@@ -264,7 +264,7 @@ void main() {
       <option value="flood">30 strobe</option>
     </optgroup>
     <optgroup label="── Restored / texture-only ──">
-      <option value="addresses_tex">★ ETH addresses</option>
+      <option value="addresses_tex">★ ETH addresses (pretext)</option>
       <option value="addr_ledger">★ Address ledger (justified)</option>
       <option value="addr_wallet">★ Wallet roll (ENS + 0x…)</option>
       <option value="addr_giant">★ Address monolith (giant)</option>
@@ -272,8 +272,8 @@ void main() {
       <option value="addr_matrix">★ Address rain (matrix)</option>
       <option value="addr_ribbon">★ Address ribbon (1-line spiral)</option>
       <option value="addr_smoke">★ Address smoke (fluid)</option>
-      <option value="manifesto_tex">★ Manifesto stream</option>
-      <option value="hexwall_tex">★ Hex wall</option>
+      <option value="manifesto_tex">★ Manifesto stream (pretext)</option>
+      <option value="hexwall_tex">★ Hex wall (pretext)</option>
       <option value="cellular">24 cellular busy</option>
       <option value="halftone_tex">14 Halftone dots</option>
       <option value="concsq_tex">17 Concentric squares</option>
@@ -330,6 +330,15 @@ void main() {
 
   <button onclick="togglePanel()" style="margin-top:8px">hide panel</button>
 </div>
+
+<!-- pretext (chenglou/pretext) — pure-JS multiline text measurement & layout,
+     vendored & self-contained at vendor/pretext.js. Module loads deferred and
+     assigns window.Pretext; the classic script below uses it (with a fallback)
+     only inside the rAF render loop, by which time this has executed. -->
+<script type="module">
+  import * as Pretext from './vendor/pretext.js';
+  window.Pretext = Pretext;
+</script>
 
 <script>
 // ===========================================================================
@@ -1086,8 +1095,8 @@ function gHexText_tex(ctx, w, h, pal, t, spd, den, opa) {
 }
 
 // ===========================================================================
-// TEXT TUNNELS (raw canvas layout, zero libraries)
-// Text wall textures laid out with raw canvas measureText for
+// PRETEXT-POWERED TEXT TUNNELS
+// Text wall textures laid out with chenglou/pretext (window.Pretext) for
 // accurate multi-line measurement + wrapping, so tokens fill the 256px wall
 // edge-to-edge and NOTHING clips off the right edge. (The old fillText address
 // wall was unreadable because 42-char strings ran straight off the texture.)
@@ -1109,46 +1118,23 @@ function rhex(n) {
   return s;
 }
 
-// Raw multi-line text wrap — pure browser canvas measurement, ZERO libraries.
-// Greedily packs space-separated tokens into lines that fit the texture width.
-// prepareOpts.whiteSpace === 'pre-wrap' honours hard \n breaks (then wraps any
-// segment that still overflows). Computed once per seed/wallet and cached.
-const _measCanvas = document.createElement('canvas');
-const _measCtx = _measCanvas.getContext('2d');
-function _packTokens(tokens, font, maxW) {
-  _measCtx.font = font;
-  const lines = [];
-  let cur = '';
-  for (let i = 0; i < tokens.length; i++) {
-    const tok = tokens[i];
-    const trial = cur ? cur + ' ' + tok : tok;
-    if (!cur || _measCtx.measureText(trial).width <= maxW) {
-      cur = trial;                 // fits (or first token on the line — never drop it)
-    } else {
-      lines.push(cur);
-      cur = tok;
-    }
-  }
-  if (cur) lines.push(cur);
-  return lines;
-}
+// Wrap a long string into lines that fit the texture width using pretext.
+// prepareOpts (optional) passes pretext options, e.g. { whiteSpace:'pre-wrap' }
+// to honour hard \n breaks. Falls back to a naive split for the first frame(s)
+// before the pretext module loads (the cache is flagged so it rebuilds once ready).
 function wrapToTexture(text, font, lineHeight, prepareOpts, maxWidthOverride) {
   const maxW = maxWidthOverride || (TEX_SIZE - TEXT_PAD * 2);
-  if (prepareOpts && prepareOpts.whiteSpace === 'pre-wrap') {
-    _measCtx.font = font;
-    const out = [];
-    text.split('\n').forEach(seg => {
-      if (!seg) { out.push(''); return; }
-      if (_measCtx.measureText(seg).width <= maxW) out.push(seg);
-      else _packTokens(seg.split(/\s+/).filter(Boolean), font, maxW).forEach(l => out.push(l));
-    });
-    return out;
-  }
-  return _packTokens(text.split(/\s+/).filter(Boolean), font, maxW);
+  const P = window.Pretext;
+  if (!P) return (prepareOpts && prepareOpts.whiteSpace === 'pre-wrap') ? text.split('\n') : text.split(/\s+/);
+  const prepared = P.prepareWithSegments(text, font, prepareOpts);
+  const { lines } = P.layoutWithLines(prepared, maxW, lineHeight);
+  // trimEnd: pretext keeps trailing whitespace on a line but (correctly) excludes
+  // it from the wrap width; drop it so left-aligned fillText never visually clips.
+  return lines.map(l => l.text.trimEnd());
 }
 
 // Draw one row with the requested alignment. justify distributes space between
-// tokens to hit the full wall width (uses raw canvas-measured fit).
+// tokens to hit the full wall width (uses pretext-measured fit via canvas widths).
 function drawTextRow(ctx, line, y, maxW, align) {
   if (!line || align === 'left') { ctx.fillText(line, TEXT_PAD, y); return; }
   if (align === 'justify') {
@@ -1166,7 +1152,7 @@ function drawTextRow(ctx, line, y, maxW, align) {
   ctx.fillText(line, x, y);
 }
 
-// Factory: content-builder + font (+ opts) => a scrolling text wall.
+// Factory: content-builder + font (+ opts) => a scrolling pretext-laid-out wall.
 // opts: { align:'left'|'center'|'right'|'justify', prepare:{...}, rowColor(li,pal,line) }
 function makeTextTunnel(id, buildContent, font, lineHeight, opts) {
   opts = opts || {};
@@ -1174,9 +1160,11 @@ function makeTextTunnel(id, buildContent, font, lineHeight, opts) {
   return function(ctx, w, h, pal, t, spd, den, opa) {
     if (!State.txt) State.txt = {};
     const slot = State.txt[id] || (State.txt[id] = {});
+    const ready = !!window.Pretext;
     const key = id + '|' + SEED;
-    if (slot.key !== key || !slot.lines) {
+    if (slot.key !== key || !slot.lines || (slot.fallback && ready)) {
       slot.key = key;
+      slot.fallback = !ready;
       slot.lines = wrapToTexture(buildContent(), font, lineHeight, opts.prepare);
     }
     const lines = slot.lines;
@@ -1202,7 +1190,7 @@ function makeTextTunnel(id, buildContent, font, lineHeight, opts) {
   };
 }
 
-// Factory: swirling vortex of text. Same cached-lines model as
+// Factory: swirling vortex of pretext-laid-out text. Same cached-lines model as
 // makeTextTunnel (layout once per seed, only animate per frame), but instead of
 // flat scrolling rows it pivots the whole field around the texture centre and
 // twists each row by an angle proportional to its distance from centre — a
@@ -1217,9 +1205,11 @@ function makeTextSwirl(id, buildContent, font, lineHeight, opts) {
   return function(ctx, w, h, pal, t, spd, den, opa) {
     if (!State.txt) State.txt = {};
     const slot = State.txt[id] || (State.txt[id] = {});
+    const ready = !!window.Pretext;
     const key = id + '|' + SEED;
-    if (slot.key !== key || !slot.lines) {
+    if (slot.key !== key || !slot.lines || (slot.fallback && ready)) {
       slot.key = key;
+      slot.fallback = !ready;
       slot.lines = wrapToTexture(buildContent(), font, lineHeight, opts.prepare, wrapW);
     }
     const lines = slot.lines;
@@ -1302,11 +1292,11 @@ function contentGiant() {
   return out.join('  ');
 }
 
-// text tunnel-tex functions (defined before TUNNEL_TEX_EXTRA uses them)
+// pretext-powered tunnel-tex functions (defined before TUNNEL_TEX_EXTRA uses them)
 const gAddresses_tex = makeTextTunnel('addr',      contentAddresses, 'bold 13px monospace', 15);
 const gManifesto_tex = makeTextTunnel('manifesto', contentManifesto, 'bold 16px "Helvetica Neue", Arial, sans-serif', 19);
 const gHexWall_tex   = makeTextTunnel('hexwall',   contentHexWall,   'bold 11px monospace', 13);
-// --- creative ETH-address treatments (each shows off a different text treatment) ---
+// --- creative ETH-address treatments (each shows off a different pretext trick) ---
 // 1. Ledger: full-justify both edges → flush data-ledger / explorer dump look.
 const gAddrLedger_tex = makeTextTunnel('addrledger', contentAddresses, 'bold 13px monospace', 16, { align: 'justify' });
 // 2. Wallet roll: one truncated address / ENS name per centered line (pre-wrap \n).
@@ -1478,7 +1468,7 @@ function gAddrSmoke_tex(ctx, w, h, pal, t, spd, den, opa) {
 
 // TUNNEL_TEX_EXTRA: tunnel-texture-only entries (NOT in figure-glitch dropdown)
 const TUNNEL_TEX_EXTRA = [
-  { id: 'addresses_tex', label: '★  ETH addresses',     fn: gAddresses_tex },
+  { id: 'addresses_tex', label: '★  ETH addresses (pretext)',     fn: gAddresses_tex },
   { id: 'addr_ledger',   label: '★  Address ledger (justified)',  fn: gAddrLedger_tex },
   { id: 'addr_wallet',   label: '★  Wallet roll (ENS + 0x…)',     fn: gAddrWallet_tex },
   { id: 'addr_giant',    label: '★  Address monolith (giant)',    fn: gAddrGiant_tex },
@@ -1486,8 +1476,8 @@ const TUNNEL_TEX_EXTRA = [
   { id: 'addr_matrix',   label: '★  Address rain (matrix)',       fn: gAddrMatrix_tex },
   { id: 'addr_ribbon',   label: '★  Address ribbon (1-line spiral)', fn: gAddrRibbon_tex },
   { id: 'addr_smoke',    label: '★  Address smoke (fluid)',       fn: gAddrSmoke_tex },
-  { id: 'manifesto_tex', label: '★  Manifesto stream',  fn: gManifesto_tex },
-  { id: 'hexwall_tex',   label: '★  Hex wall',          fn: gHexWall_tex },
+  { id: 'manifesto_tex', label: '★  Manifesto stream (pretext)',  fn: gManifesto_tex },
+  { id: 'hexwall_tex',   label: '★  Hex wall (pretext)',          fn: gHexWall_tex },
   { id: 'cellular',      label: '24  Cellular automaton', fn: gCellular },
   { id: 'halftone_tex',  label: '14  Halftone dots',       fn: gHalftone_tex },
   { id: 'concsq_tex',    label: '17  Concentric squares',  fn: gConcentric_tex },
@@ -1648,7 +1638,7 @@ function randomCombo() {
     'static','palstatic','scanlines','tear','rgbsplit','scatter','mirror','invert','cellular','glitchtext','flood',
     // restored / texture-only 10
     'halftone_tex','concsq_tex','radial_tex','hextun_tex','circles_tex','blocks_tex','diagonal_tex','letterbox_tex','matrix_tex','hextext_tex',
-    // text tunnels
+    // pretext text tunnels
     'addresses_tex','addr_ledger','addr_wallet','addr_giant','addr_swirl','addr_matrix','addr_ribbon','addr_smoke','manifesto_tex','hexwall_tex',
   ];
   const texVal = texOpts[(Math.random() * texOpts.length)|0];
