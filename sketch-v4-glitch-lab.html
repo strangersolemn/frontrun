@@ -123,6 +123,7 @@
     padding: 8px 10px; backdrop-filter: blur(8px); font-family: monospace;
   }
   body.preview #preview-bar { display: flex; }
+  body.embed #preview-bar { display: none; }   /* embedded in landing page → parent drives the controls */
   #preview-bar .pv-brand { color: #ED1E79; font-weight: 700; letter-spacing: 2px; font-size: 12px; }
   #preview-bar input {
     width: 230px; max-width: 46vw; background: #111; border: 1px solid #333;
@@ -1719,7 +1720,8 @@ function usePreset(addr) {
 function syncPreviewURL(v) {
   try { const u = new URL(location.href); if (v) u.searchParams.set('w', v); history.replaceState(null, '', u); } catch (e) {}
 }
-function applyPreview(v) { applyWallet(v); syncPreviewURL(v); const i = $('preview-addr'); if (i) i.value = (v || '').trim(); }
+function applyPreview(v) { applyWallet(v); syncPreviewURL(v); const i = $('preview-addr'); if (i) i.value = (v || '').trim(); postParentState(); }
+function postParentState(){ try { if (window.parent && window.parent !== window) window.parent.postMessage({ type:'frontrun:state', wallet: WALLET }, '*'); } catch(e){} }
 function rollPreview() {
   let a = '0x'; for (let i = 0; i < 40; i++) a += '0123456789abcdef'[(Math.random() * 16) | 0];
   applyPreview(a);
@@ -1920,6 +1922,14 @@ frame();
   const p = new URLSearchParams(location.search);
   if (!(p.has('preview') || p.has('clean'))) return;
   document.body.classList.add('preview');
+  if (p.has('embed')) document.body.classList.add('embed');   // hide in-iframe bar; the landing page drives it
+  // let a parent site control the art via postMessage
+  window.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type === 'frontrun:wallet') applyPreview(d.value || '');
+    else if (d.type === 'frontrun:roll') rollPreview();
+    else if (d.type === 'frontrun:ping') postParentState();
+  });
   const inp = $('preview-addr');
   if (inp) {
     // apply the moment a complete address/ENS is pasted or typed — no Enter needed
