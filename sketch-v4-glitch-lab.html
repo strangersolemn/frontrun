@@ -1673,6 +1673,28 @@ function bustContentCaches() {
   State.ribbon = null; State.ribbonKey = null;   // single-line spiral cache
   State.addrMatrix = null;                        // falling-address columns
 }
+// HARD traits = the piece's fixed identity (palette + figure glitch). Set by a
+// "roll" — or, for a shared link, derived once from the wallet. NOT changed when
+// a different holder address is entered.
+function rollSeed() {
+  const pal = (Math.random() * PALETTES.length) | 0;
+  $('palette-sel').value = pal; palette = PALETTES[pal];
+  const gl = GLITCHES.filter(g => g.id !== 'none');
+  const g = gl[(Math.random() * gl.length) | 0];
+  $('fig-glitch').value = g.id; activeGlitch = g.id;
+}
+function seedFromWallet(addr) {   // deterministic identity from a wallet (shared links / first load)
+  const s = seedFrom('hard:' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
+  for (let i = 0; i < 6; i++) wr();
+  const pal = (wr() * PALETTES.length) | 0;
+  $('palette-sel').value = pal; palette = PALETTES[pal];
+  const gl = GLITCHES.filter(g => g.id !== 'none');
+  const g = gl[(wr() * gl.length) | 0];
+  $('fig-glitch').value = g.id; activeGlitch = g.id;
+}
+// SOFT traits only — the holder address shapes the LOOK (tunnel shape, motion,
+// treatment, the digits). Palette + figure glitch (the identity) are left as-is,
+// so entering a new address re-skins the SAME piece instead of re-rolling it.
 function applyWallet(addr) {
   addr = (addr || '').trim();
   if (!addr) { clearWallet(); return; }
@@ -1680,23 +1702,16 @@ function applyWallet(addr) {
   WHEX = walletToHex(addr);
   WPTR = 0;
   bustContentCaches();
-  // deterministic soft-trait RNG keyed to the wallet
-  const s = seedFrom(addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
+  const s = seedFrom('soft:' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
   for (let i = 0; i < 8; i++) wr();
-  const pal = (wr() * PALETTES.length) | 0;
-  $('palette-sel').value = pal; palette = PALETTES[pal];
   const sh = SHAPES[(wr() * SHAPES.length) | 0];
   $('tunnel-shape').value = sh.name; setTunnelShape(sh.name);
   $('spd').value = 30 + ((wr() * 60) | 0);
   $('den').value = 30 + ((wr() * 60) | 0);
-  // treatment: ~50% loud (shows the digits) / ~50% subtle (abstract) → variety across the collection
   const pool = (wr() < 0.5) ? LOUD_TEX : SUBTLE_TEX;
   const texVal = pool[(wr() * pool.length) | 0];
   $('tunnel-tex').value = texVal; tunnelTex = texVal;
-  const gl = GLITCHES.filter(g => g.id !== 'none');
-  const g = gl[(wr() * gl.length) | 0];
-  $('fig-glitch').value = g.id; activeGlitch = g.id;
-  buildTunnelTexture();        // rebuild baked noise (harmless for live textures); palette is read live elsewhere
+  buildTunnelTexture();
   updateFigure();
   const cur = $('wallet-cur'); if (cur) cur.textContent = WALLET.length > 16 ? WALLET.slice(0,8)+'…'+WALLET.slice(-6) : WALLET;
 }
@@ -1723,8 +1738,9 @@ function syncPreviewURL(v) {
 function applyPreview(v) { applyWallet(v); syncPreviewURL(v); const i = $('preview-addr'); if (i) i.value = (v || '').trim(); postParentState(); }
 function postParentState(){ try { if (window.parent && window.parent !== window) window.parent.postMessage({ type:'frontrun:state', wallet: WALLET }, '*'); } catch(e){} }
 function rollPreview() {
+  rollSeed();   // new piece identity (palette + glitch)
   let a = '0x'; for (let i = 0; i < 40; i++) a += '0123456789abcdef'[(Math.random() * 16) | 0];
-  applyPreview(a);
+  applyPreview(a);   // fresh look from a new holder
 }
 
 // ===========================================================================
@@ -1941,7 +1957,7 @@ frame();
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyPreview(e.target.value); inp.blur(); } });
   }
   const w = p.get('w');
-  if (w) { applyWallet(w); if (inp) inp.value = w; }
+  if (w) { seedFromWallet(w); applyWallet(w); if (inp) inp.value = w; }
   else rollPreview();    // never start blank
 })();
 </script>
