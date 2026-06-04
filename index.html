@@ -74,8 +74,7 @@
 
   /* art stage */
   .stage{position:relative}
-  .frame{position:relative;aspect-ratio:1/1;width:100%;background:#05060a;border:1px solid var(--ink);
-    box-shadow:16px 20px 0 -2px rgba(18,17,16,.07),0 30px 60px -34px rgba(18,17,16,.55);overflow:hidden}
+  .frame{position:relative;aspect-ratio:1/1;width:100%;background:#05060a;border:1px solid var(--ink);overflow:hidden}
   .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
   .corner{position:absolute;width:9px;height:9px;border:1px solid var(--pink);z-index:3}
   .c1{top:8px;left:8px;border-right:0;border-bottom:0}.c2{top:8px;right:8px;border-left:0;border-bottom:0}
@@ -183,6 +182,7 @@
           <span class="pfx">&gt;</span>
           <input id="addr" type="text" spellcheck="false" autocomplete="off" placeholder="paste a wallet to preview  ·  0x… or name.eth">
           <button id="roll">↻ roll</button>
+          <button id="fs" title="View fullscreen">⛶ full</button>
         </div>
       </div>
     </div>
@@ -268,6 +268,7 @@
   addr.addEventListener('input',e=>{const v=e.target.value.trim();if(valid(v))send(v)});
   addr.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send(e.target.value.trim());addr.blur()}});
   document.getElementById('roll').addEventListener('click',()=>{addr.value='';roll()});
+  document.getElementById('fs').addEventListener('click',()=>{const el=document.querySelector('.frame');const r=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;if(r)r.call(el);});
   let gotState=false;
   addEventListener('message',e=>{const d=e.data||{};if(d.type==='frontrun:state'){gotState=true;const w=d.wallet||'';viewing.textContent=w?(w.length>16?w.slice(0,8)+'…'+w.slice(-6):w):'random'}});
   art.addEventListener('load',()=>{let n=0;const t=setInterval(()=>{if(gotState||n++>10){clearInterval(t);return}art.contentWindow&&art.contentWindow.postMessage({type:'frontrun:ping'},'*')},500)});
