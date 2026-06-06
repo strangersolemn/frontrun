@@ -563,6 +563,7 @@ const PALETTES = [
   ['#00030E','#3A7BFF','#1E3F9E','#05091c'],   // 8 royal blue + dark navy
   ['#000000','#D5142A','#6E0C16','#120304'],   // 9 dark red + black
   ['#000800','#00FF41','#119A33','#001a08'],   // 10 terminal hacker green + black
+  ['#000000','#FFFFFF','#B0B0B0','#000000'],   // 11 black & white
 ];
 
 // 8 tunnel shapes (cross-section polygon)
@@ -1492,9 +1493,13 @@ const TUNNEL_TEX_EXTRA = [
   { id: 'hextext_tex',   label: '11  Hex text scatter',    fn: gHexText_tex },
 ];
 
+// solid-black figure fill — renders the figure as a flat silhouette
+function gSolidBlack(ctx, w, h) { ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h); }
+
 // -- glitch registry --
 const GLITCHES = [
   { id: 'none',      label: '— none / clean —',          fn: gNone },
+  { id: 'solidblack',label: '00  Solid black (silhouette)', fn: gSolidBlack },
   { id: 'static',    label: '01  Static (white noise)',  fn: gStatic },
   { id: 'palstatic', label: '02  Palette static',        fn: gPaletteStatic },
   { id: 'scanlines', label: '03  Horizontal scanlines',  fn: gScanlines },
@@ -1945,6 +1950,12 @@ frame();
     if (d.type === 'frontrun:wallet') applyPreview(d.value || '');
     else if (d.type === 'frontrun:roll') rollPreview();
     else if (d.type === 'frontrun:ping') postParentState();
+    else if (d.type === 'frontrun:piece') {            // full distinct piece from a wallet (palette + look)
+      const v = d.value || '';
+      seedFromWallet(v); applyWallet(v); syncPreviewURL(v);
+      const i = $('preview-addr'); if (i) i.value = v.trim();
+      postParentState();
+    }
   });
   const inp = $('preview-addr');
   if (inp) {
@@ -1955,6 +1966,16 @@ frame();
     });
     inp.addEventListener('change', e => applyPreview(e.target.value));   // blur / commit fallback
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyPreview(e.target.value); inp.blur(); } });
+  }
+  // locked look preset: ?look=bwstatic → B&W static walls + solid-black silhouette
+  if (p.get('look') === 'bwstatic') {
+    const bw = PALETTES.length - 1;
+    $('palette-sel').value = bw; palette = PALETTES[bw];
+    setTunnelShape('square-flat');
+    $('tunnel-tex').value = 'static'; tunnelTex = 'static';
+    $('fig-glitch').value = 'solidblack'; activeGlitch = 'solidblack';
+    buildTunnelTexture(); updateFigure();
+    return;
   }
   const w = p.get('w');
   if (w) { seedFromWallet(w); applyWallet(w); if (inp) inp.value = w; }
