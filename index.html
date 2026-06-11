@@ -215,6 +215,14 @@
           <div class="part"><div class="n">01 — at mint</div><h3>Traits &amp; palette</h3><p>Set once, at the moment of mint. The permanent identity of the piece.</p></div>
           <div class="part"><div class="n">02 — the holder</div><h3>The look</h3><p>The numbers in the holding address map the motion, the tunnel, the form. In some, the address itself becomes the tunnel.</p></div>
         </div>
+        <div class="spec reveal" style="margin-top:26px">
+          <div class="item"><span class="mk">●</span><span class="t"><b>Palette</b> — the piece's colours, stamped by an immutable seed the second it's minted</span><span class="meta">locked forever</span></div>
+          <div class="item"><span class="mk">●</span><span class="t"><b>Figure treatment</b> — how the runner is painted: static, scanlines, stripes, datamosh</span><span class="meta">locked forever</span></div>
+          <div class="item"><span class="mk">○</span><span class="t"><b>Tunnel shape</b> — hex, square, triangle, twisted… chosen by the holding wallet</span><span class="meta">follows the holder</span></div>
+          <div class="item"><span class="mk">○</span><span class="t"><b>Wall texture</b> — noise, geometry, or text. When it's text, the holder's address literally fills the walls</span><span class="meta">follows the holder</span></div>
+          <div class="item"><span class="mk">○</span><span class="t"><b>Motion &amp; density</b> — speed and weight of the tunnel, mapped from the holder's digits</span><span class="meta">follows the holder</span></div>
+        </div>
+        <p class="reveal" style="margin-top:22px">So when a piece changes hands, it doesn't become a different artwork — it stays itself, recognisably, and repaints its world for whoever holds it. Same runner, same colours. New tunnel, new digits, new motion. Every transfer is the same piece running a new lane.</p>
       </div>
     </div>
   </section>
@@ -281,7 +289,7 @@
 // Dormant until CONTRACT is set (mainnet). ?testnet=1 watches the Sepolia rehearsal.
 (function(){
   var TESTNET = new URLSearchParams(location.search).has('testnet');
-  var CONTRACT = TESTNET ? '0x32B584D66607C7aDCCa7C6BC2aC9746e18453Dd7' : ''; // mainnet addr goes here at launch
+  var CONTRACT = TESTNET ? '0x152859225E05c23dAD33724CB306b2fA838F3565' : ''; // mainnet addr goes here at launch
   if (!CONTRACT) return; // pre-launch: keep the static Supply stat
   var RPCS = TESTNET
     ? ['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia']
