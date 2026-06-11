@@ -1525,11 +1525,29 @@ function populateDropdown(id, def) {
 // ===========================================================================
 // FIGURE — Frontrunner #8 via CSS mask, fill by mode
 // ===========================================================================
+// Some devices can't apply a CSS GIF mask (the masked canvas renders fully
+// transparent = tunnel-only, no runner). Hybrid: CSS mask where it works
+// (animated pose), canvas destination-in clipping everywhere else (static
+// pose, glitch still animates). ?nomask=1 forces the fallback for testing.
+let maskFallback = false, figImg = null;
 async function loadFigureMask() {
   const res = await fetch('figure.b64');
   const b64 = (await res.text()).trim();
-  fig.style.webkitMaskImage = 'url(' + b64 + ')';
-  fig.style.maskImage = 'url(' + b64 + ')';
+  figImg = new Image();
+  const decoded = new Promise(r => { figImg.onload = () => r(true); figImg.onerror = () => r(false); });
+  figImg.src = b64;
+  const imgOK = await decoded;
+  const cssOK = !!(window.CSS && CSS.supports &&
+    (CSS.supports('mask-image', 'url("data:,")') || CSS.supports('-webkit-mask-image', 'url("data:,")')));
+  const force = new URLSearchParams(location.search).has('nomask');
+  maskFallback = force || !cssOK || !imgOK;
+  if (maskFallback) {
+    fig.style.webkitMaskImage = 'none';
+    fig.style.maskImage = 'none';
+  } else {
+    fig.style.webkitMaskImage = 'url(' + b64 + ')';
+    fig.style.maskImage = 'url(' + b64 + ')';
+  }
 }
 
 function updateFigure() {
@@ -1582,6 +1600,14 @@ function frame() {
   const g = GLITCHES.find(gl => gl.id === activeGlitch);
   if (g && g.id !== 'none') {
     g.fn(fCtx, W, H, palette, t, spd, den, 1);
+    if (maskFallback && figImg && figImg.width) {
+      // canvas clipping replaces the CSS mask: contain, center bottom
+      fCtx.globalCompositeOperation = 'destination-in';
+      const ms = Math.min(W / figImg.width, H / figImg.height);
+      const mw = figImg.width * ms, mh = figImg.height * ms;
+      fCtx.drawImage(figImg, (W - mw) / 2, H - mh, mw, mh);
+      fCtx.globalCompositeOperation = 'source-over';
+    }
   } else {
     fCtx.clearRect(0, 0, W, H);
   }
@@ -1801,7 +1827,7 @@ function restoreLook(L) {
   if (L.flashOpa !== undefined) { $('flash-opa').value = L.flashOpa; applyFlashOpacity(); }
 }
 function loadLooks(){try{return JSON.parse(localStorage.getItem(LOOKS_KEY)||'[]');}catch{return [];}}
-function persist(arr){localStorage.setItem(LOOKS_KEY,JSON.stringify(arr));}
+function persist(arr){try{localStorage.setItem(LOOKS_KEY,JSON.stringify(arr));}catch(e){}} // storage forbidden in sandboxed/data: iframes (OpenSea) - must never kill the render
 
 // CURATED STARTER LOOKS — one entry per glitch with sensible defaults
 // Each starter pairs a tunnel SHAPE + tunnel TEXTURE + figure GLITCH
