@@ -1707,14 +1707,19 @@ function bustContentCaches() {
 // HARD traits = the piece's fixed identity (palette + figure glitch). Set by a
 // "roll" — or, for a shared link, derived once from the wallet. NOT changed when
 // a different holder address is entered.
+// HARDKEY ties the SOFT traits to the piece's identity, so the same holder
+// re-skins each piece DIFFERENTLY (soft = f(seed, holder), not f(holder)).
+let HARDKEY = 'genesis';
 function rollSeed() {
+  HARDKEY = 'roll:' + Math.random().toString(36).slice(2);
   const pal = (Math.random() * PALETTES.length) | 0;
   $('palette-sel').value = pal; palette = PALETTES[pal];
   const gl = GLITCHES.filter(g => g.id !== 'none');
   const g = gl[(Math.random() * gl.length) | 0];
   $('fig-glitch').value = g.id; activeGlitch = g.id;
 }
-function seedFromWallet(addr) {   // deterministic identity from a wallet (shared links / first load)
+function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (shared links / on-chain)
+  HARDKEY = 'hard:' + addr.toLowerCase();
   const s = seedFrom('hard:' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
   for (let i = 0; i < 6; i++) wr();
   const pal = (wr() * PALETTES.length) | 0;
@@ -1733,7 +1738,7 @@ function applyWallet(addr) {
   WHEX = walletToHex(addr);
   WPTR = 0;
   bustContentCaches();
-  const s = seedFrom('soft:' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
+  const s = seedFrom('soft:' + HARDKEY + ':' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
   for (let i = 0; i < 8; i++) wr();
   const sh = SHAPES[(wr() * SHAPES.length) | 0];
   $('tunnel-shape').value = sh.name; setTunnelShape(sh.name);
