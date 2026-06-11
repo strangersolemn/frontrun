@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — mint rehearsal (Sepolia)</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+  :root{--pink:#ED1E79;--ink:#111}
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%;background:#0a0a0a;color:#ddd;font-family:monospace}
+  #wrap{display:flex;height:100%}
+  #panel{width:340px;min-width:340px;border-right:1px solid #222;padding:26px 22px;display:flex;flex-direction:column;gap:14px}
+  h1{font-size:20px;letter-spacing:.18em}
+  h1 .pk{color:var(--pink)}
+  .net{font-size:10px;letter-spacing:.2em;color:#777;text-transform:uppercase}
+  .stat{border:1px solid #222;padding:10px 12px}
+  .stat .k{font-size:9px;letter-spacing:.2em;color:#777;text-transform:uppercase}
+  .stat .v{font-size:17px;font-weight:700;margin-top:5px}
+  button{background:var(--pink);border:0;color:#fff;font:inherit;font-weight:700;letter-spacing:.14em;padding:13px;cursor:pointer;text-transform:uppercase}
+  button.ghost{background:#181818;border:1px solid #333;color:#ccc}
+  button:disabled{opacity:.4;cursor:default}
+  #status{font-size:11px;line-height:1.7;color:#999;white-space:pre-wrap;word-break:break-all}
+  #status a{color:var(--pink)}
+  #art{flex:1;border:0;background:#000}
+  .hint{font-size:10px;color:#666;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="panel">
+    <div>
+      <h1>FRONT<span class="pk">RUN</span></h1>
+      <div class="net">mint rehearsal · sepolia</div>
+    </div>
+    <div class="stat"><div class="k">Minted</div><div class="v" id="counter">— / 420</div></div>
+    <div class="stat"><div class="k">Wallet</div><div class="v" id="wallet" style="font-size:12px">not connected</div></div>
+    <button id="connect" class="ghost">Connect Wallet</button>
+    <button id="mint" disabled>MINT</button>
+    <div id="status">connect a wallet on Sepolia to rehearse the mint.</div>
+    <div class="hint">this is the dress rehearsal of the real mint page: connect → mint → YOUR piece renders from the chain, written by YOUR wallet.</div>
+  </div>
+  <iframe id="art" title="your piece"></iframe>
+</div>
+<script>
+  const CONTRACT = new URLSearchParams(location.search).get('c') || '0xB2dCc8Df6db70F8D170fD76F66c6BC253455B0fF';
+  const ABI = [
+    'function mint()',
+    'function nextId() view returns (uint256)',
+    'function tokenURI(uint256) view returns (string)',
+    'function ownerOf(uint256) view returns (address)',
+  ];
+  const READ_RPC = 'https://ethereum-sepolia-rpc.publicnode.com';
+  const SEPOLIA = 11155111n;
+  const $ = id => document.getElementById(id);
+  let provider = null, signer = null, addr = null;
+
+  const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+  const readC = new ethers.Contract(CONTRACT, ABI, readProvider);
+
+  async function refreshCounter(){
+    try { $('counter').textContent = (await readC.nextId()) + ' / 420'; } catch(e){}
+  }
+  refreshCounter(); setInterval(refreshCounter, 15000);
+
+  function status(html){ $('status').innerHTML = html; }
+
+  $('connect').onclick = async () => {
+    if (!window.ethereum) { status('no wallet found — install MetaMask / Rabby.'); return; }
+    provider = new ethers.BrowserProvider(window.ethereum, 'any');
+    const accounts = await provider.send('eth_requestAccounts', []);
+    addr = ethers.getAddress(accounts[0]);
+    const net = await provider.getNetwork();
+    if (net.chainId !== SEPOLIA) {
+      try {
+        await provider.send('wallet_switchEthereumChain', [{ chainId: '0xaa36a7' }]);
+        provider = new ethers.BrowserProvider(window.ethereum, 'any');
+      } catch (e) { status('switch your wallet to SEPOLIA and reconnect.'); return; }
+    }
+    signer = await provider.getSigner();
+    $('wallet').textContent = addr.slice(0,6) + '…' + addr.slice(-4);
+    $('mint').disabled = false;
+    status('connected. hit MINT — the contract writes your piece from this wallet.');
+  };
+
+  $('mint').onclick = async () => {
+    if (!signer) return;
+    $('mint').disabled = true;
+    try {
+      const c = new ethers.Contract(CONTRACT, ABI, signer);
+      const id = await readC.nextId();           // the token you're about to get
+      status('confirm in your wallet…');
+      const tx = await c.mint();
+      status('mint submitted — <a href="https://sepolia.etherscan.io/tx/' + tx.hash + '" target="_blank">view on Etherscan</a>\nwaiting for the block…');
+      await tx.wait();
+      status('MINTED FRONTRUN #' + id + ' 🏃 — pulling YOUR piece off the chain…');
+      const uri = await readC.tokenURI(id);
+      const json = JSON.parse(atob(uri.split(',')[1]));
+      $('art').src = json.animation_url;
+      refreshCounter();
+      status('FRONTRUN #' + id + ' — holder ' + addr.slice(0,6) + '…' + addr.slice(-4) +
+             '\nthis render came out of the contract. send it to another wallet and it repaints.');
+    } catch (e) {
+      status('mint failed: ' + (e.shortMessage || e.message || e).toString().slice(0,160));
+    }
+    $('mint').disabled = false;
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — live from Sepolia</title>
+<style>
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%;background:#000;overflow:hidden;font-family:monospace}
+  #art{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+  #hud{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:10;
+       background:rgba(0,0,0,.78);border:1px solid #333;color:#ccc;font-size:12px;
+       padding:8px 14px;letter-spacing:.08em;white-space:nowrap;backdrop-filter:blur(6px)}
+  #hud b{color:#ED1E79}
+  #hud .ok{color:#2ce15f}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#888;font-size:13px;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+  <iframe id="art" title="FRONTRUN live"></iframe>
+  <div id="hud">contacting Sepolia…</div>
+  <div id="err"></div>
+<script>
+  // Pulls tokenURI(id) straight off the FRONTRUN Sepolia contract with raw
+  // eth_call — what you see is EXACTLY what the chain returns, nothing local.
+  const CONTRACT = '0xB2dCc8Df6db70F8D170fD76F66c6BC253455B0fF';
+  const RPCS = [
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://sepolia.drpc.org',
+    'https://1rpc.io/sepolia',
+  ];
+  const id = parseInt(new URLSearchParams(location.search).get('id') || '0', 10);
+  const hud = document.getElementById('hud');
+
+  const hex = n => n.toString(16).padStart(64, '0');
+  const SEL_TOKENURI = '0xc87b56dd'; // tokenURI(uint256)
+  const SEL_OWNEROF  = '0x6352211e'; // ownerOf(uint256)
+
+  async function call(data) {
+    let lastErr;
+    for (const rpc of RPCS) {
+      try {
+        const r = await fetch(rpc, { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:CONTRACT,data},'latest']}) });
+        const j = await r.json();
+        if (j.error) throw new Error(j.error.message);
+        return j.result;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr;
+  }
+
+  // decode an ABI-encoded string return value
+  function decodeString(ret) {
+    const b = ret.slice(2);
+    const len = parseInt(b.slice(64, 128), 16);
+    const data = b.slice(128, 128 + len * 2);
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = parseInt(data.slice(i*2, i*2+2), 16);
+    return new TextDecoder().decode(bytes);
+  }
+
+  (async () => {
+    try {
+      const ownerRet = await call(SEL_OWNEROF + hex(id));
+      const owner = '0x' + ownerRet.slice(-40);
+      hud.innerHTML = `<b>FRONTRUN #${id}</b> &nbsp;·&nbsp; holder ${owner.slice(0,6)}…${owner.slice(-4)} &nbsp;·&nbsp; reading tokenURI…`;
+      const uri = decodeString(await call(SEL_TOKENURI + hex(id)));
+      const json = JSON.parse(atob(uri.split(',')[1]));
+      document.getElementById('art').src = json.animation_url;
+      hud.innerHTML = `<b>FRONTRUN #${id}</b> &nbsp;·&nbsp; holder ${owner.slice(0,6)}…${owner.slice(-4)} &nbsp;·&nbsp; <span class="ok">LIVE FROM SEPOLIA — fully on-chain</span>`;
+    } catch (e) {
+      hud.style.display = 'none';
+      const err = document.getElementById('err');
+      err.style.display = 'flex';
+      err.textContent = 'could not reach Sepolia (' + e.message + ') — token may not exist; try ?id=0';
+    }
+  })();
+</script>
+</body>
+</html>
