@@ -37,6 +37,12 @@
     <div class="stat"><div class="k">Wallet</div><div class="v" id="wallet" style="font-size:12px">not connected</div></div>
     <button id="connect" class="ghost">Connect Wallet</button>
     <button id="mint" disabled>MINT</button>
+    <div class="stat" style="display:flex;flex-direction:column;gap:8px">
+      <div class="k">Send a piece</div>
+      <input id="send-id" placeholder="token # (e.g. 1)" style="background:#181818;border:1px solid #333;color:#ddd;font:inherit;padding:8px">
+      <input id="send-to" placeholder="0x… recipient" style="background:#181818;border:1px solid #333;color:#ddd;font:inherit;padding:8px">
+      <button id="send" class="ghost" disabled>SEND → watch it repaint</button>
+    </div>
     <div id="status">connect a wallet on Sepolia to rehearse the mint.</div>
     <div class="hint">this is the dress rehearsal of the real mint page: connect → mint → YOUR piece renders from the chain, written by YOUR wallet.</div>
   </div>
@@ -49,6 +55,7 @@
     'function nextId() view returns (uint256)',
     'function tokenURI(uint256) view returns (string)',
     'function ownerOf(uint256) view returns (address)',
+    'function transferFrom(address,address,uint256)',
   ];
   const READ_RPC = 'https://ethereum-sepolia-rpc.publicnode.com';
   const SEPOLIA = 11155111n;
@@ -80,7 +87,38 @@
     signer = await provider.getSigner();
     $('wallet').textContent = addr.slice(0,6) + '…' + addr.slice(-4);
     $('mint').disabled = false;
+    $('send').disabled = false;
     status('connected. hit MINT — the contract writes your piece from this wallet.');
+  };
+
+  async function showToken(id, label){
+    const uri = await readC.tokenURI(id);
+    const json = JSON.parse(atob(uri.split(',')[1]));
+    $('art').src = json.animation_url;
+    if (label) status(label);
+  }
+
+  $('send').onclick = async () => {
+    if (!signer) return;
+    const id = parseInt($('send-id').value, 10);
+    let to = ($('send-to').value || '').trim();
+    if (isNaN(id)) { status('enter the token # you want to send.'); return; }
+    try { to = ethers.getAddress(to); } catch (e) { status('that recipient address doesn\'t look right.'); return; }
+    $('send').disabled = true;
+    try {
+      const owner = await readC.ownerOf(id);
+      if (owner.toLowerCase() !== addr.toLowerCase()) { status('#' + id + ' isn\'t in this wallet — it\'s held by ' + owner.slice(0,8) + '…'); $('send').disabled=false; return; }
+      await showToken(id, 'this is #' + id + ' NOW (held by you). confirm the transfer in your wallet…');
+      const c = new ethers.Contract(CONTRACT, ABI, signer);
+      const tx = await c.transferFrom(addr, to, id);
+      status('transfer submitted — <a href="https://sepolia.etherscan.io/tx/' + tx.hash + '" target="_blank">Etherscan</a>\nwaiting for the block…');
+      await tx.wait();
+      await showToken(id, 'FRONTRUN #' + id + ' → now held by ' + to.slice(0,6) + '…' + to.slice(-4) +
+        '\nSAME piece — same colours, same runner. NEW tunnel, written by the new wallet. 🏃');
+    } catch (e) {
+      status('send failed: ' + (e.shortMessage || e.message || e).toString().slice(0,160));
+    }
+    $('send').disabled = false;
   };
 
   $('mint').onclick = async () => {
