@@ -13,9 +13,13 @@
   #holder{background:rgba(0,0,0,.8);border:1px solid #333;color:#bbb;font-size:12px;
           letter-spacing:.1em;padding:7px 14px;backdrop-filter:blur(6px)}
   #holder b{color:#ED1E79}
-  #next{background:#ED1E79;border:0;color:#fff;font:inherit;font-weight:700;font-size:14px;
-        letter-spacing:.16em;padding:15px 34px;cursor:pointer;text-transform:uppercase}
-  #next:active{transform:scale(.97)}
+  #btns{display:flex;gap:10px}
+  #btns button{border:0;color:#fff;font:inherit;font-weight:700;font-size:14px;
+        letter-spacing:.16em;padding:15px 28px;cursor:pointer;text-transform:uppercase}
+  #btns button:active{transform:scale(.97)}
+  #next{background:#ED1E79}
+  #roll{background:#181818;border:1px solid #444 !important;color:#ddd}
+  #roll:hover{border-color:#ED1E79 !important;color:#ED1E79}
   #lock{font-size:10px;letter-spacing:.18em;color:#777;text-transform:uppercase;
         background:rgba(0,0,0,.7);padding:4px 10px}
 </style>
@@ -25,7 +29,10 @@
   <div id="bar">
     <div id="lock">identity locked · the holder writes the rest</div>
     <div id="holder">loading from Sepolia…</div>
-    <button id="next" style="display:none">SIMULATE NEW HOLDER</button>
+    <div id="btns" style="display:none">
+      <button id="next">SIMULATE NEW HOLDER</button>
+      <button id="roll">ROLL NEW PIECE</button>
+    </div>
   </div>
 <script>
   // Loads the REAL on-chain piece, then re-skins it live by handing the engine
@@ -63,13 +70,19 @@
     const uri = decodeString(await call('0xc87b56dd'+hex(id)));
     art.src = JSON.parse(atob(uri.split(',')[1])).animation_url;
     holderEl.innerHTML = '<b>FRONTRUN #'+id+'</b> · holder '+short(owner)+' (real, on-chain)';
-    btn.style.display = 'block';
+    document.getElementById('btns').style.display = 'flex';
   })().catch(e => holderEl.textContent = 'could not reach Sepolia — '+e.message);
 
   btn.onclick = () => {
     let a = '0x'; for (let i=0;i<40;i++) a += '0123456789abcdef'[(Math.random()*16)|0];
     art.contentWindow.postMessage({type:'frontrun:wallet', value:a}, '*');
     holderEl.innerHTML = '<b>FRONTRUN #'+id+'</b> · simulated holder '+short(a);
+  };
+
+  // ROLL = a brand-new piece: new identity (palette + figure) AND new wallet.
+  document.getElementById('roll').onclick = () => {
+    art.contentWindow.postMessage({type:'frontrun:roll'}, '*');
+    holderEl.innerHTML = '<b>new piece</b> · fresh identity, fresh wallet';
   };
 </script>
 </body>
