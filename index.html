@@ -281,7 +281,7 @@
 // Dormant until CONTRACT is set (mainnet). ?testnet=1 watches the Sepolia rehearsal.
 (function(){
   var TESTNET = new URLSearchParams(location.search).has('testnet');
-  var CONTRACT = TESTNET ? '0xB2dCc8Df6db70F8D170fD76F66c6BC253455B0fF' : ''; // mainnet addr goes here at launch
+  var CONTRACT = TESTNET ? '0x32B584D66607C7aDCCa7C6BC2aC9746e18453Dd7' : ''; // mainnet addr goes here at launch
   if (!CONTRACT) return; // pre-launch: keep the static Supply stat
   var RPCS = TESTNET
     ? ['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia']
