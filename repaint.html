@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — repaint demo</title>
+<style>
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%;background:#000;overflow:hidden;font-family:monospace}
+  #art{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+  #bar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:10;
+       display:flex;flex-direction:column;align-items:center;gap:10px}
+  #holder{background:rgba(0,0,0,.8);border:1px solid #333;color:#bbb;font-size:12px;
+          letter-spacing:.1em;padding:7px 14px;backdrop-filter:blur(6px)}
+  #holder b{color:#ED1E79}
+  #next{background:#ED1E79;border:0;color:#fff;font:inherit;font-weight:700;font-size:14px;
+        letter-spacing:.16em;padding:15px 34px;cursor:pointer;text-transform:uppercase}
+  #next:active{transform:scale(.97)}
+  #lock{font-size:10px;letter-spacing:.18em;color:#777;text-transform:uppercase;
+        background:rgba(0,0,0,.7);padding:4px 10px}
+</style>
+</head>
+<body>
+  <iframe id="art" title="FRONTRUN"></iframe>
+  <div id="bar">
+    <div id="lock">identity locked · the holder writes the rest</div>
+    <div id="holder">loading from Sepolia…</div>
+    <button id="next" style="display:none">SIMULATE NEW HOLDER</button>
+  </div>
+<script>
+  // Loads the REAL on-chain piece, then re-skins it live by handing the engine
+  // a new holder address — the exact code path a real transfer triggers.
+  const CONTRACT = '0x152859225E05c23dAD33724CB306b2fA838F3565';
+  const RPCS = ['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia'];
+  const id = parseInt(new URLSearchParams(location.search).get('id') || '1', 10);
+  const art = document.getElementById('art');
+  const holderEl = document.getElementById('holder');
+  const btn = document.getElementById('next');
+  const hex = n => n.toString(16).padStart(64,'0');
+
+  async function call(data){
+    let err;
+    for (const rpc of RPCS){
+      try{
+        const r = await fetch(rpc,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:CONTRACT,data},'latest']})});
+        const j = await r.json(); if (j.error) throw new Error(j.error.message);
+        return j.result;
+      }catch(e){err=e}
+    }
+    throw err;
+  }
+  function decodeString(ret){
+    const b = ret.slice(2), len = parseInt(b.slice(64,128),16);
+    const d = b.slice(128,128+len*2), u = new Uint8Array(len);
+    for (let i=0;i<len;i++) u[i]=parseInt(d.slice(i*2,i*2+2),16);
+    return new TextDecoder().decode(u);
+  }
+  const short = a => a.slice(0,6)+'…'+a.slice(-4);
+
+  (async () => {
+    const owner = '0x'+(await call('0x6352211e'+hex(id))).slice(-40);
+    const uri = decodeString(await call('0xc87b56dd'+hex(id)));
+    art.src = JSON.parse(atob(uri.split(',')[1])).animation_url;
+    holderEl.innerHTML = '<b>FRONTRUN #'+id+'</b> · holder '+short(owner)+' (real, on-chain)';
+    btn.style.display = 'block';
+  })().catch(e => holderEl.textContent = 'could not reach Sepolia — '+e.message);
+
+  btn.onclick = () => {
+    let a = '0x'; for (let i=0;i<40;i++) a += '0123456789abcdef'[(Math.random()*16)|0];
+    art.contentWindow.postMessage({type:'frontrun:wallet', value:a}, '*');
+    holderEl.innerHTML = '<b>FRONTRUN #'+id+'</b> · simulated holder '+short(a);
+  };
+</script>
+</body>
+</html>
