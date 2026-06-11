@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — mint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+  @font-face{font-family:'Inversionz Unboxed';src:url('./fonts/Inversionz-Unboxed.otf') format('opentype'),url('./fonts/Inversionz-Unboxed.ttf') format('truetype');font-display:swap}
+  :root{--paper:#F4F2EC;--paper-2:#EEEBE3;--ink:#121110;--dim:#8b877d;--faint:#bcb7ab;--line:#dcd8cd;--pink:#ED1E79;
+        --font:'Martian Mono',ui-monospace,monospace;--display:'Inversionz Unboxed',var(--font)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  a{color:inherit;text-decoration:none}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 38px;border-bottom:1px solid var(--line)}
+  .brand{font-weight:800;letter-spacing:.28em;font-size:13px}
+  .brand .dot{color:var(--pink)}
+  .hstat{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  .wrap{max-width:1180px;margin:0 auto;padding:46px 38px;display:grid;grid-template-columns:1fr 1.05fr;gap:54px;align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(38px,5.5vw,72px);line-height:.98;letter-spacing:.02em;margin:0 0 10px;text-transform:uppercase}
+  h1 .pk{color:var(--pink)}
+  .sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:30px}
+  .mint{border:1px solid var(--ink);background:var(--paper);max-width:470px}
+  .stats{display:flex;border-bottom:1px solid var(--ink)}
+  .stat{flex:1;padding:13px 15px}
+  .stat+.stat{border-left:1px solid var(--line)}
+  .stat .k{font-size:9px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;font-weight:500}
+  .stat .v{font-size:16px;font-weight:700;margin-top:7px}
+  .actions{display:flex}
+  .actions button{flex:1;border:0;padding:16px 10px;font-family:var(--font);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:opacity .15s,background .15s}
+  #mintbtn{background:var(--pink);color:#fff;flex:1.4}
+  #mintbtn:hover{opacity:.88}
+  #mintbtn:disabled{opacity:.35;cursor:default}
+  #connect{background:transparent;color:var(--ink);border-left:1px solid var(--ink)}
+  #connect:hover{background:var(--ink);color:var(--paper)}
+  .note{padding:10px 15px;border-top:1px solid var(--line);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between}
+  .blink{color:var(--pink);animation:bl 1.4s steps(1) infinite}
+  @keyframes bl{50%{opacity:0}}
+  #status{margin-top:18px;font-size:11.5px;line-height:1.8;color:var(--dim);max-width:470px;word-break:break-all}
+  #status a{color:var(--pink);font-weight:700}
+  #status b{color:var(--ink)}
+  .stage{position:relative}
+  .frame{position:relative;aspect-ratio:1/1;width:100%;background:#05060a;border:1px solid var(--ink);overflow:hidden}
+  .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .corner{position:absolute;width:9px;height:9px;border:1px solid var(--pink);z-index:3}
+  .c1{top:8px;left:8px;border-right:0;border-bottom:0}.c2{top:8px;right:8px;border-left:0;border-bottom:0}
+  .c3{bottom:8px;left:8px;border-right:0;border-top:0}.c4{bottom:8px;right:8px;border-left:0;border-top:0}
+  .caption{display:flex;justify-content:space-between;margin-top:11px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  .caption .now{color:var(--ink);text-transform:none;letter-spacing:0;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./">FRONTRUN<span class="dot">_</span></a>
+  <div class="hstat">ETHEREUM · FULLY ON-CHAIN · <span id="netlabel">SEPOLIA REHEARSAL</span></div>
+</header>
+<div class="wrap">
+  <div>
+    <h1>MINT<span class="pk">_</span></h1>
+    <div class="sub">the wallet that mints is the first to run</div>
+    <div class="mint">
+      <div class="stats">
+        <div class="stat"><div class="k">Minted</div><div class="v" id="counter">— / 420</div></div>
+        <div class="stat"><div class="k">Price</div><div class="v">TBA</div></div>
+        <div class="stat"><div class="k">Wallet</div><div class="v" id="wallet" style="font-size:11px">—</div></div>
+      </div>
+      <div class="actions">
+        <button id="mintbtn" disabled>MINT</button>
+        <button id="connect">CONNECT WALLET</button>
+      </div>
+      <div class="note"><span><span class="blink">●</span> rehearsal · sepolia</span><span>100% on-chain</span></div>
+    </div>
+    <div id="status">connect your wallet — the preview repaints with how <b>your address</b> reads the engine, before you mint anything.</div>
+  </div>
+  <div class="stage">
+    <div class="frame">
+      <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+      <iframe id="art" src="./sketch-v4-glitch-lab.html?preview=1&embed=1" title="FRONTRUN"></iframe>
+    </div>
+    <div class="caption"><span id="cap-l">FRONTRUN · LIVE ENGINE</span><span class="now" id="cap-r">rolling…</span></div>
+  </div>
+</div>
+<script>
+  // Production mint page. Mainnet swap = CONTRACT + CHAIN_ID + RPC, nothing else.
+  const CONTRACT = new URLSearchParams(location.search).get('c') || '0x2f57629cA74f8A5f9268323AfAc92DF483a1f7A7';
+  const CHAIN_ID = 11155111n, CHAIN_HEX = '0xaa36a7';
+  const READ_RPC = 'https://ethereum-sepolia-rpc.publicnode.com';
+  const SCAN = 'https://sepolia.etherscan.io';
+  const ABI = ['function mint()','function nextId() view returns (uint256)','function tokenURI(uint256) view returns (string)'];
+  const $ = id => document.getElementById(id);
+  let provider=null, signer=null, addr=null;
+
+  const readC = new ethers.Contract(CONTRACT, ABI, new ethers.JsonRpcProvider(READ_RPC));
+  async function refreshCounter(){ try{ $('counter').textContent = (await readC.nextId()) + ' / 420'; }catch(e){} }
+  refreshCounter(); setInterval(refreshCounter, 15000);
+
+  const status = h => $('status').innerHTML = h;
+  const short = a => a.slice(0,6)+'…'+a.slice(-4);
+
+  // drive the engine preview with the connected wallet (frontrun:piece = full
+  // piece from this wallet — what minting *feels* like before the seed exists)
+  function previewWallet(a){
+    const f = $('art');
+    if (f.contentWindow) f.contentWindow.postMessage({type:'frontrun:piece', value:a}, '*');
+    $('cap-r').textContent = 'painted by ' + short(a);
+  }
+
+  $('connect').onclick = async () => {
+    if (!window.ethereum) { status('no wallet found — open this page in a browser with MetaMask or Rabby.'); return; }
+    provider = new ethers.BrowserProvider(window.ethereum, 'any');
+    const accounts = await provider.send('eth_requestAccounts', []);
+    addr = ethers.getAddress(accounts[0]);
+    const net = await provider.getNetwork();
+    if (net.chainId !== CHAIN_ID) {
+      try { await provider.send('wallet_switchEthereumChain', [{chainId: CHAIN_HEX}]);
+            provider = new ethers.BrowserProvider(window.ethereum, 'any'); }
+      catch(e){ status('switch your wallet network and reconnect.'); return; }
+    }
+    signer = await provider.getSigner();
+    $('wallet').textContent = short(addr);
+    $('mintbtn').disabled = false;
+    previewWallet(addr);
+    status('this is how <b>your address</b> paints the engine. hit MINT — your piece gets its permanent seed the second the block lands.');
+  };
+
+  $('mintbtn').onclick = async () => {
+    if (!signer) return;
+    $('mintbtn').disabled = true;
+    try {
+      const c = new ethers.Contract(CONTRACT, ABI, signer);
+      const id = await readC.nextId();
+      status('confirm in your wallet…');
+      const tx = await c.mint();
+      status('mint submitted — <a href="'+SCAN+'/tx/'+tx.hash+'" target="_blank">etherscan ↗</a><br>waiting for the block…');
+      await tx.wait();
+      status('<b>FRONTRUN #'+id+'</b> is yours 🏃 — pulling it off the chain…');
+      const uri = await readC.tokenURI(id);
+      const json = JSON.parse(atob(uri.split(',')[1]));
+      $('art').src = json.animation_url;
+      $('cap-l').textContent = 'FRONTRUN #'+id+' · FROM THE CHAIN';
+      $('cap-r').textContent = 'held by ' + short(addr);
+      refreshCounter();
+      status('<b>FRONTRUN #'+id+'</b> — this render came out of the contract, painted by your wallet. '+
+             '<a href="./live.html?id='+id+'" target="_blank">its permanent home ↗</a>');
+    } catch(e) {
+      status('mint failed: ' + (e.shortMessage||e.message||e).toString().slice(0,140));
+    }
+    $('mintbtn').disabled = false;
+  };
+</script>
+</body>
+</html>
