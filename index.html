@@ -159,7 +159,7 @@
 
       <div class="mint reveal d4">
         <div class="stats">
-          <div class="stat"><div class="k">Supply</div><div class="v">420</div></div>
+          <div class="stat"><div class="k" id="minted-k">Supply</div><div class="v" id="minted-v">420</div></div>
           <div class="stat"><div class="k">Price</div><div class="v">TBA</div></div>
           <div class="stat"><div class="k">Chain</div><div class="v">Ethereum</div></div>
         </div>
@@ -275,6 +275,36 @@
 
   // make the (non-functional) mint buttons feel alive without doing anything
   document.querySelectorAll('.mint button').forEach(b=>b.addEventListener('click',()=>{b.animate([{transform:'scale(1)'},{transform:'scale(.97)'},{transform:'scale(1)'}],{duration:160})}));
+</script>
+<script>
+// LIVE MINT COUNTER — reads nextId() off the contract with raw eth_call.
+// Dormant until CONTRACT is set (mainnet). ?testnet=1 watches the Sepolia rehearsal.
+(function(){
+  var TESTNET = new URLSearchParams(location.search).has('testnet');
+  var CONTRACT = TESTNET ? '0xB2dCc8Df6db70F8D170fD76F66c6BC253455B0fF' : ''; // mainnet addr goes here at launch
+  if (!CONTRACT) return; // pre-launch: keep the static Supply stat
+  var RPCS = TESTNET
+    ? ['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia']
+    : ['https://ethereum-rpc.publicnode.com','https://eth.drpc.org','https://1rpc.io/eth'];
+  var SEL = '0x61b8ce8c'; // nextId()
+  function poll(){
+    (function tryRpc(i){
+      if (i >= RPCS.length) return;
+      fetch(RPCS[i], {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:CONTRACT,data:SEL},'latest']})})
+      .then(function(r){return r.json()})
+      .then(function(j){
+        if (j.error || !j.result) throw 0;
+        var n = parseInt(j.result, 16);
+        document.getElementById('minted-k').textContent = 'Minted';
+        document.getElementById('minted-v').textContent = n + ' / 420';
+      })
+      .catch(function(){ tryRpc(i+1); });
+    })(0);
+  }
+  poll();
+  setInterval(poll, 15000); // tick every 15s while the page is open
+})();
 </script>
 </body>
 </html>
