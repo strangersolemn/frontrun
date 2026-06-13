@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — shader tunnels</title>
+<style>
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%;background:#000;overflow:hidden;font-family:monospace;color:#ddd}
+  #art{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+  #bar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10;
+       display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:96vw}
+  #bar button{background:rgba(0,0,0,.72);border:1px solid #444;color:#ccc;
+    font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    padding:11px 16px;cursor:pointer;backdrop-filter:blur(6px)}
+  #bar button.on{background:#ED1E79;border-color:#ED1E79;color:#fff}
+  #bar button:hover{border-color:#ED1E79}
+  #label{position:fixed;left:0;right:0;top:22px;text-align:center;z-index:10;
+    font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#888;text-shadow:0 1px 6px #000}
+  #label b{color:#ED1E79}
+</style>
+</head>
+<body>
+  <iframe id="art" title="FRONTRUN shader"></iframe>
+  <div id="label"><b id="lname">liquid metal</b> &nbsp;·&nbsp; raymarched · fully on-chain</div>
+  <div id="bar"></div>
+<script>
+  const SHADERS = [
+    ['liquidmetal','liquid metal'],
+    ['blackwater','black water'],
+    ['towers','towers'],
+    ['canary','liquid gold ⛧'],
+  ];
+  const art = document.getElementById('art'), bar = document.getElementById('bar'), lname = document.getElementById('lname');
+  function show(id, name){
+    art.src = './sketch-v4-glitch-lab.html?preview=1&embed=1&canary=1&shape=' + id + '&cb=' + Date.now();
+    lname.textContent = name;
+    Array.from(bar.children).forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  }
+  SHADERS.forEach(([id,name]) => {
+    const b = document.createElement('button');
+    b.textContent = name; b.dataset.id = id;
+    b.onclick = () => show(id, name);
+    bar.appendChild(b);
+  });
+  show('liquidmetal','liquid metal');
+</script>
+</body>
+</html>

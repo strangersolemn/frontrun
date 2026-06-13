@@ -2240,6 +2240,9 @@ frame();
   const w = p.get('w');
   if (w) { seedFromWallet(w); applyWallet(w); if (inp) inp.value = w; }
   else rollPreview();    // never start blank
+  // ?shape=liquidmetal|blackwater|towers|canary — force a tunnel (showcase / shareable links)
+  const _shp = p.get('shape');
+  if (_shp) { setTunnelShape(_shp); const _ss=$('tunnel-shape'); if(_ss) _ss.value=_shp; }
 })();
 </script>
 </body>
