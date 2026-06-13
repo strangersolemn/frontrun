@@ -1809,6 +1809,57 @@ function applyFlashOpacity() {
   $('v-flash-opa').textContent = opa.toFixed(2);
 }
 
+// ===========================================================================
+// EASTER EGG — HTML-IN-CANVAS (drawElementImage). A hidden gold layer that
+// lives INSIDE the runner: a chest seal, a beating heart, the holder's address
+// as glowing veins. Drawn with the experimental Canvas drawElementImage API
+// (Chrome Canary / Brave, chrome://flags/#canvas-draw-element). Dormant & invisible
+// everywhere the API is absent — every piece carries it; the future unlocks it.
+// ?egg=1 shows it as a masked overlay so the look previews on any browser today.
+// ===========================================================================
+let eggBuilt=false, eggWrap=null, eggVeins=null, eggApi=false, eggAddr=null, eggPreview=false;
+function buildEgg(){
+  eggBuilt=true;
+  try { eggApi = !!(fCtx && (fCtx.drawElementImage || fCtx.drawElement)); } catch(e){ eggApi=false; }
+  eggPreview = new URLSearchParams(location.search).has('egg');
+  if (!eggApi && !eggPreview) return;          // truly dormant — build nothing
+  const css = document.createElement('style');
+  css.textContent =
+    '#fr-egg{position:fixed;inset:0;pointer-events:none;font-family:monospace;z-index:0}'+
+    '#fr-egg.show{z-index:31;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center bottom;mask-position:center bottom;transform:scale(var(--fig-scale,0.92));transform-origin:bottom center}'+
+    '#fr-veins{position:absolute;left:50%;top:30%;transform:translateX(-50%);width:42%;text-align:center;font-size:11px;line-height:1.35;word-break:break-all;letter-spacing:1px;color:transparent;background:linear-gradient(180deg,#ffe9a8,#d4922b,#ffe9a8);-webkit-background-clip:text;background-clip:text;opacity:.5;filter:drop-shadow(0 0 4px rgba(255,200,80,.6))}'+
+    '#fr-seal{position:absolute;left:50%;top:33%;transform:translateX(-50%);font-size:42px;font-weight:bold;color:#ffd700;text-shadow:0 0 10px rgba(255,200,60,.9),0 0 22px rgba(255,170,0,.6);animation:fr-shine 2.4s ease-in-out infinite}'+
+    '@keyframes fr-shine{0%,100%{opacity:.7}50%{opacity:1}}'+
+    '#fr-heart{position:absolute;left:50%;top:48%;width:20px;height:20px;background:#ff3b6b;box-shadow:0 0 14px rgba(255,60,110,.95);transform-origin:center;animation:fr-beat 1.05s ease-in-out infinite}'+
+    '#fr-heart::before,#fr-heart::after{content:"";position:absolute;width:20px;height:20px;background:#ff3b6b;border-radius:50%}'+
+    '#fr-heart::before{top:-10px;left:0}#fr-heart::after{top:0;left:10px}'+
+    '@keyframes fr-beat{0%,100%{transform:translateX(-50%) rotate(-45deg) scale(.85)}14%{transform:translateX(-50%) rotate(-45deg) scale(1.12)}28%{transform:translateX(-50%) rotate(-45deg) scale(.92)}}';
+  document.head.appendChild(css);
+  eggWrap=document.createElement('div'); eggWrap.id='fr-egg';
+  eggWrap.innerHTML='<div id="fr-veins"></div><div id="fr-seal">&#10215;</div><div id="fr-heart"></div>';
+  document.body.appendChild(eggWrap);
+  eggVeins=eggWrap.querySelector('#fr-veins');
+  if (eggPreview && !eggApi) {            // overlay preview: clip to the runner like the figure does
+    eggWrap.classList.add('show');
+    eggWrap.style.webkitMaskImage = fig.style.webkitMaskImage || fig.style.maskImage;
+    eggWrap.style.maskImage = fig.style.maskImage || fig.style.webkitMaskImage;
+  }
+}
+function drawEgg(t){
+  if (!eggBuilt) buildEgg();
+  if (!eggWrap) return;
+  if (eggAddr !== WALLET) {               // refresh the veins text when the holder changes
+    eggAddr = WALLET; const a=(WALLET||'').toLowerCase();
+    let s=''; for(let i=0;i<16;i++) s+=a+' ';
+    if (eggVeins) eggVeins.textContent = a ? s : '';
+  }
+  eggWrap.style.width=W+'px'; eggWrap.style.height=H+'px';
+  if (eggApi) {
+    try { (fCtx.drawElementImage||fCtx.drawElement).call(fCtx, eggWrap, 0, 0); }
+    catch(e){ eggApi=false; }            // first failure -> stop trying, stay clean
+  }
+}
+
 function frame() {
   const t = (performance.now() - start) / 1000;
   const spd = $('spd').value / 100;
@@ -1823,6 +1874,7 @@ function frame() {
   const g = GLITCHES.find(gl => gl.id === activeGlitch);
   if (g && g.id !== 'none') {
     g.fn(fCtx, W, H, palette, t, spd, den, 1);
+    drawEgg(t);   // hidden HTML-in-canvas layer, clipped to the runner with the glitch
     if (maskFallback && figImg && figImg.width) {
       // canvas clipping replaces the CSS mask: contain, center bottom
       fCtx.globalCompositeOperation = 'destination-in';
