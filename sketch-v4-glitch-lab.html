@@ -2343,6 +2343,7 @@ frame();
     else if (d.type === 'frontrun:piece') {            // full distinct piece from a wallet (palette + look)
       const v = d.value || '';
       seedFromWallet(v); applyWallet(v); syncPreviewURL(v);
+      if (d.shape) { setTunnelShape(d.shape); const ss = $('tunnel-shape'); if (ss) ss.value = d.shape; } // flipper: lock one effect
       const i = $('preview-addr'); if (i) i.value = v.trim();
       postParentState();
     }

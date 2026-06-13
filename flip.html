@@ -9,70 +9,55 @@
   html,body{height:100%;background:#000;overflow:hidden;font-family:monospace;color:#ccc}
   #art{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
   #catch{position:fixed;inset:0;z-index:5;cursor:pointer}
-  #hud{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:10;
-       display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.72);
-       border:1px solid #333;padding:8px 12px;font-size:12px;letter-spacing:.06em;backdrop-filter:blur(6px)}
-  #hud b{color:#ED1E79}
-  #hud button{background:#181818;border:1px solid #444;color:#ccc;font:inherit;font-size:12px;
-              padding:6px 11px;cursor:pointer}
-  #hud button.on{background:#ED1E79;border-color:#ED1E79;color:#fff}
-  #hud button:hover{border-color:#ED1E79}
-  #keys{position:fixed;right:14px;top:12px;z-index:10;font-size:10px;color:#666;text-align:right;line-height:1.7;letter-spacing:.08em}
+  #bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:10;
+       display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:96vw}
+  #bar button{background:rgba(0,0,0,.72);border:1px solid #444;color:#bbb;font:inherit;font-size:12px;
+              letter-spacing:.08em;text-transform:uppercase;padding:9px 13px;cursor:pointer;backdrop-filter:blur(6px)}
+  #bar button.on{background:#ED1E79;border-color:#ED1E79;color:#fff}
+  #bar button:hover{border-color:#ED1E79}
+  #hint{position:fixed;left:0;right:0;top:16px;text-align:center;z-index:10;font-size:11px;letter-spacing:.18em;color:#777}
 </style>
 </head>
 <body>
   <iframe id="art" src="./sketch-v4-glitch-lab.html?preview=1&embed=1&canary=1" title="FRONTRUN"></iframe>
   <div id="catch"></div>
-  <div id="hud">
-    <button id="prev">‹ prev</button>
-    <button id="next">next ›</button>
-    <button id="auto">▶ auto</button>
-    <button id="slower">–</button>
-    <span><b id="spd">1.5</b>s</span>
-    <button id="faster">+</button>
-  </div>
-  <div id="keys">SPACE / click — next<br>A — autoplay&nbsp;&nbsp;[ ] — speed<br>H — hide UI</div>
+  <div id="hint">click / space — next &nbsp;·&nbsp; H — hide</div>
+  <div id="bar"></div>
 <script>
-  const art = document.getElementById('art');
-  const post = (type,value) => art.contentWindow && art.contentWindow.postMessage(value?{type,value}:{type}, '*');
-
-  // history so prev works
-  const hist = []; let hpos = -1;
+  const EFFECTS = [
+    ['','all'],
+    ['liquidmetal','liquid metal'],
+    ['blackwater','black water'],
+    ['towers','towers'],
+    ['datastream','datastream'],
+    ['datacity','database city'],
+    ['whirlwind','whirlwind'],
+    ['canary','liquid gold ⛧'],
+  ];
+  let effect = '';
+  const art = document.getElementById('art'), bar = document.getElementById('bar');
   function randWallet(){ let a='0x'; for(let i=0;i<40;i++) a+='0123456789abcdef'[(Math.random()*16)|0]; return a; }
-  function newPiece(){ const w=randWallet(); hist.length=hpos+1; hist.push(w); hpos=hist.length-1; post('frontrun:piece', w); }
-  function prevPiece(){ if(hpos>0){ hpos--; post('frontrun:piece', hist[hpos]); } }
-  function nextPiece(){ if(hpos<hist.length-1){ hpos++; post('frontrun:piece', hist[hpos]); } else newPiece(); }
+  function flip(){
+    const msg = { type:'frontrun:piece', value:randWallet() };
+    if (effect) msg.shape = effect;
+    art.contentWindow && art.contentWindow.postMessage(msg, '*');
+  }
+  EFFECTS.forEach(([id,name])=>{
+    const b=document.createElement('button'); b.textContent=name; b.dataset.id=id;
+    if(id==='') b.classList.add('on');
+    b.onclick=()=>{ effect=id; Array.from(bar.children).forEach(x=>x.classList.toggle('on',x.dataset.id===id)); flip(); };
+    bar.appendChild(b);
+  });
+  document.getElementById('catch').onclick = flip;
 
-  let timer=null, interval=1500;
-  const spdEl=document.getElementById('spd'), autoBtn=document.getElementById('auto');
-  function setSpd(ms){ interval=Math.max(200,Math.min(6000,ms)); spdEl.textContent=(interval/1000).toFixed(1);
-    if(timer){ clearInterval(timer); timer=setInterval(newPiece, interval); } }
-  function toggleAuto(){ if(timer){ clearInterval(timer); timer=null; autoBtn.classList.remove('on'); autoBtn.textContent='▶ auto'; }
-    else { timer=setInterval(newPiece, interval); autoBtn.classList.add('on'); autoBtn.textContent='⏸ auto'; } }
-
-  document.getElementById('next').onclick = nextPiece;
-  document.getElementById('prev').onclick = prevPiece;
-  document.getElementById('catch').onclick = nextPiece;
-  autoBtn.onclick = toggleAuto;
-  document.getElementById('slower').onclick = ()=>setSpd(interval+300);
-  document.getElementById('faster').onclick = ()=>setSpd(interval-300);
-
-  // hide UI for clean capture
   let hidden=false;
-  function setUI(h){ hidden=h; document.getElementById('hud').style.display=h?'none':'flex'; document.getElementById('keys').style.display=h?'none':'block'; }
-
   addEventListener('keydown', e=>{
     const k=e.key.toLowerCase();
-    if(k===' '||k==='arrowright'){ e.preventDefault(); nextPiece(); }
-    else if(k==='arrowleft'){ e.preventDefault(); prevPiece(); }
-    else if(k==='a'){ toggleAuto(); }
-    else if(k===']'){ setSpd(interval-300); }
-    else if(k==='['){ setSpd(interval+300); }
-    else if(k==='h'){ setUI(!hidden); }
+    if(k===' '){ e.preventDefault(); flip(); }
+    else if(k==='h'){ hidden=!hidden; bar.style.display=hidden?'none':'flex'; document.getElementById('hint').style.display=hidden?'none':'block'; }
   });
 
-  // kick off once the engine is ready
-  setTimeout(newPiece, 1500);
+  setTimeout(flip, 1500);   // first piece once the engine boots
 </script>
 </body>
 </html>
