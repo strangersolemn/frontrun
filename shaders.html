@@ -22,7 +22,8 @@
 </head>
 <body>
   <iframe id="art" title="FRONTRUN shader"></iframe>
-  <div id="label"><b id="lname">liquid metal</b> &nbsp;·&nbsp; raymarched · fully on-chain</div>
+  <div id="catch" style="position:fixed;inset:0;z-index:5"></div>
+  <div id="label"><b id="lname">liquid metal</b> &nbsp;·&nbsp; raymarched · fully on-chain &nbsp;·&nbsp; <span style="color:#666">press H to hide</span></div>
   <div id="bar"></div>
 <script>
   const SHADERS = [
@@ -44,6 +45,13 @@
     bar.appendChild(b);
   });
   show('liquidmetal','liquid metal');
+
+  // clean-shot toggle: H key or tap the art hides the UI for a full-bleed screenshot
+  const label = document.getElementById('label');
+  let hidden = false;
+  function setUI(h){ hidden = h; bar.style.display = h ? 'none' : 'flex'; label.style.display = h ? 'none' : 'block'; }
+  addEventListener('keydown', e => { if (e.key === 'h' || e.key === 'H') setUI(!hidden); });
+  document.getElementById('catch').addEventListener('click', () => setUI(!hidden));
 </script>
 </body>
 </html>
