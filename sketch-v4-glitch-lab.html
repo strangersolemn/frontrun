@@ -251,6 +251,9 @@ void main() {
       <option value="liquidmetal">⛧ liquid metal</option>
       <option value="blackwater">⛧ black water</option>
       <option value="towers">⛧ towers (rare)</option>
+      <option value="datastream">⛧ datastream (digits)</option>
+      <option value="datacity">⛧ database city</option>
+      <option value="whirlwind">⛧ whirlwind (minimal)</option>
     </optgroup>
   </select>
 
@@ -579,6 +582,12 @@ const ST_LIB = [
 'vec2 path(float z){return vec2(sin(z*.21),cos(z*.16))*(.35+.55*uWp.x);}',
 ].join('\n');
 
+const ST_GLYPH = [
+'uniform sampler2D uAtlas;uniform sampler2D uAddrTex;',
+'float gcover(float gi,vec2 p){if(p.x<0.0||p.x>1.0||p.y<0.0||p.y>1.0)return 0.0;return texture2D(uAtlas,vec2((gi+p.x)/16.0,p.y)).r;}',
+'float addrGi(float idx){float u=(floor(mod(idx,40.0))+0.5)/40.0;return floor(texture2D(uAddrTex,vec2(u,0.5)).r*15.0+0.5);}'
+].join('\n');
+
 const SHADER_TUNNELS = {
 
 // —— LIQUID METAL: chrome bore, fbm-displaced walls, banded env reflections —
@@ -697,9 +706,116 @@ canary: ST_LIB + [
 ' col=mix(vec3(.04,.02,0.),col,clamp(exp(-.09*tt),0.,1.));',
 ' gl_FragColor=vec4(col,1.);}',
 ].join('\n'),
+
+// —— DATASTREAM: the holder's address digits flying in from the camera ————
+datastream: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' vec3 col=uC3*0.20;',
+' for(int i=0;i<16;i++){',
+'  float fl=float(i);',
+'  float z=mod(fl - uT*(2.5+5.0*uSpd),16.0)+0.5;',
+'  float s=1.7/z;',
+'  vec2 g=uv/s;',
+'  vec2 id=floor(g*3.0)+vec2(0.0,fl*4.0);',
+'  vec2 f=fract(g*3.0);',
+'  float hsh=h21(id);',
+'  if(hsh<0.5) continue;',
+'  float gi=addrGi(hsh*40.0+fl);',
+'  float cov=gcover(gi,(f-0.12)/0.76);',
+'  float fade=smoothstep(16.0,1.0,z)*smoothstep(0.0,1.6,z);',
+'  vec3 cc=mix(uC2,uC1,step(0.72,hsh));',
+'  col+=cc*cov*fade;',
+' }',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+
+// —— DATACITY: running through racks of the address — a database city ————
+datacity: ST_LIB + ST_GLYPH + [
+'float tmask(vec2 g,out vec2 id){id=floor(g);vec2 f=fract(g)-.5;float h=h21(id);return step(abs(f.x),.40)*step(abs(f.y),.42)*step(.38,h);}',
+'float map(vec3 p){float r=length(p.xy);float a=atan(p.y,p.x);vec2 g=vec2((a/6.2831853+.5)*28.,p.z*1.15);vec2 id;float m=tmask(g,id);float hh=(.4+h21(id+3.3)*1.3)*(.6+.7*uWp.y);float wall=2.7-m*hh;return (wall-r)*.6;}',
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float zz=uT*(1.2+2.2*uSpd);',
+' vec3 ro=vec3(0.,0.,zz); vec3 rd=normalize(vec3(uv,1.5));',
+' float tt=.1; vec3 p=ro; float d;',
+' for(int i=0;i<80;i++){p=ro+rd*tt; d=map(p); if(d<.003||tt>40.)break; tt+=max(d,.012);}',
+' float a2=atan(p.y,p.x);',
+' vec2 g=vec2((a2/6.2831853+.5)*28., p.z*1.15);',
+' vec2 id; float m=tmask(g,id);',
+' vec2 lp=fract(vec2(fract(g.x)*3.0,fract(g.y)*4.0));',
+' float lit=step(0.45,h21(id*2.7+floor(vec2(fract(g.x)*3.0,fract(g.y)*4.0))));',
+' float gi=addrGi(h21(id+lp*1.3)*40.0);',
+' float cov=gcover(gi,(lp-0.12)/0.76);',
+' float flick=0.6+0.4*sin(uT*2.0+h21(id)*30.0);',
+' vec3 col=uC2*0.06;',
+' col+=uC1*cov*lit*m*flick;',
+' col+=uC1*0.03*m;',
+' col=mix(uC3,col,clamp(exp(-.08*tt),0.,1.));',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+
+// —— WHIRLWIND: minimal — racing toward a distant vortex of the address ——
+whirlwind: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float r=length(uv), a=atan(uv.y,uv.x);',
+' vec3 col=uC3*0.12;',
+' for(int i=0;i<20;i++){',
+'  float fl=float(i);',
+'  float rr=mod(fl*0.11 - uT*(0.2+0.5*uSpd), 2.2);',
+'  float ring=0.02+rr*rr*0.55;',
+'  if(abs(r-ring)>0.05) continue;',
+'  float seg=26.0;',
+'  float tw=fract((a/6.2831853+0.5)+rr*0.7+uT*0.04);',
+'  float si=floor(tw*seg);',
+'  float gi=addrGi(si+fl*5.0);',
+'  vec2 cp=vec2(fract(tw*seg),(r-ring)/0.05*0.5+0.5);',
+'  float cov=gcover(gi,cp);',
+'  float fade=smoothstep(2.2,0.0,rr);',
+'  col+=uC1*cov*fade*0.95;',
+' }',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
 };
 
 let stProg = {}, stBuf = null;
+let glyphTex = null, addrTex = null, glyphAddr = null;
+function buildGlyphAtlas(){
+  const cw=24,ch=32,cols=16;
+  const c=document.createElement('canvas'); c.width=cw*cols; c.height=ch;
+  const x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
+  x.fillStyle='#fff'; x.font='bold 26px monospace'; x.textAlign='center'; x.textBaseline='middle';
+  const hex='0123456789abcdef';
+  for(let i=0;i<16;i++) x.fillText(hex[i], i*cw+cw/2, ch/2+1);
+  glyphTex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,glyphTex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+}
+function buildAddrTex(){
+  const a=(WALLET||'').toLowerCase().replace(/[^0-9a-f]/g,'');
+  const s=(a.length?a:'0').padEnd(40,'0').slice(0,40);
+  const c=document.createElement('canvas'); c.width=40; c.height=1;
+  const x=c.getContext('2d'); const img=x.createImageData(40,1);
+  for(let i=0;i<40;i++){ const ch=s.charCodeAt(i); const nib=(ch<=57)?ch-48:ch-87; img.data[i*4]=Math.round(nib/15*255); img.data[i*4+3]=255; }
+  x.putImageData(img,0,0);
+  if(!addrTex) addrTex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,addrTex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  glyphAddr=WALLET;
+}
 function drawShaderTunnel(t) {
   if (!gl) return;
   let P = stProg[activeShaderTunnel];
@@ -711,7 +827,7 @@ function drawShaderTunnel(t) {
       gl.linkProgram(pr);
       if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
       P = { pr: pr, aP: gl.getAttribLocation(pr, 'aP'), u: {} };
-      const us = ['uT','uR','uC0','uC1','uC2','uC3','uWp','uSpd','uDen'];
+      const us = ['uT','uR','uC0','uC1','uC2','uC3','uWp','uSpd','uDen','uAtlas','uAddrTex'];
       for (let i = 0; i < us.length; i++) P.u[us[i]] = gl.getUniformLocation(pr, us[i]);
       stProg[activeShaderTunnel] = P;
     } catch (e) { console.error('shader tunnel failed:', e); stProg[activeShaderTunnel] = null; }
@@ -742,6 +858,8 @@ function drawShaderTunnel(t) {
   gl.uniform2f(P.u.uWp, w1, w2);
   gl.uniform1f(P.u.uSpd, ($('spd') ? $('spd').value : 50) / 100);
   gl.uniform1f(P.u.uDen, ($('den') ? $('den').value : 50) / 100);
+  if (P.u.uAtlas) { if (!glyphTex) buildGlyphAtlas(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glyphTex); gl.uniform1i(P.u.uAtlas, 1); }
+  if (P.u.uAddrTex) { if (!addrTex || glyphAddr !== WALLET) buildAddrTex(); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, addrTex); gl.uniform1i(P.u.uAddrTex, 2); gl.activeTexture(gl.TEXTURE0); }
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
