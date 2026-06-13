@@ -564,6 +564,7 @@ function drawTunnel(t) {
 // Palette drives colour, the holder's hex bends the bore and the flow.
 // ===========================================================================
 let activeShaderTunnel = null;
+let HARD_SHADER = null;   // rare tunnel identity, set by the seed
 const ST_VS = 'attribute vec2 aP;void main(){gl_Position=vec4(aP,0.,1.);}';
 const ST_LIB = [
 'precision highp float;',
@@ -1940,6 +1941,13 @@ function rollSeed() {
   const gl = GLITCHES.filter(g => g.id !== 'none');
   const g = gl[(Math.random() * gl.length) | 0];
   $('fig-glitch').value = g.id; activeGlitch = g.id;
+  { const RR = Math.random(), RB = Math.random();
+  // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
+  // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
+  HARD_SHADER = null;
+  if (RR < 0.02) HARD_SHADER = 'canary';
+  else if (RR < 0.07) HARD_SHADER = (RB < 0.5) ? 'liquidmetal' : 'blackwater';
+  else if (RR < 0.15) HARD_SHADER = 'towers'; }
 }
 function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (shared links / on-chain)
   HARDKEY = 'hard:' + addr.toLowerCase();
@@ -1950,6 +1958,13 @@ function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (
   const gl = GLITCHES.filter(g => g.id !== 'none');
   const g = gl[(wr() * gl.length) | 0];
   $('fig-glitch').value = g.id; activeGlitch = g.id;
+  { const RR = wr(), RB = wr();
+  // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
+  // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
+  HARD_SHADER = null;
+  if (RR < 0.02) HARD_SHADER = 'canary';
+  else if (RR < 0.07) HARD_SHADER = (RB < 0.5) ? 'liquidmetal' : 'blackwater';
+  else if (RR < 0.15) HARD_SHADER = 'towers'; }
 }
 // SOFT traits only — the holder address shapes the LOOK (tunnel shape, motion,
 // treatment, the digits). Palette + figure glitch (the identity) are left as-is,
@@ -1963,11 +1978,8 @@ function applyWallet(addr) {
   bustContentCaches();
   const s = seedFrom('soft:' + HARDKEY + ':' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
   for (let i = 0; i < 8; i++) wr();
-  let shName = SHAPES[(wr() * SHAPES.length) | 0].name;
-  const rA = wr(), rB = wr();
-  if (rA < 0.16) shName = (rB < 0.5) ? 'liquidmetal' : 'blackwater'; // raymarched liquids
-  else if (rA < 0.22) shName = 'towers';                             // rare: the city ring
-  if (canaryUnlocked() && rB < 0.08) shName = 'canary';              // future-browser easter egg
+  // a rare piece keeps its hard shader identity; everyone else gets holder-driven geometry
+  const shName = HARD_SHADER || SHAPES[(wr() * SHAPES.length) | 0].name;
   const shSel = $('tunnel-shape'); if (shSel) shSel.value = shName;
   setTunnelShape(shName);
   $('spd').value = 30 + ((wr() * 60) | 0);
