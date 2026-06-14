@@ -1934,7 +1934,7 @@ function dwInit(){
   dwAddr=WALLET;
 }
 function dwMoon(x,w,h){
-  const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.15;
+  const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.225;
   const lp=2551442877; const ref=new Date("2026-01-18T19:51:00Z"); let phase=(((new Date()).getTime()-ref.getTime())%lp)/lp; if(phase<0)phase+=1;
   x.save(); x.globalCompositeOperation='screen';
   if(dwSouthern){ x.translate(cx,cy); x.rotate(Math.PI); x.translate(-cx,-cy); }
@@ -1959,13 +1959,13 @@ function drawDreamweaver(t){
   });
   x.restore();
   const spd=0.5+1.6*(($('spd')?$('spd').value:50)/100);
-  dwStars.forEach(s=>{ s.rad*=1+s.sp*spd*0.2; if(s.rad>md*0.95){ s.a=Math.random()*6.2832; s.rad=2+Math.random()*8; }
+  dwStars.forEach(s=>{ s.rad*=1+s.sp*spd*0.07; if(s.rad>md*0.95){ s.a=Math.random()*6.2832; s.rad=2+Math.random()*8; }
     const px=cx+Math.cos(s.a)*s.rad, py=cy+Math.sin(s.a)*s.rad; const f=Math.min(1,s.rad/(md*0.42));
     x.fillStyle='rgba(255,255,255,'+(0.22+0.78*f)+')'; x.beginPath(); x.arc(px,py,s.size*(0.4+f),0,Math.PI*2); x.fill();
   });
   const now=performance.now();
-  if(now-dwLastShoot>=5000){ const sp=w*0.035, col=DW_NEB[(Math.random()*DW_NEB.length)|0]; dwShoot={x:Math.random()*w*0.6,y:Math.random()*h*0.35,opacity:1,dx:sp,dy:sp*0.35,color:col}; dwLastShoot=now; }
-  if(dwShoot){ dwShoot.x+=dwShoot.dx; dwShoot.y+=dwShoot.dy; dwShoot.opacity-=0.02;
+  if(now-dwLastShoot>=5000){ const sp=w*0.016, col=DW_NEB[(Math.random()*DW_NEB.length)|0]; dwShoot={x:Math.random()*w*0.6,y:Math.random()*h*0.35,opacity:1,dx:sp,dy:sp*0.35,color:col}; dwLastShoot=now; }
+  if(dwShoot){ dwShoot.x+=dwShoot.dx; dwShoot.y+=dwShoot.dy; dwShoot.opacity-=0.008;
     if(dwShoot.opacity<=0) dwShoot=null; else { x.save();
       const g=x.createLinearGradient(dwShoot.x,dwShoot.y,dwShoot.x-dwShoot.dx*7,dwShoot.y-dwShoot.dy*7); const cr=dwShoot.color.match(/\d+/g);
       g.addColorStop(0,'rgba('+cr[0]+','+cr[1]+','+cr[2]+','+dwShoot.opacity+')'); g.addColorStop(1,'rgba('+cr[0]+','+cr[1]+','+cr[2]+',0)');
@@ -2113,7 +2113,7 @@ function rollSeed() {
   // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
   // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
   HARD_BG = null; HARD_SHADER = null;
-  if (RR < 0.012) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
+  if (RR < 0.007) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
   else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';       // liquid ~7%
   else if (RR < 0.162) HARD_SHADER = 'towers'; }                                 // towers ~8%
 }
@@ -2130,7 +2130,7 @@ function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (
   // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
   // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
   HARD_BG = null; HARD_SHADER = null;
-  if (RR < 0.012) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
+  if (RR < 0.007) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
   else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';       // liquid ~7%
   else if (RR < 0.162) HARD_SHADER = 'towers'; }                                 // towers ~8%
 }
