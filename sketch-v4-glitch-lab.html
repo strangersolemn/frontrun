@@ -257,6 +257,9 @@ void main() {
       <option value="datacity">⛧ database city</option>
       <option value="whirlwind">⛧ whirlwind (minimal)</option>
       <option value="troncity">⛧ tron city (digits)</option>
+      <option value="barcode">⛧ barcode</option>
+      <option value="ticker">⛧ ticker</option>
+      <option value="rain">⛧ matrix rain</option>
     </optgroup>
     <optgroup label="── Ultra-rare backgrounds ──">
       <option value="dreamweaver">★ dreamweaver (skyline + moon)</option>
@@ -722,7 +725,7 @@ datastream: ST_LIB + ST_GLYPH + [
 ' vec3 col=uC3*0.20;',
 ' for(int i=0;i<16;i++){',
 '  float fl=float(i);',
-'  float z=mod(fl - uT*(2.5+5.0*uSpd),16.0)+0.5;',
+'  float z=mod(fl - uT*(1.25+2.5*uSpd),16.0)+0.5;',
 '  float s=1.7/z;',
 '  vec2 g=uv/s;',
 '  vec2 id=floor(g*3.0)+vec2(0.0,fl*4.0);',
@@ -773,7 +776,7 @@ whirlwind: ST_LIB + ST_GLYPH + [
 ' vec3 col=uC3*0.10;',
 ' for(int i=0;i<26;i++){',
 '  float fl=float(i);',
-'  float z=mod(fl*0.5 + uT*(0.7+1.4*uSpd), 13.0)+0.3;',
+'  float z=mod(fl*0.5 + uT*(0.35+0.7*uSpd), 13.0)+0.3;',
 '  float rad=0.95/z;',
 '  float band=0.018+0.013*z;',
 '  if(abs(r-rad)>band) continue;',
@@ -833,6 +836,58 @@ troncity: ST_LIB + ST_GLYPH + [
 ' }',
 ' col*=clamp(1.0-tt/100.0,0.0,1.0);',
 ' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+
+// —— BARCODE: the address as scrolling bars, value = digit, labels beneath ——
+barcode: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=gl_FragCoord.xy/uR.xy;',
+' float scroll=uT*(0.05+0.18*uSpd);',
+' float x=(uv.x+scroll)*40.0;',
+' float idx=floor(mod(x,40.0));',
+' float gi=addrGi(idx);',
+' float cell=fract(x);',
+' float bar=step(cell,0.15+(gi/15.0)*0.7);',
+' float lab=0.0; if(uv.y<0.16){ lab=gcover(gi, vec2(cell, uv.y/0.16)); }',
+' vec3 c=uC1*bar*(uv.y<0.18?0.25:0.9)+uC1*lab+uC2*0.02;',
+' gl_FragColor=vec4(c,1.0);',
+'}'
+].join('\n'),
+
+// —— TICKER: rows of the address crawling like a trading wall ————————————
+ticker: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=gl_FragCoord.xy/uR.xy;',
+' float rows=7.0; float row=floor(uv.y*rows);',
+' float dir=(mod(row,2.0)<1.0)?1.0:-1.0;',
+' float x=uv.x + uT*(0.07+0.22*uSpd)*dir + row*0.17;',
+' float gi=addrGi(floor(mod(x*30.0,40.0)));',
+' vec2 cp=fract(vec2(x*30.0, uv.y*rows));',
+' float cov=gcover(gi,cp);',
+' float ry=fract(uv.y*rows);',
+' float band=step(0.12,ry)*step(ry,0.9);',
+' vec3 c=uC1*cov*band + uC2*0.03;',
+' gl_FragColor=vec4(c,1.0);',
+'}'
+].join('\n'),
+
+// —— RAIN: matrix-style columns of the address falling, bright head ————————
+rain: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=gl_FragCoord.xy/uR.xy;',
+' float cols=30.0, rows=24.0;',
+' float cx=floor(uv.x*cols);',
+' float sp=0.6+1.6*uSpd+1.0*h21(vec2(cx,9.0));',
+' float head=fract(h21(vec2(cx,1.7)) - uT*sp*0.08);',
+' float y=1.0-uv.y;',
+' float gi=addrGi(h21(vec2(cx,floor(uv.y*rows)+floor(uT*sp)))*40.0);',
+' vec2 cp=fract(vec2(uv.x*cols, uv.y*rows));',
+' float cov=gcover(gi,cp);',
+' float dist=fract(head - y);',
+' float bright=(dist<0.04)?1.2:smoothstep(0.55,0.0,dist)*0.55;',
+' vec3 c=uC1*cov*bright;',
+' gl_FragColor=vec4(c,1.0);',
 '}'
 ].join('\n'),
 };
