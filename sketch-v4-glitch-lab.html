@@ -805,7 +805,7 @@ barcode: ST_LIB + ST_GLYPH + [
 ' float gi=addrGi(idx);',
 ' float cell=fract(around*10.0);',
 ' float bar=step(cell,0.12+(gi/15.0)*0.72);',
-' float lab=gcover(gi, vec2(cell, fract(depth)));',  // digits scroll along the walls (square cells)
+' float lab=gcover(gi, vec2(cell, fract(depth*2.0)));',  // digits scroll along the walls (de-stretched 50%)
 ' float fog=clamp(m*2.4,0.0,1.0);',                  // bright near, dark to vanishing point
 ' vec3 c=(uC1*bar*0.85 + uC1*lab)*fog + uC2*0.02*fog;',
 ' gl_FragColor=vec4(c,1.0);',
