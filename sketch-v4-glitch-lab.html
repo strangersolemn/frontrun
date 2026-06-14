@@ -250,7 +250,7 @@ void main() {
     <option value="twisted">twisted hex</option>
     <option value="pentagon">pentagon</option>
     <optgroup label="── Shader tunnels (raymarched) ──">
-      <option value="liquidmetal">⛧ liquid metal</option>
+      <option value="liquid">⛧ liquid</option>
       <option value="blackwater">⛧ black water</option>
       <option value="towers">⛧ towers (rare)</option>
       <option value="datastream">⛧ datastream (digits)</option>
@@ -601,7 +601,7 @@ const ST_GLYPH = [
 const SHADER_TUNNELS = {
 
 // —— LIQUID METAL: chrome bore, fbm-displaced walls, banded env reflections —
-liquidmetal: ST_LIB + [
+liquid: ST_LIB + [
 'float map(vec3 p){',
 ' vec2 o=path(p.z);float a=atan(p.y-o.y,p.x-o.x);float r=length(p.xy-o);',
 ' float w=fbm(vec2(a*2.2+p.z*.5,p.z*.7-uT*(.6+1.6*uSpd)));',
@@ -689,33 +689,6 @@ towers: ST_LIB + [
 ' gl_FragColor=vec4(col,1.);}',
 ].join('\n'),
 
-// —— CANARY: liquid gold + iridescent fresnel. Hidden until browsers evolve —
-canary: ST_LIB + [
-'float map(vec3 p){',
-' vec2 o=path(p.z);float a=atan(p.y-o.y,p.x-o.x);float r=length(p.xy-o);',
-' float w=fbm(vec2(a*2.6+p.z*.6,p.z*.9-uT*(1.1+1.8*uSpd)));',
-' return 1.65+(w-.5)*.8*(.5+.8*uDen)-r;}',
-'void main(){',
-' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
-' float zz=uT*(1.8+2.4*uSpd);',
-' vec3 ro=vec3(path(zz),zz);',
-' vec3 rd=normalize(vec3(uv,1.5));',
-' float tt=.1;vec3 p=ro;float d;',
-' for(int i=0;i<72;i++){p=ro+rd*tt;d=map(p);if(d<.0025||tt>36.)break;tt+=d*.78;}',
-' vec2 e=vec2(.02,0.);',
-' vec3 n=normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));',
-' vec3 refl=reflect(rd,n);',
-' vec3 gold=vec3(1.,.74,.21);',
-' float stripes=smoothstep(.3,.7,.5+.5*sin(refl.y*11.+refl.x*6.+p.z));',
-' vec3 env=mix(gold*.22,gold,stripes);',
-' float fres=pow(1.-clamp(dot(n,-rd),0.,1.),3.);',
-' float spec=pow(clamp(dot(refl,normalize(vec3(.4,.6,-.45))),0.,1.),42.);',
-' vec3 col=env*(.25+.75*fres)+vec3(1.,.95,.7)*spec;',
-' col+=vec3(sin(fres*16.),sin(fres*16.+2.1),sin(fres*16.+4.2))*.05;',
-' col=mix(col,uC1,.10);',
-' col=mix(vec3(.04,.02,0.),col,clamp(exp(-.09*tt),0.,1.));',
-' gl_FragColor=vec4(col,1.);}',
-].join('\n'),
 
 // —— DATASTREAM: the holder's address digits flying in from the camera ————
 datastream: ST_LIB + ST_GLYPH + [
@@ -795,19 +768,19 @@ whirlwind: ST_LIB + ST_GLYPH + [
 // —— BARCODE: the address as scrolling bars, value = digit, labels beneath ——
 barcode: ST_LIB + ST_GLYPH + [
 'void main(){',
-' vec2 p=(gl_FragCoord.xy*2.0-uR)/uR.y;',          // aspect-correct, centered
+' vec2 p=(gl_FragCoord.xy*2.0-uR)/uR.y;',
 ' float m=max(abs(p.x),abs(p.y)); if(m<0.0008) m=0.0008;',
-' float depth=0.32/m + uT*(0.15+0.5*uSpd);',        // into the tunnel
-' float around;',                                    // 0..4 around the tube
+' float depth=0.32/m + uT*(0.15+0.5*uSpd);',
+' float around;',
 ' if(abs(p.x)>abs(p.y)) around=(p.x>0.0?0.0:2.0)+(p.y/abs(p.x)*0.5+0.5);',
 ' else around=(p.y>0.0?1.0:3.0)+(p.x/abs(p.y)*0.5+0.5);',
-' float idx=floor(mod(around*10.0,40.0));',         // bars run down the tunnel
-' float gi=addrGi(idx);',
-' float cell=fract(around*10.0);',
-' float bar=step(cell,0.12+(gi/15.0)*0.72);',
-' float lab=gcover(gi, vec2(cell, fract(depth*2.0)));',  // digits scroll along the walls (de-stretched 50%)
-' float fog=clamp(m*2.4,0.0,1.0);',                  // bright near, dark to vanishing point
-' vec3 c=(uC1*bar*0.85 + uC1*lab)*fog + uC2*0.02*fog;',
+' float ac=12.0;',
+' vec2 ci=floor(vec2(around*ac, depth*8.0));',
+' float gi=addrGi(ci.x + ci.y*7.0);',
+' vec2 cp=fract(vec2(around*ac, depth*8.0));',
+' float cov=gcover(gi, cp);',
+' float fog=clamp(m*2.4,0.0,1.0);',
+' vec3 c=uC1*cov*fog + uC2*0.025*fog;',
 ' gl_FragColor=vec4(c,1.0);',
 '}'
 ].join('\n'),
@@ -898,24 +871,6 @@ function drawShaderTunnel(t) {
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 
-// EASTER EGG — the CANARY tunnel. Locked to browsers from the future: Chrome
-// builds 2+ versions ahead of today's stable (Canary/Dev now — everyone, in
-// time, as the tech evolves). ?canary=1 opens the door for the curious.
-function canaryUnlocked() {
-  try {
-    if (new URLSearchParams(location.search).has('canary')) return true;
-    const m = navigator.userAgent.match(/Chrome\/(\d+)/);
-    return !!m && parseInt(m[1], 10) >= 152;
-  } catch (e) { return false; }
-}
-if (canaryUnlocked()) {
-  const _sel = document.getElementById('tunnel-shape');
-  if (_sel) {
-    const o = document.createElement('option');
-    o.value = 'canary'; o.textContent = '⛧ CANARY — liquid gold (future build detected)';
-    _sel.appendChild(o);
-  }
-}
 
 // ===========================================================================
 // PRNG + seed
@@ -1979,7 +1934,7 @@ function dwInit(){
   dwAddr=WALLET;
 }
 function dwMoon(x,w,h){
-  const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.075;
+  const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.15;
   const lp=2551442877; const ref=new Date("2026-01-18T19:51:00Z"); let phase=(((new Date()).getTime()-ref.getTime())%lp)/lp; if(phase<0)phase+=1;
   x.save(); x.globalCompositeOperation='screen';
   if(dwSouthern){ x.translate(cx,cy); x.rotate(Math.PI); x.translate(-cx,-cy); }
@@ -2004,7 +1959,7 @@ function drawDreamweaver(t){
   });
   x.restore();
   const spd=0.5+1.6*(($('spd')?$('spd').value:50)/100);
-  dwStars.forEach(s=>{ s.rad*=1+s.sp*spd; if(s.rad>md*0.95){ s.a=Math.random()*6.2832; s.rad=2+Math.random()*8; }
+  dwStars.forEach(s=>{ s.rad*=1+s.sp*spd*0.2; if(s.rad>md*0.95){ s.a=Math.random()*6.2832; s.rad=2+Math.random()*8; }
     const px=cx+Math.cos(s.a)*s.rad, py=cy+Math.sin(s.a)*s.rad; const f=Math.min(1,s.rad/(md*0.42));
     x.fillStyle='rgba(255,255,255,'+(0.22+0.78*f)+')'; x.beginPath(); x.arc(px,py,s.size*(0.4+f),0,Math.PI*2); x.fill();
   });
@@ -2159,8 +2114,7 @@ function rollSeed() {
   // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
   HARD_BG = null; HARD_SHADER = null;
   if (RR < 0.012) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
-  else if (RR < 0.032) HARD_SHADER = 'canary';                                   // gold ~2%
-  else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquidmetal' : 'blackwater';  // liquid ~5%
+  else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';       // liquid ~7%
   else if (RR < 0.162) HARD_SHADER = 'towers'; }                                 // towers ~8%
 }
 function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (shared links / on-chain)
@@ -2177,8 +2131,7 @@ function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (
   // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
   HARD_BG = null; HARD_SHADER = null;
   if (RR < 0.012) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
-  else if (RR < 0.032) HARD_SHADER = 'canary';                                   // gold ~2%
-  else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquidmetal' : 'blackwater';  // liquid ~5%
+  else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';       // liquid ~7%
   else if (RR < 0.162) HARD_SHADER = 'towers'; }                                 // towers ~8%
 }
 // SOFT traits only — the holder address shapes the LOOK (tunnel shape, motion,
