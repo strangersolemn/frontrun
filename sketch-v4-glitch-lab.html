@@ -1971,7 +1971,7 @@ function drawDreamweaver(t){
       g.addColorStop(0,'rgba('+cr[0]+','+cr[1]+','+cr[2]+','+dwShoot.opacity+')'); g.addColorStop(1,'rgba('+cr[0]+','+cr[1]+','+cr[2]+',0)');
       x.strokeStyle=g; x.lineWidth=2.2; x.lineCap='round'; x.beginPath(); x.moveTo(dwShoot.x,dwShoot.y); x.lineTo(dwShoot.x-dwShoot.dx*7,dwShoot.y-dwShoot.dy*7); x.stroke(); x.restore(); }
   }
-  dwMoon(x,w,h);
+  /* dwMoon(x,w,h); moon disabled — occlusion TODO */
   x.save(); x.globalAlpha=0.1;
   for(let i=0;i<1500;i++){ const px=Math.random()*w,py=Math.random()*h,sz=Math.random()*1.4,rr=Math.random(); x.fillStyle= rr<0.2?'#ff3ca0':(rr<0.4?'#0082ff':'#ffffff'); x.fillRect(px,py,sz,sz); }
   x.restore();
