@@ -1936,7 +1936,6 @@ function dwInit(){
 function dwMoon(x,w,h){
   const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.169;
   const lp=2551442877; const ref=new Date("2026-01-18T19:51:00Z"); let phase=(((new Date()).getTime()-ref.getTime())%lp)/lp; if(phase<0)phase+=1;
-  x.save(); x.fillStyle='#0a0c14'; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill(); x.restore();
   x.save(); x.globalCompositeOperation='screen';
   if(dwSouthern){ x.translate(cx,cy); x.rotate(Math.PI); x.translate(-cx,-cy); }
   x.fillStyle='#E6F7FF'; x.shadowColor='rgba(180,230,255,0.5)'; x.shadowBlur=r*1.1;
@@ -2114,9 +2113,15 @@ function rollSeed() {
   // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
   // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
   HARD_BG = null; HARD_SHADER = null;
-  if (RR < 0.007) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
-  else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';       // liquid ~7%
-  else if (RR < 0.162) HARD_SHADER = 'towers'; }                                 // towers ~8%
+  if (RR < 0.007) HARD_BG = 'dreamweaver';
+  else if (RR < 0.057) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';
+  else if (RR < 0.107) HARD_SHADER = 'towers';
+  else if (RR < 0.152) HARD_SHADER = 'datastream';
+  else if (RR < 0.197) HARD_SHADER = 'datacity';
+  else if (RR < 0.242) HARD_SHADER = 'whirlwind';
+  else if (RR < 0.287) HARD_SHADER = 'barcode';
+  else if (RR < 0.332) HARD_SHADER = 'rain';
+  else if (RR < 0.377) HARD_SHADER = 'ticker'; }
 }
 function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (shared links / on-chain)
   HARDKEY = 'hard:' + addr.toLowerCase();
@@ -2131,9 +2136,15 @@ function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (
   // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
   // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
   HARD_BG = null; HARD_SHADER = null;
-  if (RR < 0.007) HARD_BG = 'dreamweaver';                                       // ultra ~1/83
-  else if (RR < 0.082) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';       // liquid ~7%
-  else if (RR < 0.162) HARD_SHADER = 'towers'; }                                 // towers ~8%
+  if (RR < 0.007) HARD_BG = 'dreamweaver';
+  else if (RR < 0.057) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';
+  else if (RR < 0.107) HARD_SHADER = 'towers';
+  else if (RR < 0.152) HARD_SHADER = 'datastream';
+  else if (RR < 0.197) HARD_SHADER = 'datacity';
+  else if (RR < 0.242) HARD_SHADER = 'whirlwind';
+  else if (RR < 0.287) HARD_SHADER = 'barcode';
+  else if (RR < 0.332) HARD_SHADER = 'rain';
+  else if (RR < 0.377) HARD_SHADER = 'ticker'; }
 }
 // SOFT traits only — the holder address shapes the LOOK (tunnel shape, motion,
 // treatment, the digits). Palette + figure glitch (the identity) are left as-is,
