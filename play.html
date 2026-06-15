@@ -45,7 +45,13 @@
   if (q.get('bpm')) bpmEl.value = q.get('bpm');
   if (q.get('beats')) beatsEl.value = q.get('beats');
 
-  const roll = () => art.contentWindow && art.contentWindow.postMessage({type:'frontrun:roll'}, '*');
+  // cycle every effect equally (each appears once per shuffled pass) so the new
+  // ones get the same screen time as liquid/towers — not weighted by rarity
+  const EFFECTS = ['liquid','blackwater','towers','datastream','datacity','whirlwind','barcode','rain','ticker','dreamweaver','hex','twisted'];
+  let queue = [];
+  function nextEffect(){ if(!queue.length) queue = EFFECTS.slice().sort(()=>Math.random()-0.5); return queue.pop(); }
+  function randWallet(){ let a='0x'; for(let i=0;i<40;i++) a+='0123456789abcdef'[(Math.random()*16)|0]; return a; }
+  const roll = () => art.contentWindow && art.contentWindow.postMessage({type:'frontrun:piece', value:randWallet(), shape:nextEffect()}, '*');
 
   // load track (picker or drag-drop)
   function loadFile(f){ if(!f) return; aud.src = URL.createObjectURL(f); document.getElementById('trackname').textContent = '♪ ' + f.name; }
