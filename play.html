@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — play</title>
+<style>
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%;background:#000;overflow:hidden;font-family:monospace;color:#ddd}
+  #art{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+  /* start overlay — disappears on play */
+  #start{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.82);backdrop-filter:blur(4px);
+         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center}
+  #start.hidden{display:none}
+  #play{background:#ED1E79;border:0;color:#fff;font:inherit;font-size:20px;font-weight:700;
+        letter-spacing:.2em;text-transform:uppercase;padding:20px 54px;cursor:pointer}
+  #play:hover{opacity:.9}
+  .ctl{display:flex;gap:10px;align-items:center;font-size:12px;letter-spacing:.1em;color:#aaa}
+  .ctl input[type=number]{width:70px;background:#181818;border:1px solid #444;color:#eee;font:inherit;padding:6px 8px}
+  label.file{background:#181818;border:1px solid #444;color:#ccc;padding:10px 16px;cursor:pointer;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  label.file:hover{border-color:#ED1E79}
+  #trackname{font-size:11px;color:#888;min-height:14px}
+  .hint{font-size:10px;color:#666;letter-spacing:.12em;line-height:1.8}
+  #toast{position:fixed;left:14px;bottom:12px;z-index:10;font-size:10px;letter-spacing:.12em;color:#555}
+</style>
+</head>
+<body>
+  <iframe id="art" src="./sketch-v4-glitch-lab.html?preview=1&embed=1" title="FRONTRUN"></iframe>
+  <audio id="aud"></audio>
+  <div id="start">
+    <div style="font-size:13px;letter-spacing:.3em;color:#ED1E79">FRONTRUN · PLAY-THROUGH</div>
+    <label class="file" for="file">♪ load your track</label>
+    <input id="file" type="file" accept="audio/*" style="display:none">
+    <div id="trackname">no track — plays silent, still changes on the bar</div>
+    <div class="ctl">BPM <input id="bpm" type="number" value="100" min="40" max="220"> &nbsp; beats/bar <input id="beats" type="number" value="4" min="1" max="16"></div>
+    <button id="play">▶ play</button>
+    <div class="hint">changes piece every bar · space = pause · H = hide all · drop an audio file anywhere</div>
+  </div>
+  <div id="toast"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const art = document.getElementById('art'), aud = document.getElementById('aud');
+  const startEl = document.getElementById('start'), toast = document.getElementById('toast');
+  const bpmEl = document.getElementById('bpm'), beatsEl = document.getElementById('beats');
+  if (q.get('bpm')) bpmEl.value = q.get('bpm');
+  if (q.get('beats')) beatsEl.value = q.get('beats');
+
+  const roll = () => art.contentWindow && art.contentWindow.postMessage({type:'frontrun:roll'}, '*');
+
+  // load track (picker or drag-drop)
+  function loadFile(f){ if(!f) return; aud.src = URL.createObjectURL(f); document.getElementById('trackname').textContent = '♪ ' + f.name; }
+  document.getElementById('file').addEventListener('change', e => loadFile(e.target.files[0]));
+  ['dragover','drop'].forEach(ev => addEventListener(ev, e => { e.preventDefault(); if(ev==='drop' && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); }));
+
+  let barLen = 2.4, lastBar = -1, running = false, t0 = 0;
+  function recalc(){ barLen = (60/(+bpmEl.value||100)) * (+beatsEl.value||4); }
+
+  function tick(){
+    if (running){
+      const now = aud.src ? aud.currentTime : (performance.now()/1000 - t0);
+      const bar = Math.floor(now / barLen);
+      if (bar !== lastBar){ lastBar = bar; roll(); toast.textContent = 'bar ' + (bar+1); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function play(){
+    recalc();
+    startEl.classList.add('hidden');
+    running = true; lastBar = -1; t0 = performance.now()/1000;
+    if (aud.src){ aud.currentTime = 0; aud.play().catch(()=>{}); }
+    roll();
+  }
+  document.getElementById('play').onclick = play;
+
+  // controls during playback
+  let uiHidden = false;
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === ' '){ e.preventDefault();
+      if (!running) return;
+      if (aud.src){ aud.paused ? aud.play() : aud.pause(); }
+      else { if (running){ /* toggle */ } }
+      running = aud.src ? !aud.paused : !running;
+      if (running && !aud.src) t0 = performance.now()/1000 - lastBar*barLen;
+    }
+    else if (k === 'h'){ uiHidden = !uiHidden; toast.style.display = uiHidden ? 'none' : 'block'; }
+  });
+  tick();
+</script>
+</body>
+</html>
