@@ -2023,19 +2023,37 @@ let maskFallback = false, figImg = null;
 let figFrames = null, figDurs = null, figTotal = 0;
 async function decodeFigFrames(dataUrl) {
   try {
-    if (typeof ImageDecoder === 'undefined') return;
-    const u = Uint8Array.from(atob(dataUrl.split(',')[1]), c => c.charCodeAt(0));
-    const dec = new ImageDecoder({ data: u, type: 'image/webp' });
-    await dec.tracks.ready;
-    const n = dec.tracks.selectedTrack.frameCount;
-    const frames = [], durs = []; let total = 0;
-    for (let i = 0; i < n; i++) {
-      const { image } = await dec.decode({ frameIndex: i });
-      frames.push(image); const d = (image.duration || 100000) / 1000; durs.push(d); total += d;
+    if (typeof ImageDecoder !== 'undefined') {           // modern browsers: decode the animated webp directly
+      const u = Uint8Array.from(atob(dataUrl.split(',')[1]), c => c.charCodeAt(0));
+      const dec = new ImageDecoder({ data: u, type: 'image/webp' });
+      await dec.tracks.ready;
+      const n = dec.tracks.selectedTrack.frameCount;
+      const frames = [], durs = []; let total = 0;
+      for (let i = 0; i < n; i++) {
+        const { image } = await dec.decode({ frameIndex: i });
+        frames.push(image); const d = (image.duration || 100000) / 1000; durs.push(d); total += d;
+      }
+      figFrames = frames; figDurs = durs; figTotal = total;
+      try { window.FR_FIGTOTAL = total; } catch (e) {}
+      return;
     }
-    figFrames = frames; figDurs = durs; figTotal = total;
-    try { window.FR_FIGTOTAL = total; } catch (e) {}   // expose run-cycle length to the GIF maker
   } catch (e) {}
+  // FALLBACK — iOS Safari / no WebCodecs: slice the run cycle from a sprite sheet so the runner still animates
+  try { await loadFigSpritesheet(); } catch (e) {}
+}
+async function loadFigSpritesheet() {
+  const COLS = 6, FW = 300, FH = 300, N = 29;
+  const DUR = [100]; for (let i = 1; i < N; i++) DUR.push(30);   // matches the webp (total 940ms)
+  const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = 'figure-frames.png'; });
+  const frames = [], durs = []; let total = 0;
+  for (let i = 0; i < N; i++) {
+    const r = Math.floor(i / COLS), c = i % COLS;
+    const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
+    cv.getContext('2d').drawImage(img, c * FW, r * FH, FW, FH, 0, 0, FW, FH);
+    frames.push(cv); durs.push(DUR[i]); total += DUR[i];
+  }
+  figFrames = frames; figDurs = durs; figTotal = total;
+  try { window.FR_FIGTOTAL = total; } catch (e) {}
 }
 function currentFigFrame() {
   if (!figFrames || !figTotal) return figImg;
