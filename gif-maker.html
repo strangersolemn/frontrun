@@ -12,8 +12,9 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);
 .brand{font-size:30px;letter-spacing:.32em;font-weight:700;margin:0;padding-left:.32em}
 .tag{color:var(--mut);letter-spacing:.22em;text-transform:uppercase;font-size:11px;margin:4px 0 22px}
 .card{width:100%;max-width:520px;border:1px solid var(--line);border-radius:14px;padding:18px;background:#0c0c12}
-.stage{width:100%;max-width:520px;aspect-ratio:1;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000;margin-bottom:14px;position:relative}
-#art{width:100%;height:100%;border:0;display:block}
+.stage{width:100%;max-width:560px;aspect-ratio:1;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000;margin-bottom:14px;position:relative}
+#frame720{position:absolute;top:0;left:0;width:720px;height:720px;transform-origin:top left}
+#art{width:720px;height:720px;border:0;display:block}
 .row{display:flex;gap:8px;margin-top:4px}
 input{flex:1;font:inherit;border-radius:10px;padding:12px;border:1px solid #33333f;background:#101017;color:var(--fg)}
 input::placeholder{color:#4a4a57}
@@ -33,7 +34,7 @@ button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cur
 </style></head><body>
 <h1 class="brand">FRONTRUN</h1><div class="tag">gif maker</div>
 
-<div class="stage"><iframe id="art" src="./engine.html?preview=1&embed=1&cap=1" title="FRONTRUN"></iframe></div>
+<div class="stage"><div id="frame720"><iframe id="art" src="./engine.html?preview=1&embed=1&cap=1" title="FRONTRUN"></iframe></div></div>
 
 <div class="card">
   <div class="row">
@@ -59,11 +60,14 @@ let ready=false;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function setPiece(w){ try{art.contentWindow.postMessage({type:'frontrun:wallet',value:w},'*');}catch(e){} }
 function status(t){ $("status").textContent=t||""; }
+// engine renders at a fixed 720px (sharp, big GIFs); scale the wrapper to fit the visible stage
+function fitStage(){ const s=document.querySelector('.stage'), w=$("frame720"); if(s&&w) w.style.transform='scale('+(s.clientWidth/720)+')'; }
+window.addEventListener('resize',fitStage); fitStage();
 
 // roll a random wallet -> a random piece (no typing needed)
 function rollRandom(){ $("wallet").value=''; try{art.contentWindow.postMessage({type:'frontrun:roll'},'*');}catch(e){} }
 // engine boots inside the iframe — enable the buttons once it's up and show a starter piece
-window.addEventListener('load',()=>{ setTimeout(()=>{ ready=true; $("make").disabled=false; rollRandom(); status(''); },2000); });
+window.addEventListener('load',()=>{ fitStage(); setTimeout(()=>{ fitStage(); ready=true; $("make").disabled=false; rollRandom(); status(''); },2000); });
 $("rand").onclick=()=>{ if(ready){ rollRandom(); status('new piece — hit Make GIF'); setTimeout(()=>status(''),1500); } };
 // pasting a wallet just swaps the piece (optional)
 $("wallet").addEventListener("input",()=>{ const w=$("wallet").value.trim(); if(/^0x[0-9a-fA-F]{40}$/.test(w)) setPiece(w); });
@@ -135,11 +139,11 @@ $("make").onclick=async()=>{
     const WINDOW = CYCLE*LOOPS;
     const FRAMES = Math.min(40, Math.max(20, Math.round(WINDOW/70)));
     const DELAY = Math.max(40, Math.round(WINDOW/FRAMES));
-    let size=480;
+    let size=720;
     const frames=await captureFrames(size,FRAMES,DELAY);
     if(!frames.length) throw new Error("nothing captured — reload and try again");
     status("encoding gif…");
-    const tries=[[480,12],[480,22],[400,18],[340,18],[300,26],[260,30]];
+    const tries=[[720,12],[640,16],[560,20],[480,24],[400,28],[340,30]];
     let blob=null, used=tries[0];
     for(const [sz,q] of tries){
       $("bar").style.width="55%";
