@@ -368,7 +368,7 @@ const $ = id => document.getElementById(id);
 const fig = $('fig');
 const fCtx = fig.getContext('2d');
 const bgGl = $('bg-gl');
-const gl = bgGl.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: false });
+const gl = bgGl.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: new URLSearchParams(location.search).has('cap') });
 if (!gl) console.warn('WebGL not available — tunnel will not render');
 
 let W = 0, H = 0;

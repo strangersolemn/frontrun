@@ -1,0 +1,138 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · GIF maker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="./vendor/gif.js"></script>
+<style>
+:root{--bg:#08080c;--fg:#eaeaf0;--mut:#7a7a88;--line:#1c1c24;--acc:#ED1E79;--ok:#2CE15F}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);
+ font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+ display:flex;flex-direction:column;align-items:center;padding:28px 16px}
+.brand{font-size:30px;letter-spacing:.32em;font-weight:700;margin:0;padding-left:.32em}
+.tag{color:var(--mut);letter-spacing:.22em;text-transform:uppercase;font-size:11px;margin:4px 0 22px}
+.card{width:100%;max-width:520px;border:1px solid var(--line);border-radius:14px;padding:18px;background:#0c0c12}
+.stage{width:100%;max-width:520px;aspect-ratio:1;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000;margin-bottom:14px;position:relative}
+#art{width:100%;height:100%;border:0;display:block}
+.row{display:flex;gap:8px;margin-top:4px}
+input{flex:1;font:inherit;border-radius:10px;padding:12px;border:1px solid #33333f;background:#101017;color:var(--fg)}
+input::placeholder{color:#4a4a57}
+button{font:inherit;border-radius:10px;padding:12px 14px;cursor:pointer;border:1px solid #33333f;background:#15151d;color:var(--fg)}
+button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cursor:not-allowed}
+#connect{background:#15151d}
+#make{width:100%;margin-top:12px;background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600;letter-spacing:.04em}
+.hint{color:var(--mut);font-size:12px;margin-top:10px;text-align:center}
+#prog{height:6px;background:#15151d;border-radius:4px;overflow:hidden;margin-top:14px;display:none}
+#bar{height:100%;width:0;background:var(--acc);transition:width .2s}
+#status{margin-top:10px;text-align:center;font-size:13px;min-height:18px}
+#out{margin-top:16px;text-align:center;display:none}
+#out img{max-width:100%;border-radius:12px;border:1px solid var(--line)}
+#dl{display:inline-block;margin-top:12px;background:var(--ok);border-color:var(--ok);color:#06210f;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:10px}
+.sz{color:var(--mut);font-size:12px;margin-top:8px}
+</style></head><body>
+<h1 class="brand">FRONTRUN</h1><div class="tag">gif maker</div>
+
+<div class="stage"><iframe id="art" src="./sketch-v4-glitch-lab.html?preview=1&embed=1&cap=1" title="FRONTRUN"></iframe></div>
+
+<div class="card">
+  <div class="row">
+    <input id="wallet" type="text" placeholder="paste any 0x wallet…" autocomplete="off" spellcheck="false">
+    <button id="connect">Connect</button>
+  </div>
+  <button id="make" disabled>Make GIF</button>
+  <div id="prog"><div id="bar"></div></div>
+  <div id="status"></div>
+  <div class="hint">enter a wallet to load its piece, then make a GIF. exports under 15&nbsp;MB for X.</div>
+  <div id="out">
+    <img id="result" alt="your FRONTRUN gif">
+    <div><a id="dl" download="frontrun.gif">Download GIF</a></div>
+    <div class="sz" id="size"></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const art=$("art"), MAXBYTES=15*1024*1024;
+let ready=false;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function setPiece(w){ try{art.contentWindow.postMessage({type:'frontrun:piece',value:w},'*');}catch(e){} }
+function status(t){ $("status").textContent=t||""; }
+
+// enable "Make GIF" once a valid wallet is loaded
+function tryLoad(){
+  const w=$("wallet").value.trim();
+  if(!/^0x[0-9a-fA-F]{40}$/.test(w)){ status("enter a valid 0x wallet"); $("make").disabled=true; return; }
+  status("loading piece…"); setPiece(w); $("make").disabled=false; ready=true;
+  setTimeout(()=>status(""),1200);
+}
+$("wallet").addEventListener("input",()=>{ if(/^0x[0-9a-fA-F]{40}$/.test($("wallet").value.trim())) tryLoad(); else $("make").disabled=true; });
+$("connect").onclick=async()=>{
+  if(!window.ethereum){status("no wallet — paste an address instead");return;}
+  try{const p=new ethers.BrowserProvider(window.ethereum);await p.send("eth_requestAccounts",[]);
+    const a=await(await p.getSigner()).getAddress(); $("wallet").value=a; tryLoad();}catch(e){status("connection cancelled");}
+};
+
+// grab the three engine canvases from the iframe and composite one frame
+function grab(cap){
+  const d=art.contentDocument; if(!d) return false;
+  const gl=d.getElementById('bg-gl'), b2=d.getElementById('bg2d'), fg=d.getElementById('fig');
+  const cx=cap.getContext('2d'); const W=cap.width,H=cap.height;
+  cx.fillStyle='#000'; cx.fillRect(0,0,W,H);
+  try{ if(gl) cx.drawImage(gl,0,0,W,H); if(b2) cx.drawImage(b2,0,0,W,H); if(fg) cx.drawImage(fg,0,0,W,H); }catch(e){ return false; }
+  return true;
+}
+
+// capture frames into memory once, sampling at real-time intervals (matches playback),
+// then we can re-encode at different settings to fit 15MB
+async function captureFrames(size, n, gapMs){
+  const frames=[];
+  for(let i=0;i<n;i++){
+    await sleep(gapMs);
+    const c=document.createElement('canvas'); c.width=size; c.height=size;
+    if(!grab(c)){ await sleep(40); grab(c); }
+    frames.push(c);
+    $("bar").style.width=Math.round((i+1)/n*55)+'%';
+  }
+  return frames;
+}
+
+function encode(frames, size, quality, delay){
+  return new Promise((resolve)=>{
+    const gif=new GIF({workers:4,quality:quality,width:size,height:size,workerScript:'./vendor/gif.worker.js',background:'#000',dither:false});
+    for(const f of frames){
+      if(f.width===size){ gif.addFrame(f,{copy:true,delay}); }
+      else { const t=document.createElement('canvas'); t.width=size;t.height=size; t.getContext('2d').drawImage(f,0,0,size,size); gif.addFrame(t,{copy:true,delay}); }
+    }
+    gif.on('progress',p=>{ $("bar").style.width=(55+Math.round(p*45))+'%'; });
+    gif.on('finished',b=>resolve(b));
+    gif.render();
+  });
+}
+
+$("make").onclick=async()=>{
+  if(!ready) return;
+  $("make").disabled=true; $("connect").disabled=true; $("out").style.display="none";
+  $("prog").style.display="block"; $("bar").style.width="0";
+  status("capturing… keep this tab in front");
+  const FRAMES=30, DELAY=66; // ~2s at 15fps
+  let size=480;
+  const frames=await captureFrames(size,FRAMES,DELAY);
+  // encode, shrinking until under 15MB for X
+  status("encoding gif…");
+  const tries=[[480,12],[480,22],[400,18],[340,18],[300,26],[260,30]];
+  let blob=null, used=tries[0];
+  for(const [sz,q] of tries){
+    $("bar").style.width="55%";
+    blob=await encode(frames,sz,q,DELAY); used=[sz,q];
+    if(blob.size<=MAXBYTES) break;
+  }
+  $("bar").style.width="100%";
+  const url=URL.createObjectURL(blob);
+  $("result").src=url; $("dl").href=url;
+  const mb=(blob.size/1024/1024).toFixed(2);
+  $("size").textContent=used[0]+"×"+used[0]+" · "+mb+" MB "+(blob.size<=MAXBYTES?"· under X's 15 MB limit ✓":"· still over 15 MB, try again");
+  $("out").style.display="block"; status("done");
+  $("make").disabled=false; $("connect").disabled=false;
+  setTimeout(()=>{$("prog").style.display="none";},600);
+};
+</script></body></html>
