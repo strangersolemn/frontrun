@@ -83,16 +83,28 @@ function grab(cap){
   return true;
 }
 
-// capture frames into memory once, sampling at real-time intervals (matches playback),
-// then we can re-encode at different settings to fit 15MB
-async function captureFrames(size, n, gapMs){
+// Capture by DRIVING the engine's clock ourselves: step its performance.now forward by
+// dtMs each frame and force a render. The runner + tunnel animate deterministically and
+// smoothly regardless of tab focus / rAF throttling (the live loop can't be relied on).
+async function captureFrames(size, n, dtMs){
+  const win=art.contentWindow;
+  if(!win || typeof win.frame!=='function') throw new Error("engine not ready — reload and retry");
+  const realNow = win.performance.now.bind(win.performance);
+  let virt = realNow();
   const frames=[];
-  for(let i=0;i<n;i++){
-    await sleep(gapMs);
-    const c=document.createElement('canvas'); c.width=size; c.height=size;
-    if(!grab(c)){ await sleep(40); grab(c); }
-    frames.push(c);
-    $("bar").style.width=Math.round((i+1)/n*55)+'%';
+  try{
+    win.performance.now = ()=>virt;          // freeze + step the engine's time source
+    for(let i=0;i<n;i++){
+      virt += dtMs;                          // advance one GIF-frame's worth of run cycle
+      try{ win.frame(); }catch(e){}          // force one render at this virtual time
+      const c=document.createElement('canvas'); c.width=size; c.height=size;
+      if(!grab(c)){ grab(c); }
+      frames.push(c);
+      $("bar").style.width=Math.round((i+1)/n*55)+'%';
+      await sleep(0);                         // yield so the progress bar paints (not for timing)
+    }
+  } finally {
+    win.performance.now = realNow;            // always restore the real clock
   }
   return frames;
 }
