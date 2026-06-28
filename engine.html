@@ -1,0 +1,2713 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>FRONTRUN — Glitch Lab (sketch v4)</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%; position: fixed;
+    background: #050505; overflow: hidden; touch-action: none;
+    user-select: none; -webkit-user-select: none;
+    font-family: monospace; color: #888;
+  }
+  #frame {
+    position: fixed; inset: 0;
+    width: 100vw; height: 100vh;
+    background: var(--bg-color, #000); overflow: hidden;
+  }
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    image-rendering: pixelated;
+  }
+  /* WebGL tunnel — full screen background, BEHIND the figure */
+  #bg-gl { z-index: 1; }
+  /* Flash overlay — dim black over the BG only (sits BELOW the figure).
+     Background-color set inline by JS via the opacity slider. */
+  #flash-black {
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    z-index: 20;     /* below #fig (30), above #bg-gl (1) */
+    display: none;
+  }
+  #bg2d { z-index: 2; display: none; image-rendering: auto; }
+  /* Figure canvas — the glitch renders here, masked by the figure shape */
+  #fig {
+    z-index: 30; pointer-events: none;
+    -webkit-mask-size: contain;        mask-size: contain;
+    -webkit-mask-repeat: no-repeat;    mask-repeat: no-repeat;
+    -webkit-mask-position: center bottom; mask-position: center bottom;
+    transform: scale(var(--fig-scale, 0.92));
+    transform-origin: bottom center;
+  }
+
+  /* CONTROL PANEL */
+  #panel {
+    position: fixed; top: 10px; right: 10px;
+    background: rgba(10,10,10,0.92); border: 1px solid #333;
+    padding: 10px 12px; font-size: 11px;
+    color: #aaa; line-height: 1.6; z-index: 200;
+    min-width: 280px; max-width: 320px;
+    backdrop-filter: blur(6px);
+    max-height: 95vh; overflow-y: auto;
+  }
+  #panel h3 {
+    margin: 0 0 6px; padding: 0 0 5px;
+    font-size: 10px; letter-spacing: 2px; color: #ED1E79;
+    border-bottom: 1px solid #333; text-transform: uppercase;
+  }
+  #panel h4 {
+    margin: 12px 0 4px; padding: 6px 0 4px;
+    font-size: 10px; letter-spacing: 2px; color: #ED1E79;
+    border-top: 1px solid #333; text-transform: uppercase;
+  }
+  #panel label { display: block; margin: 6px 0 2px; color: #888; font-size: 10px; }
+  #panel select, #panel input[type=range], #panel input[type=color] {
+    width: 100%; background: #181818; border: 1px solid #333;
+    color: #ddd; padding: 3px 4px; font: inherit; box-sizing: border-box;
+  }
+  #panel input[type=color] { height: 22px; padding: 2px; cursor: pointer; }
+  #panel button {
+    background: #181818; color: #ddd; border: 1px solid #444;
+    padding: 4px 8px; font: inherit; cursor: pointer; margin-top: 4px;
+    width: 100%;
+  }
+  #panel button:hover { color: #ED1E79; border-color: #ED1E79; }
+  .row { display: flex; gap: 4px; align-items: center; }
+  .row select { flex: 1; }
+  .v { color: #ED1E79; }
+  #toggle-panel {
+    position: fixed; top: 10px; right: 10px; z-index: 201;
+    background: #181818; color: #888; border: 1px solid #444;
+    padding: 4px 8px; font: 11px monospace; cursor: pointer;
+    display: none;
+  }
+
+  /* TITLE / FADE — for the promo video ending.
+     #fade-black dissolves the tunnel to black; #title resolves the wordmark
+     on top so it survives the fade. Both driven by the F key. */
+  #fade-black {
+    position: absolute; inset: 0; background: #000;
+    z-index: 40;            /* above #fig (30) */
+    opacity: 0; pointer-events: none;
+    transition: opacity 2.6s ease-in-out;
+  }
+  #title {
+    position: absolute; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 2.4s ease-in-out;
+    transition-delay: 0.7s;       /* name emerges as the scene dies */
+  }
+  #title span {
+    font-family: monospace; font-weight: 700;
+    font-size: clamp(28px, 9vw, 120px);
+    letter-spacing: 0.28em; text-indent: 0.28em;  /* balance the trailing space */
+    text-transform: uppercase;
+    color: var(--title-color, #ED1E79);
+    text-shadow: 0 0 18px var(--title-glow, rgba(237,30,121,0.55));
+    white-space: nowrap;
+  }
+  /* active state — toggled by JS */
+  #frame.titled #fade-black { opacity: 1; }
+  #frame.titled #title      { opacity: 1; }
+
+  /* PUBLIC PREVIEW MODE — no dev panel at all, just the art + a minimal wallet bar */
+  body.preview #panel, body.preview #toggle-panel { display: none !important; }
+  #preview-bar {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 250; display: none; align-items: center; gap: 8px;
+    background: rgba(8,8,8,0.6); border: 1px solid rgba(255,255,255,0.14);
+    padding: 8px 10px; backdrop-filter: blur(8px); font-family: monospace;
+  }
+  body.preview #preview-bar { display: flex; }
+  body.embed #preview-bar { display: none; }   /* embedded in landing page → parent drives the controls */
+  #preview-bar .pv-brand { color: #ED1E79; font-weight: 700; letter-spacing: 2px; font-size: 12px; }
+  #preview-bar input {
+    width: 230px; max-width: 46vw; background: #111; border: 1px solid #333;
+    color: #ddd; padding: 5px 7px; font: inherit; font-size: 12px;
+  }
+  #preview-bar button {
+    background: #181818; color: #ddd; border: 1px solid #444;
+    padding: 5px 9px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  #preview-bar button:hover { color: #ED1E79; border-color: #ED1E79; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <canvas id="bg-gl"></canvas>
+  <canvas id="bg2d"></canvas>
+  <canvas id="fig"></canvas>
+  <!-- Black flash overlay — covers everything when active -->
+  <div id="flash-black"></div>
+  <!-- Title fade (F key) — tunnel dissolves to black, FRONTRUN holds -->
+  <div id="fade-black"></div>
+  <div id="title"><span>FRONTRUN</span></div>
+</div>
+
+<!-- PUBLIC PREVIEW MODE bar (shown only when URL has ?preview) -->
+<div id="preview-bar">
+  <span class="pv-brand">FRONTRUN</span>
+  <input type="text" id="preview-addr" placeholder="paste a wallet or name.eth — see your piece" spellcheck="false" autocomplete="off">
+  <button onclick="rollPreview()">🎲 roll</button>
+</div>
+
+<!-- VERTEX SHADER for the tunnel -->
+<script id="vs" type="x-shader/x-vertex">
+attribute vec3 position;
+attribute vec2 uv;
+uniform mat4 uMVP;
+uniform float uScroll;
+varying vec2 vUv;
+varying float vDepth;
+void main() {
+  vUv = uv;
+  vUv.y += uScroll;
+  vec4 pos = uMVP * vec4(position, 1.0);
+  gl_Position = pos;
+  vDepth = pos.z;
+}
+</script>
+
+<!-- FRAGMENT SHADER for the tunnel -->
+<script id="fs" type="x-shader/x-fragment">
+precision mediump float;
+uniform sampler2D uTexture;
+uniform vec3 uFogColor;
+uniform float uTime;
+uniform float uGlitchAmount;
+varying vec2 vUv;
+varying float vDepth;
+float hash11(float n) { return fract(sin(n) * 43758.5453123); }
+void main() {
+  vec2 uv = vUv;
+  float band = floor(uv.y * 40.0);
+  float bandHash = hash11(band + floor(uTime * 6.0));
+  if (bandHash > 0.85) {
+    float shift = (hash11(band * 7.31) - 0.5) * 0.15 * uGlitchAmount;
+    uv.x += shift;
+  }
+  vec4 color = texture2D(uTexture, uv);
+  float dist = abs(vDepth);
+  float fogFactor = exp2(-0.045 * dist * dist);
+  fogFactor = clamp(fogFactor, 0.0, 1.0);
+  gl_FragColor = mix(vec4(uFogColor, 1.0), color, fogFactor);
+  gl_FragColor.a = 1.0;
+}
+</script>
+
+<button id="toggle-panel" onclick="togglePanel()">[ + ]</button>
+
+<div id="panel">
+  <h3>FRONTRUN GLITCH LAB v4</h3>
+
+  <label>SEED</label>
+  <div class="row">
+    <span id="seed" style="flex:1;color:#ED1E79">—</span>
+    <button onclick="reseed()" style="margin:0;width:auto">roll</button>
+  </div>
+
+  <h4>WALLET — drives the whole piece</h4>
+  <label>current: <span id="wallet-cur" style="color:#ED1E79">(random)</span></label>
+  <div class="row">
+    <input type="text" id="wallet-addr" placeholder="paste 0x… or name.eth"
+           style="flex:1;background:#181818;border:1px solid #333;color:#ddd;padding:3px 4px;font:inherit">
+    <button onclick="randomWallet()" style="margin:0;flex:0 0 auto" title="random wallet">🎲</button>
+  </div>
+  <div class="row" style="margin-top:3px;gap:3px">
+    <button onclick="usePreset('0xd8da6bf26964af9d7eed9e03e53415d37aa96045')" style="margin:0;font-size:9px;padding:3px 5px">vitalik.eth</button>
+    <button onclick="clearWallet()" style="margin:0;font-size:9px;padding:3px 5px">clear</button>
+  </div>
+
+  <label>Palette</label>
+  <select id="palette-sel">
+    <option value="0">Frontrunner pink #ED1E79</option>
+    <option value="1">Blood red #FF003C</option>
+    <option value="2">Mint green #00FF95</option>
+    <option value="3">Amber #FFAE00</option>
+    <option value="4">Cyan #00F0FF</option>
+    <option value="5">Electric yellow #FFE600</option>
+    <option value="6">Magenta #FF00FF</option>
+    <option value="7">Violet #9D00FF</option>
+    <option value="8">Royal blue + navy</option>
+    <option value="9">Dark red + black</option>
+    <option value="10">Terminal green + black</option>
+  </select>
+
+  <h4>TUNNEL (under figure)</h4>
+  <label>Tunnel shape</label>
+  <select id="tunnel-shape" style="margin-bottom:6px">
+    <option value="square">square (diamond)</option>
+    <option value="square-flat">square-flat</option>
+    <option value="hex" selected>hex</option>
+    <option value="oct">octagon</option>
+    <option value="triangle">triangle</option>
+    <option value="twelve">twelve (near-circle)</option>
+    <option value="twisted">twisted hex</option>
+    <option value="pentagon">pentagon</option>
+    <optgroup label="── Shader tunnels (raymarched) ──">
+      <option value="liquid">⛧ liquid</option>
+      <option value="blackwater">⛧ black water</option>
+      <option value="towers">⛧ towers (rare)</option>
+      <option value="datastream">⛧ datastream (digits)</option>
+      <option value="datacity">⛧ database city</option>
+      <option value="whirlwind">⛧ whirlwind (minimal)</option>
+      <option value="barcode">⛧ barcode</option>
+      <option value="ticker">⛧ ticker</option>
+      <option value="rain">⛧ matrix rain</option>
+    </optgroup>
+  </select>
+
+  <label id="lbl-tunnel-tex">Tunnel wall texture</label>
+  <select id="tunnel-tex">
+    <option value="noise" selected>chunky noise (default)</option>
+    <optgroup label="── Curated glitches ──">
+      <option value="static">01 buzz static</option>
+      <option value="palstatic">02 palette static</option>
+      <option value="scanlines">03 scanlines</option>
+      <option value="tear">08 horizontal tear</option>
+      <option value="rgbsplit">09 RGB buzz</option>
+      <option value="scatter">13 chaos scatter</option>
+      <option value="mirror">20 mirror tear</option>
+      <option value="invert">22 invert burst</option>
+      <option value="glitchtext">26 glitch text</option>
+      <option value="flood">30 strobe</option>
+    </optgroup>
+    <optgroup label="── Restored / texture-only ──">
+      <option value="addresses_tex">★ ETH addresses (pretext)</option>
+      <option value="addr_ledger">★ Address ledger (justified)</option>
+      <option value="addr_wallet">★ Wallet roll (ENS + 0x…)</option>
+      <option value="addr_giant">★ Address monolith (giant)</option>
+      <option value="addr_swirl">★ Address swirl (vortex)</option>
+      <option value="addr_matrix">★ Address rain (matrix)</option>
+      <option value="addr_ribbon">★ Address ribbon (1-line spiral)</option>
+      <option value="addr_smoke">★ Address smoke (fluid)</option>
+      <option value="manifesto_tex">★ Manifesto stream (pretext)</option>
+      <option value="hexwall_tex">★ Hex wall (pretext)</option>
+      <option value="cellular">24 cellular busy</option>
+      <option value="halftone_tex">14 Halftone dots</option>
+      <option value="concsq_tex">17 Concentric squares</option>
+      <option value="radial_tex">18 Radial warp</option>
+      <option value="hextun_tex">21 Hex tunnel</option>
+      <option value="circles_tex">29 Concentric circles</option>
+      <option value="blocks_tex">06 Block chunks</option>
+      <option value="diagonal_tex">07 Diagonal stripes</option>
+      <option value="letterbox_tex">23 Letterbox stripes</option>
+      <option value="matrix_tex">27 Matrix rain</option>
+      <option value="hextext_tex">11 Hex text scatter</option>
+    </optgroup>
+  </select>
+
+  <label>BG dim flash (dims only the tunnel, NOT the figure)</label>
+  <div class="row">
+    <select id="flash-mode" style="flex:1">
+      <option value="off">off</option>
+      <option value="10+1" selected>10 visible + 1 dim</option>
+    </select>
+  </div>
+  <label>Flash dim opacity <span class="v" id="v-flash-opa"></span></label>
+  <input type="range" id="flash-opa" min="0" max="100" value="10">
+
+  <h4>FIGURE GLITCH (clipped to figure shape)</h4>
+  <select id="fig-glitch"></select>
+  <label>Speed <span class="v" id="v-spd"></span></label>
+  <input type="range" id="spd" min="0" max="100" value="50">
+  <label>Density <span class="v" id="v-den"></span></label>
+  <input type="range" id="den" min="0" max="100" value="50">
+
+  <h4>FIGURE SIZE</h4>
+  <label>Size <span class="v" id="v-fig-size"></span></label>
+  <input type="range" id="fig-size" min="50" max="100" value="92">
+  <label>Opacity <span class="v" id="v-fig-opa"></span></label>
+  <input type="range" id="fig-opa" min="0" max="100" value="100">
+
+  <h4>QUICK TEST</h4>
+  <div class="row">
+    <button onclick="cycleGlitches()" style="margin:0">▶ cycle all glitches</button>
+    <button onclick="stopCycle()" style="margin:0;flex:0 0 auto">■</button>
+  </div>
+  <button onclick="randomCombo()" style="margin-top:4px;color:#ED1E79;font-weight:bold">🎲 RANDOM COMBO</button>
+  <button onclick="cycleSavedLooks()" style="margin-top:2px">▶ preview saved looks</button>
+  <button onclick="titleFade()" style="margin-top:2px">▶ title fade — FRONTRUN (F)</button>
+
+  <h4>LOCKED LOOKS</h4>
+  <div class="row">
+    <input type="text" id="look-name" placeholder="name…"
+           style="flex:1;background:#181818;border:1px solid #333;color:#ddd;padding:3px 4px;font:inherit">
+    <button id="save-look" style="margin:0;flex:0 0 auto">+ save</button>
+  </div>
+  <div id="looks-list" style="margin-top:4px;display:flex;flex-direction:column;gap:2px"></div>
+
+  <button onclick="togglePanel()" style="margin-top:8px">hide panel</button>
+</div>
+
+<!--FRONTRUN_PRETEXT-->
+<!-- On-chain: the contract replaces the marker above with the pretext source
+     (read from EthFS) and sets window.Pretext. Local fallback loads it from vendor. -->
+<script>
+  if (!window.Pretext) {
+    var _s = document.createElement('script');
+    _s.type = 'module';
+    _s.textContent = "import * as P from './vendor/pretext.js'; window.Pretext = P;";
+    document.head.appendChild(_s);
+  }
+</script>
+
+<script>
+// ===========================================================================
+// FRONTRUN GLITCH LAB v4
+// 3-layer architecture: bottom glitch + figure (middle) + top glitch
+// 30+ pure-Canvas glitch effects, layered + selectable per layer
+// ===========================================================================
+const $ = id => document.getElementById(id);
+
+const fig = $('fig');
+const fCtx = fig.getContext('2d');
+const bgGl = $('bg-gl');
+const gl = bgGl.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: new URLSearchParams(location.search).has('cap') });
+if (!gl) console.warn('WebGL not available — tunnel will not render');
+
+let W = 0, H = 0;
+function resize() {
+  W = Math.round(window.innerWidth);
+  H = Math.round(window.innerHeight);
+  fig.width = W; fig.height = H;
+  { var _b2=document.getElementById("bg2d"); if(_b2){_b2.width=W;_b2.height=H;} }
+  if (gl) {
+    bgGl.width = W; bgGl.height = H;
+    gl.viewport(0, 0, W, H);
+    perspective(Math.PI / 2.2, W / H, 0.1, 50);
+    if (uMVP && program) { gl.useProgram(program); gl.uniformMatrix4fv(uMVP, false, mvp); }
+  }
+}
+window.addEventListener('resize', resize);
+
+// ===========================================================================
+// WEBGL TUNNEL setup (lifted from sketch-v3 — runs once at boot)
+// ===========================================================================
+function compileShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(sh));
+    throw new Error('shader compile fail');
+  }
+  return sh;
+}
+
+let program = null;
+let aPos, aUv, uMVP, uScroll, uTex, uFog, uTime, uGlitch;
+let vbo, vertCount = 0;
+let texture = null;
+const Z_DEPTH = 12, TILE_REPEAT = 5;
+const mvp = new Float32Array(16);
+
+function perspective(fovY, aspect, near, far) {
+  const f = 1 / Math.tan(fovY / 2);
+  mvp[0]  = f / aspect; mvp[1]  = 0; mvp[2]  = 0; mvp[3]  = 0;
+  mvp[4]  = 0;          mvp[5]  = f; mvp[6]  = 0; mvp[7]  = 0;
+  mvp[8]  = 0;          mvp[9]  = 0;
+  mvp[10] = (far + near) / (near - far);
+  mvp[11] = -1;
+  mvp[12] = 0;          mvp[13] = 0;
+  mvp[14] = (2 * far * near) / (near - far);
+  mvp[15] = 0;
+}
+
+function setupWebGL() {
+  if (!gl) return;
+  const vsSrc = document.getElementById('vs').textContent;
+  const fsSrc = document.getElementById('fs').textContent;
+  program = gl.createProgram();
+  gl.attachShader(program, compileShader(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error('program link fail: ' + gl.getProgramInfoLog(program));
+  }
+  gl.useProgram(program);
+  aPos    = gl.getAttribLocation(program, 'position');
+  aUv     = gl.getAttribLocation(program, 'uv');
+  uMVP    = gl.getUniformLocation(program, 'uMVP');
+  uScroll = gl.getUniformLocation(program, 'uScroll');
+  uTex    = gl.getUniformLocation(program, 'uTexture');
+  uFog    = gl.getUniformLocation(program, 'uFogColor');
+  uTime   = gl.getUniformLocation(program, 'uTime');
+  uGlitch = gl.getUniformLocation(program, 'uGlitchAmount');
+  vbo = gl.createBuffer();
+  texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+}
+
+function buildTunnelGeometry(shape) {
+  if (!gl || !program) return;
+  const N = shape.sides;
+  const baseRot = shape.rot || 0;
+  const twist = shape.twist || 0;
+  const verts = [];
+  for (let i = 0; i < N; i++) {
+    const a0 = ((i)     / N) * Math.PI * 2 + baseRot;
+    const a1 = ((i + 1) / N) * Math.PI * 2 + baseRot;
+    const nx0 = Math.cos(a0), ny0 = Math.sin(a0);
+    const nx1 = Math.cos(a1), ny1 = Math.sin(a1);
+    const fa0 = a0 + twist, fa1 = a1 + twist;
+    const fx0 = Math.cos(fa0), fy0 = Math.sin(fa0);
+    const fx1 = Math.cos(fa1), fy1 = Math.sin(fa1);
+    verts.push(nx0, ny0, 0,         0, 0);
+    verts.push(fx0, fy0, -Z_DEPTH,  0, TILE_REPEAT);
+    verts.push(nx1, ny1, 0,         1, 0);
+    verts.push(nx1, ny1, 0,         1, 0);
+    verts.push(fx0, fy0, -Z_DEPTH,  0, TILE_REPEAT);
+    verts.push(fx1, fy1, -Z_DEPTH,  1, TILE_REPEAT);
+  }
+  const arr = new Float32Array(verts);
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, arr, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 20, 0);
+  gl.enableVertexAttribArray(aUv);
+  gl.vertexAttribPointer(aUv,  2, gl.FLOAT, false, 20, 12);
+  vertCount = arr.length / 5;
+}
+
+function hexBytes(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return [(v>>16)&0xff, (v>>8)&0xff, v&0xff];
+}
+
+const TEX_SIZE = 256;
+function buildTunnelTexture() {
+  if (!gl || !program) return;
+  const c = document.createElement('canvas');
+  c.width = TEX_SIZE; c.height = TEX_SIZE;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(TEX_SIZE, TEX_SIZE);
+  const data = img.data;
+  const bgC     = hexBytes(palette[0]);
+  const accent  = hexBytes(palette[1]);
+  const mid     = hexBytes(palette[2]);
+  const cell = 4;
+  const density = 0.35;
+  for (let by = 0; by < TEX_SIZE; by += cell) {
+    for (let bx = 0; bx < TEX_SIZE; bx += cell) {
+      const r = Math.random();
+      let col;
+      if (r < 0.55) col = bgC;
+      else if (r < 0.55 + density) col = accent;
+      else col = mid;
+      for (let y = by; y < by + cell; y++) {
+        for (let x = bx; x < bx + cell; x++) {
+          const i = (y * TEX_SIZE + x) * 4;
+          data[i] = col[0]; data[i+1] = col[1]; data[i+2] = col[2]; data[i+3] = 255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+}
+
+function hexRGB(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return [((v>>16)&0xff)/255, ((v>>8)&0xff)/255, (v&0xff)/255];
+}
+
+// Tunnel state — initialized in boot after SHAPES/PALETTES are defined
+let activeShape = null;
+let tunnelTex = 'noise';            // which texture for tunnel walls
+
+// Offscreen 256x256 canvas used to render the chosen glitch each frame,
+// then upload to GPU as the wall texture.
+const texCanvas = document.createElement('canvas');
+texCanvas.width = TEX_SIZE; texCanvas.height = TEX_SIZE;
+const texCtx = texCanvas.getContext('2d');
+
+function updateTunnelTextureFromGlitch(t) {
+  // Find the glitch fn — check curated GLITCHES first, then TUNNEL_TEX_EXTRA
+  const g = GLITCHES.find(gl => gl.id === tunnelTex)
+         || TUNNEL_TEX_EXTRA.find(gl => gl.id === tunnelTex);
+  if (!g) return;
+  g.fn(texCtx, TEX_SIZE, TEX_SIZE, palette, t, 0.6, 0.5, 1);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texCanvas);
+}
+
+function drawTunnel(t) {
+  if (!gl) return;
+  if (activeShaderTunnel) { drawShaderTunnel(t); return; }
+  if (!program || !vertCount) return;
+  // re-bind every frame: the shader-tunnel pass owns its own program/buffers
+  gl.useProgram(program);
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 20, 0);
+  gl.enableVertexAttribArray(aUv);
+  gl.vertexAttribPointer(aUv,  2, gl.FLOAT, false, 20, 12);
+  // texture: noise = static one-time bake; glitch id = live re-render every frame
+  if (tunnelTex !== 'noise') {
+    updateTunnelTextureFromGlitch(t);
+  }
+  gl.uniform1i(uTex, 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  const fog = hexRGB(palette[3] || '#0a0a14');
+  gl.uniform3f(uFog, fog[0], fog[1], fog[2]);
+  gl.uniform1f(uScroll, t * 0.4);
+  gl.uniform1f(uTime, t);
+  gl.uniform1f(uGlitch, 0.5);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, vertCount);
+}
+
+// ===========================================================================
+// SHADER TUNNELS — raymarched walls, pure GLSL, no textures, no libraries.
+// liquid metal / black water / towers (rare).
+// Palette drives colour, the holder's hex bends the bore and the flow.
+// ===========================================================================
+let activeShaderTunnel = null;
+let HARD_SHADER = null;   // rare tunnel identity, set by the seed
+let HARD_BG = null;       // ultra-rare background identity (dreamweaver)
+let SEALED = false;       // pre-reveal: every piece shows the dreamweaver mystery, tier hidden
+// grab a handle to OUR OWN source (no second copy): on-chain the bootstrap injects
+// window.FRONTRUN_SRC; locally it's this inline script's own text. Used by the code grail.
+try { window.FRONTRUN_SRC = window.FRONTRUN_SRC || (document.currentScript && document.currentScript.textContent) || ''; } catch(e){}
+const ST_VS = 'attribute vec2 aP;void main(){gl_Position=vec4(aP,0.,1.);}';
+const ST_LIB = [
+'precision highp float;',
+'uniform float uT;uniform vec2 uR;',
+'uniform vec3 uC0;uniform vec3 uC1;uniform vec3 uC2;uniform vec3 uC3;',
+'uniform vec2 uWp;uniform float uSpd;uniform float uDen;',
+'float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
+'float n21(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
+' float a=h21(i),b=h21(i+vec2(1,0)),c=h21(i+vec2(0,1)),d=h21(i+vec2(1,1));',
+' return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}',
+'float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n21(p);p*=2.03;a*=.5;}return v;}',
+'vec2 path(float z){return vec2(sin(z*.21),cos(z*.16))*(.35+.55*uWp.x);}',
+].join('\n');
+
+const ST_GLYPH = [
+'uniform sampler2D uAtlas;uniform sampler2D uAddrTex;',
+'float gcover(float gi,vec2 p){if(p.x<0.0||p.x>1.0||p.y<0.0||p.y>1.0)return 0.0;return texture2D(uAtlas,vec2((gi+p.x)/16.0,p.y)).r;}',
+'float addrGi(float idx){float u=(floor(mod(idx,40.0))+0.5)/40.0;return floor(texture2D(uAddrTex,vec2(u,0.5)).r*15.0+0.5);}'
+].join('\n');
+
+const SHADER_TUNNELS = {
+
+// —— LIQUID METAL: chrome bore, fbm-displaced walls, banded env reflections —
+liquid: ST_LIB + [
+'float map(vec3 p){',
+' vec2 o=path(p.z);float a=atan(p.y-o.y,p.x-o.x);float r=length(p.xy-o);',
+' float w=fbm(vec2(a*2.2+p.z*.5,p.z*.7-uT*(.6+1.6*uSpd)));',
+' return 1.7+(w-.5)*.9*(.4+.9*uDen)-r;}',
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' vec3 ro=vec3(path(uT*(1.4+2.2*uSpd)),uT*(1.4+2.2*uSpd));ro.z=uT*(1.4+2.2*uSpd);ro.xy=path(ro.z);',
+' vec3 rd=normalize(vec3(uv,1.55));',
+' float tt=.1;vec3 p=ro;float d;',
+' for(int i=0;i<72;i++){p=ro+rd*tt;d=map(p);if(d<.0025||tt>38.)break;tt+=d*.78;}',
+' vec2 e=vec2(.02,0.);',
+' vec3 n=normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));',
+' vec3 refl=reflect(rd,n);',
+' float stripes=smoothstep(.3,.7,.5+.5*sin(refl.y*9.+refl.x*5.+p.z*.8));',
+' vec3 env=mix(uC2*.3,uC1,stripes*.85);',
+' float fres=pow(1.-clamp(dot(n,-rd),0.,1.),3.);',
+' vec3 L=normalize(vec3(.4,.6,-.45));',
+' float spec=pow(clamp(dot(refl,L),0.,1.),36.);',
+' vec3 col=env*(.22+.78*fres)+vec3(1.)*spec*.85+uC1*fres*.22;',
+' col=mix(uC3,col,clamp(exp(-.085*tt),0.,1.));',
+' gl_FragColor=vec4(col,1.);}',
+].join('\n'),
+
+// —— BLACK WATER: viscous dark gloss, hard specular glints, accent rim ——————
+blackwater: ST_LIB + [
+'float map(vec3 p){',
+' vec2 o=path(p.z);float a=atan(p.y-o.y,p.x-o.x);float r=length(p.xy-o);',
+' float w=fbm(vec2(a*3.1+p.z*.4,p.z*1.1-uT*(.35+.9*uSpd)));',
+' w+=.35*fbm(vec2(a*9.+p.z*2.,p.z*3.-uT*1.7));',
+' return 1.75+(w-.6)*.55*(.5+.7*uDen)-r;}',
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float zz=uT*(1.+1.6*uSpd);',
+' vec3 ro=vec3(path(zz),zz);',
+' vec3 rd=normalize(vec3(uv,1.5));',
+' float tt=.1;vec3 p=ro;float d;',
+' for(int i=0;i<72;i++){p=ro+rd*tt;d=map(p);if(d<.0025||tt>34.)break;tt+=d*.75;}',
+' vec2 e=vec2(.018,0.);',
+' vec3 n=normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));',
+' vec3 refl=reflect(rd,n);',
+' float fres=pow(1.-clamp(dot(n,-rd),0.,1.),4.);',
+' vec3 L1=normalize(vec3(.5,.8,-.3)),L2=normalize(vec3(-.6,.2,-.5));',
+' float s1=pow(clamp(dot(refl,L1),0.,1.),90.),s2=pow(clamp(dot(refl,L2),0.,1.),50.);',
+' float a2=atan(p.y,p.x);',
+' float drip=smoothstep(.93,1.,n21(vec2(a2*14.,p.z*.33-uT*2.2)));',
+' vec3 col=uC0*.22+uC2*.05;',
+' col+=vec3(.95)*s1+vec3(.5)*s2*.6;',
+' col+=uC1*fres*.5+uC1*drip*.35;',
+' col=mix(uC0*.9,col,clamp(exp(-.1*tt),0.,1.));',
+' gl_FragColor=vec4(col,1.);}',
+].join('\n'),
+
+// —— TOWERS: a ring city — blocky towers jut from the bore, windows lit ————
+towers: ST_LIB + [
+'float tmask(vec2 g,out vec2 id){id=floor(g);vec2 f=fract(g)-.5;',
+' float h=h21(id);',
+' return step(abs(f.x),.36)*step(abs(f.y),.38)*step(.42,h);}',
+'float map(vec3 p){',
+' float r=length(p.xy);float a=atan(p.y,p.x);',
+' vec2 g=vec2((a/6.2831853+.5)*22.,p.z*1.05);',
+' vec2 id;float m=tmask(g,id);',
+' float hh=(.35+h21(id+7.7)*1.45)*(.55+.75*uWp.y);',
+' float wall=2.85-m*hh;',
+' return (wall-r)*.62;}',
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float zz=uT*(1.1+2.*uSpd);',
+' vec3 ro=vec3(0.,0.,zz);',
+' vec3 rd=normalize(vec3(uv,1.45));',
+' float tt=.1;vec3 p=ro;float d;',
+' for(int i=0;i<80;i++){p=ro+rd*tt;d=map(p);if(d<.003||tt>42.)break;tt+=max(d,.012);}',
+' vec2 e=vec2(.02,0.);',
+' vec3 n=normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));',
+' float a2=atan(p.y,p.x);',
+' vec2 g=vec2((a2/6.2831853+.5)*22.,p.z*1.05);',
+' vec2 id;float m=tmask(g,id);',
+' vec2 wg=floor(vec2(fract(g.x)*4.,fract(g.y)*6.));',
+' float win=step(.72,h21(id*3.1+wg*.37))*m;',
+' float flick=.65+.35*sin(uT*2.5+h21(id)*40.);',
+' float diff=clamp(dot(n,normalize(vec3(.3,.5,-.6))),0.,1.);',
+' vec3 col=uC2*.10+uC2*diff*.16;',
+' col+=uC1*win*flick;',
+' col+=uC1*.05*m;',
+' col=mix(uC3,col,clamp(exp(-.075*tt),0.,1.));',
+' gl_FragColor=vec4(col,1.);}',
+].join('\n'),
+
+
+datastream: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' vec3 col=uC3*0.20;',
+' for(int i=0;i<16;i++){',
+'  float fl=float(i);',
+'  float z=mod(fl - uT*(1.25+2.5*uSpd),16.0)+0.5;',
+'  float s=1.7/z;',
+'  vec2 g=uv/s;',
+'  vec2 id=floor(g*3.0)+vec2(0.0,fl*4.0);',
+'  vec2 f=fract(g*3.0);',
+'  float hsh=h21(id);',
+'  if(hsh<0.5) continue;',
+'  float gi=addrGi(hsh*40.0+fl);',
+'  float cov=gcover(gi,(f-0.12)/0.76);',
+'  float fade=smoothstep(16.0,1.0,z)*smoothstep(0.0,1.6,z);',
+'  vec3 cc=mix(uC2,uC1,step(0.72,hsh));',
+'  col+=cc*cov*fade;',
+' }',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+datacity: ST_LIB + ST_GLYPH + [
+'float tmask(vec2 g,out vec2 id){id=floor(g);vec2 f=fract(g)-.5;float h=h21(id);return step(abs(f.x),.40)*step(abs(f.y),.42)*step(.38,h);}',
+'float map(vec3 p){float r=length(p.xy);float a=atan(p.y,p.x);vec2 g=vec2((a/6.2831853+.5)*28.,p.z*1.15);vec2 id;float m=tmask(g,id);float hh=(.4+h21(id+3.3)*1.3)*(.6+.7*uWp.y);float wall=2.7-m*hh;return (wall-r)*.6;}',
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float zz=uT*(1.2+2.2*uSpd);',
+' vec3 ro=vec3(0.,0.,zz); vec3 rd=normalize(vec3(uv,1.5));',
+' float tt=.1; vec3 p=ro; float d;',
+' for(int i=0;i<80;i++){p=ro+rd*tt; d=map(p); if(d<.003||tt>40.)break; tt+=max(d,.012);}',
+' float a2=atan(p.y,p.x);',
+' vec2 g=vec2((a2/6.2831853+.5)*28., p.z*1.15);',
+' vec2 id; float m=tmask(g,id);',
+' vec2 lp=fract(vec2(fract(g.x)*3.0,fract(g.y)*4.0));',
+' float lit=step(0.45,h21(id*2.7+floor(vec2(fract(g.x)*3.0,fract(g.y)*4.0))));',
+' float gi=addrGi(h21(id+lp*1.3)*40.0);',
+' float cov=gcover(gi,(lp-0.12)/0.76);',
+' float flick=0.6+0.4*sin(uT*2.0+h21(id)*30.0);',
+' vec3 col=uC2*0.06;',
+' col+=uC1*cov*lit*m*flick;',
+' col+=uC1*0.03*m;',
+' col=mix(uC3,col,clamp(exp(-.08*tt),0.,1.));',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+whirlwind: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float a=atan(uv.y,uv.x), r=length(uv);',
+' vec3 col=uC3*0.10;',
+' for(int i=0;i<26;i++){',
+'  float fl=float(i);',
+'  float z=mod(fl*0.5 + uT*(0.35+0.7*uSpd), 13.0)+0.3;',
+'  float rad=0.95/z;',
+'  float band=0.018+0.013*z;',
+'  if(abs(r-rad)>band) continue;',
+'  float seg=20.0;',
+'  float spin=fract((a/6.2831853+0.5)+z*0.4+uT*0.03);',
+'  float gi=addrGi(floor(spin*seg)+fl*3.0);',
+'  vec2 cp=vec2(fract(spin*seg),(r-rad)/band*0.5+0.5);',
+'  float cov=gcover(gi,cp);',
+'  float fade=smoothstep(13.0,0.4,z)*0.95;',
+'  col+=uC1*cov*fade;',
+' }',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+
+
+// —— THE PULL: the 0x address spiralling INTO a glowing singularity (data well) ——
+thepull: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy*2.-uR)/uR.y;',
+' float a=atan(uv.y,uv.x), r=length(uv);',
+' vec3 col=uC3*0.05;',
+' for(int i=0;i<30;i++){',
+'  float fl=float(i);',
+'  float z=mod(fl*0.42 - uT*(0.5+1.1*uSpd), 13.0)+0.25;',   // layers travel INWARD (the pull)
+'  float rad=0.92/z;',
+'  float band=0.02+0.018*z;',
+'  if(abs(r-rad)>band) continue;',
+'  float seg=18.0;',
+'  float spin=fract((a/6.2831853+0.5) + z*0.55 - uT*0.05);', // logarithmic swirl into the well
+'  float gi=addrGi(floor(spin*seg)+fl*3.0);',
+'  vec2 cp=vec2(fract(spin*seg),(r-rad)/band*0.5+0.5);',
+'  float cov=gcover(gi,cp);',
+'  float pull=smoothstep(13.0,0.3,z);',                     // brighter as it nears the centre
+'  col+=uC1*cov*pull*0.95;',
+' }',
+' float core=smoothstep(0.34,0.0,r);',                      // the singularity glow
+' col+=uC1*core*core*0.55 + vec3(1.0)*core*core*core*0.45;',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+].join('\n'),
+
+// —— BARCODE: the address as scrolling bars, value = digit, labels beneath ——
+barcode: ST_LIB + ST_GLYPH + [
+'void main(){',
+' vec2 p=(gl_FragCoord.xy*2.0-uR)/uR.y;',
+' float m=max(abs(p.x),abs(p.y)); if(m<0.0008) m=0.0008;',
+' float depth=0.32/m + uT*(0.15+0.5*uSpd);',
+' float around;',
+' if(abs(p.x)>abs(p.y)) around=(p.x>0.0?0.0:2.0)+(p.y/abs(p.x)*0.5+0.5);',
+' else around=(p.y>0.0?1.0:3.0)+(p.x/abs(p.y)*0.5+0.5);',
+' float ac=12.0;',
+' vec2 ci=floor(vec2(around*ac, depth*8.0));',
+' float gi=addrGi(ci.x + ci.y*7.0);',
+' vec2 cp=fract(vec2(around*ac, depth*8.0));',
+' float cov=gcover(gi, cp);',
+' float fog=clamp(m*2.4,0.0,1.0);',
+' vec3 c=uC1*cov*fog + uC2*0.025*fog;',
+' gl_FragColor=vec4(c,1.0);',
+'}'
+].join('\n'),
+
+
+};
+
+let stProg = {}, stBuf = null;
+let glyphTex = null, addrTex = null, glyphAddr = null;
+function buildGlyphAtlas(){
+  const cw=24,ch=32,cols=16;
+  const c=document.createElement('canvas'); c.width=cw*cols; c.height=ch;
+  const x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
+  x.fillStyle='#fff'; x.font='bold 26px monospace'; x.textAlign='center'; x.textBaseline='middle';
+  const hex='0123456789abcdef';
+  for(let i=0;i<16;i++) x.fillText(hex[i], i*cw+cw/2, ch/2+1);
+  glyphTex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,glyphTex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+}
+function buildAddrTex(){
+  const a=(WALLET||'').toLowerCase().replace(/[^0-9a-f]/g,'');
+  const s=(a.length?a:'0').padEnd(40,'0').slice(0,40);
+  const c=document.createElement('canvas'); c.width=40; c.height=1;
+  const x=c.getContext('2d'); const img=x.createImageData(40,1);
+  for(let i=0;i<40;i++){ const ch=s.charCodeAt(i); const nib=(ch<=57)?ch-48:ch-87; img.data[i*4]=Math.round(nib/15*255); img.data[i*4+3]=255; }
+  x.putImageData(img,0,0);
+  if(!addrTex) addrTex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,addrTex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  glyphAddr=WALLET;
+}
+function drawShaderTunnel(t) {
+  if (!gl) return;
+  let P = stProg[activeShaderTunnel];
+  if (P === undefined) {
+    try {
+      const pr = gl.createProgram();
+      gl.attachShader(pr, compileShader(gl.VERTEX_SHADER, ST_VS));
+      gl.attachShader(pr, compileShader(gl.FRAGMENT_SHADER, SHADER_TUNNELS[activeShaderTunnel]));
+      gl.linkProgram(pr);
+      if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+      P = { pr: pr, aP: gl.getAttribLocation(pr, 'aP'), u: {} };
+      const us = ['uT','uR','uC0','uC1','uC2','uC3','uWp','uSpd','uDen','uAtlas','uAddrTex'];
+      for (let i = 0; i < us.length; i++) P.u[us[i]] = gl.getUniformLocation(pr, us[i]);
+      stProg[activeShaderTunnel] = P;
+    } catch (e) { console.error('shader tunnel failed:', e); stProg[activeShaderTunnel] = null; }
+  }
+  if (!P) {   // compile failed on this device — fall back to a geometry tunnel
+    activeShaderTunnel = null;
+    setTunnelShape('hex');
+    return;
+  }
+  if (!stBuf) {
+    stBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, stBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  }
+  gl.useProgram(P.pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, stBuf);
+  gl.enableVertexAttribArray(P.aP);
+  gl.vertexAttribPointer(P.aP, 2, gl.FLOAT, false, 0, 0);
+  const c0 = hexRGB(palette[0]), c1 = hexRGB(palette[1]), c2 = hexRGB(palette[2]), c3 = hexRGB(palette[3] || '#0a0a14');
+  gl.uniform1f(P.u.uT, t);
+  gl.uniform2f(P.u.uR, W, H);
+  gl.uniform3f(P.u.uC0, c0[0], c0[1], c0[2]);
+  gl.uniform3f(P.u.uC1, c1[0], c1[1], c1[2]);
+  gl.uniform3f(P.u.uC2, c2[0], c2[1], c2[2]);
+  gl.uniform3f(P.u.uC3, c3[0], c3[1], c3[2]);
+  const w1 = (WHEX && WHEX.length >= 8) ? parseInt(WHEX.slice(0, 4), 16) / 65535 : 0.5;
+  const w2 = (WHEX && WHEX.length >= 8) ? parseInt(WHEX.slice(4, 8), 16) / 65535 : 0.5;
+  gl.uniform2f(P.u.uWp, w1, w2);
+  gl.uniform1f(P.u.uSpd, ($('spd') ? $('spd').value : 50) / 100);
+  gl.uniform1f(P.u.uDen, ($('den') ? $('den').value : 50) / 100);
+  if (P.u.uAtlas) { if (!glyphTex) buildGlyphAtlas(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glyphTex); gl.uniform1i(P.u.uAtlas, 1); }
+  if (P.u.uAddrTex) { if (!addrTex || glyphAddr !== WALLET) buildAddrTex(); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, addrTex); gl.uniform1i(P.u.uAddrTex, 2); gl.activeTexture(gl.TEXTURE0); }
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+
+// ===========================================================================
+// PRNG + seed
+// ===========================================================================
+function sfc32(a,b,c,d){return function(){a|=0;b|=0;c|=0;d|=0;let t=(a+b|0)+d|0;d=d+1|0;a=b^b>>>9;b=c+(c<<3)|0;c=(c<<21|c>>>11);c=c+t|0;return (t>>>0)/4294967296;};}
+function seedFrom(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return [h,h^0xdeadbeef,h^0x1f1f1f1f,h^0x77777777];}
+
+// [bg, accent, mid, fog]
+const PALETTES = [
+  ['#000000','#ED1E79','#7E8AAA','#0a0a14'],   // Frontrunner #8 canonical
+  ['#000000','#FF003C','#5C6B7E','#0c0608'],
+  ['#000000','#00FF95','#4A5566','#06100c'],
+  ['#000000','#FFAE00','#6B5A7E','#100c06'],
+  ['#000000','#00F0FF','#7E5C8A','#080c10'],
+  ['#000000','#FFE600','#5C7E6B','#0e0c06'],
+  ['#000000','#FF00FF','#6B6B6B','#0c060c'],
+  ['#0A0510','#9D00FF','#5C5C7E','#0c0612'],
+  ['#00030E','#3A7BFF','#1E3F9E','#05091c'],   // 8 royal blue + dark navy
+  ['#000000','#D5142A','#6E0C16','#120304'],   // 9 dark red + black
+  ['#000800','#00FF41','#119A33','#001a08'],   // 10 terminal hacker green + black
+  ['#000000','#FFFFFF','#B0B0B0','#000000'],   // 11 black & white
+  ['#0b0a1a','#3DA0E6','#C724E7','#0c1430'],   // 12 tst — TheSocialTrauma blue ninja PFP: electric blue + magenta eye on navy
+  ['#07140a','#5E8B48','#A8572F','#0a2410'],   // 13 pepe — pepe green (dominant) + reddy-brown, no blue, on dark green
+];
+
+// 8 tunnel shapes (cross-section polygon)
+const SHAPES = [
+  { name: 'square',      sides: 4, twist: 0,   rot: Math.PI/4 },
+  { name: 'square-flat', sides: 4, twist: 0,   rot: 0 },
+  { name: 'hex',         sides: 6, twist: 0,   rot: 0 },
+  { name: 'oct',         sides: 8, twist: 0,   rot: Math.PI/8 },
+  { name: 'triangle',    sides: 3, twist: 0,   rot: -Math.PI/2 },
+  { name: 'twelve',      sides: 12, twist: 0,  rot: 0 },
+  { name: 'twisted',     sides: 6, twist: 0.4, rot: 0 },
+  { name: 'pentagon',    sides: 5, twist: 0,   rot: -Math.PI/2 },
+];
+
+let SEED, RNG;
+let palette = PALETTES[0];
+
+function reseed() {
+  SEED = Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0');
+  const s = seedFrom(SEED);
+  RNG = sfc32(s[0],s[1],s[2],s[3]);
+  for (let i=0;i<16;i++) RNG();
+  $('seed').textContent = SEED;
+}
+
+// ===========================================================================
+// GLITCH LIBRARY — 30 named functions, each draws to a passed ctx at (W,H)
+// Each glitch is stateless (or maintains its own state in a closure)
+// Signature: glitch(ctx, w, h, palette, t, speed01, density01, opacity01)
+// ===========================================================================
+
+// Utility: tinted hex with alpha
+function rgba(hex, a) {
+  const v = parseInt(hex.slice(1), 16);
+  return `rgba(${(v>>16)&0xff},${(v>>8)&0xff},${v&0xff},${a})`;
+}
+
+// Per-glitch state (kept in closures)
+const State = {};
+
+// -- 1. Static noise (BUZZ — re-randomizes per frame, true TV static) --
+function gStatic(ctx, w, h, pal, t, spd, den, opa) {
+  // pre-rendered buzz tiles: cycle through N tiles so the static genuinely jitters
+  // without us paying the per-frame ImageData cost every frame
+  const tile = 200;
+  const TILES = 4;
+  if (!State.staticTiles || State.staticTiles.length !== TILES) {
+    State.staticTiles = [];
+    for (let n = 0; n < TILES; n++) {
+      const c = document.createElement('canvas'); c.width = tile; c.height = tile;
+      const c2 = c.getContext('2d');
+      const img = c2.createImageData(tile, tile);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = Math.random();
+        const v = r < 0.45 ? 255 : r < 0.55 ? 200 : 0;
+        d[i]=v; d[i+1]=v; d[i+2]=v; d[i+3]=255;
+      }
+      c2.putImageData(img, 0, 0);
+      State.staticTiles.push(c);
+    }
+  }
+  // pick which tile based on time + speed — feels like buzzing
+  const idx = ((t * 1000 * (0.5 + spd * 4)) | 0) % TILES;
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  for (let y = 0; y < h; y += tile) {
+    for (let x = 0; x < w; x += tile) {
+      ctx.drawImage(State.staticTiles[idx], x, y);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 2. Palette static (BUZZ — per-pixel like white static, just colored) --
+function gPaletteStatic(ctx, w, h, pal, t, spd, den, opa) {
+  const tile = 200;
+  const TILES = 4;
+  const tileKey = pal[1] + '-' + pal[2];
+  if (!State.palstaticTiles || State.palstaticKey !== tileKey || State.palstaticTiles.length !== TILES) {
+    State.palstaticTiles = [];
+    const accent = hexToRgb(pal[1]);
+    const mid    = hexToRgb(pal[2]);
+    for (let n = 0; n < TILES; n++) {
+      const c = document.createElement('canvas'); c.width = tile; c.height = tile;
+      const c2 = c.getContext('2d');
+      const img = c2.createImageData(tile, tile);
+      const d = img.data;
+      // per-pixel like white static — smoother, less chunky
+      for (let i = 0; i < d.length; i += 4) {
+        const r = Math.random();
+        let col;
+        if (r < 0.55)      col = [0,0,0];
+        else if (r < 0.85) col = [accent.r,accent.g,accent.b];
+        else               col = [mid.r,mid.g,mid.b];
+        d[i]=col[0]; d[i+1]=col[1]; d[i+2]=col[2]; d[i+3]=255;
+      }
+      c2.putImageData(img, 0, 0);
+      State.palstaticTiles.push(c);
+    }
+    State.palstaticKey = tileKey;
+  }
+  const idx = ((t * 1000 * (0.5 + spd * 4)) | 0) % TILES;
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  for (let y = 0; y < h; y += tile) {
+    for (let x = 0; x < w; x += tile) {
+      ctx.drawImage(State.palstaticTiles[idx], x, y);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function hexToRgb(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return { r: (v>>16)&0xff, g: (v>>8)&0xff, b: v&0xff };
+}
+
+// -- 3. Horizontal scanlines --
+function gScanlines(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const line = 3;
+  const drift = (t * spd * 80) % (line * 2);
+  for (let y = -drift; y < h; y += line * 2) {
+    ctx.fillStyle = pal[2];
+    ctx.fillRect(0, y, w, line);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 4. (removed: Vertical bars) --
+
+// -- 5. (removed: Pixel sort cascade) --
+
+// -- 6. (removed: Block chunks) --
+// -- 7. (removed: Diagonal stripes) --
+
+// -- 8. Horizontal tear (slice shifts) --
+function gTear(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  // fill with vertical accent stripes first
+  for (let x = 0; x < w; x += 8) {
+    ctx.fillStyle = (x/8|0) % 2 ? pal[1] : pal[2];
+    ctx.fillRect(x, 0, 4, h);
+  }
+  ctx.globalAlpha = opa;
+  // apply tears
+  const tears = (den * 12) | 0;
+  for (let i = 0; i < tears; i++) {
+    const y = ((Math.sin(t * spd * 5 + i * 13.7) + 1) / 2 * h) | 0;
+    const th = (Math.sin(t * spd * 7 + i) + 1) / 2 * 30 + 5;
+    const dx = (Math.sin(t * spd * 3 + i * 7) * 80) | 0;
+    const img = ctx.getImageData(0, y, w, th);
+    ctx.clearRect(0, y, w, th);
+    ctx.putImageData(img, dx, y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 9. RGB split (BUZZ — dots re-positioned every frame, jittery aberration) --
+function gRGBSplit(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const count = (300 + den * 700) | 0;
+  // each frame: pick random positions + small offsets for the 3 channels
+  // this creates the "buzzing" chromatic noise feel
+  const jitter = 4 + spd * 12;
+  for (let ch = 0; ch < 3; ch++) {
+    ctx.fillStyle = ['rgba(255,0,0,0.85)','rgba(0,255,0,0.85)','rgba(0,0,255,0.85)'][ch];
+    const offX = (Math.random() - 0.5) * jitter;
+    const offY = (Math.random() - 0.5) * jitter;
+    for (let i = 0; i < count; i++) {
+      const x = Math.random() * w + offX;
+      const y = Math.random() * h + offY;
+      ctx.fillRect(x|0, y|0, 2, 2);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 10. (removed: Wave distortion) --
+
+// -- 11. (removed: Hex text scatter) --
+
+// -- 12. (removed: Binary bits — too uniform) --
+
+// -- 13. Pixel scatter (CHAOTIC — fully random per frame, much higher density) --
+function gScatter(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const count = ((w*h) / 50 * den) | 0;       // 4x more dots than before
+  // accent dots, various sizes
+  for (let i = 0; i < count; i++) {
+    const x = (Math.random() * w) | 0;
+    const y = (Math.random() * h) | 0;
+    const size = Math.random() < 0.7 ? 2 : (Math.random() < 0.5 ? 3 : 4);
+    ctx.fillStyle = Math.random() < 0.7 ? pal[1] : pal[2];
+    ctx.fillRect(x, y, size, size);
+  }
+  // occasional bigger chunks
+  const chunks = (den * 30) | 0;
+  for (let i = 0; i < chunks; i++) {
+    const x = (Math.random() * w) | 0;
+    const y = (Math.random() * h) | 0;
+    const sw = 4 + (Math.random() * 8) | 0;
+    const sh = 4 + (Math.random() * 8) | 0;
+    ctx.fillStyle = pal[2];
+    ctx.fillRect(x, y, sw, sh);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 14. (removed: Halftone dots) --
+
+// -- 15. (removed: Mondrian blocks) --
+
+// -- 16. (removed: Checker shred) --
+
+// -- 17. (removed: Concentric squares) --
+
+// -- 18. (removed: Radial warp streaks) --
+
+// -- 19. (removed: Stretched smears) --
+
+// -- 20. Mirror tear (slices mirrored) --
+function gMirror(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  for (let x = 0; x < w; x += 6) {
+    ctx.fillStyle = (x/6|0) % 3 ? pal[1] : pal[2];
+    ctx.fillRect(x, 0, 3, h);
+  }
+  ctx.globalAlpha = opa;
+  const tears = 4 + (den * 14) | 0;
+  for (let i = 0; i < tears; i++) {
+    const y = ((Math.sin(i * 13.7 + t * spd * 4) + 1) / 2 * h) | 0;
+    const th = 8 + ((Math.sin(i * 5.3 + t * spd * 2) + 1) / 2 * 30) | 0;
+    if (th <= 0 || y + th > h) continue;
+    const img = ctx.getImageData(0, y, w, th);
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = th;
+    tmp.getContext('2d').putImageData(img, 0, 0);
+    ctx.save();
+    ctx.translate(w, y);
+    ctx.scale(-1, 1);
+    ctx.drawImage(tmp, 0, 0);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 21. (removed: Hex tunnel) --
+
+// -- 22. Static color invert burst — DENSER bar count --
+function gInvertBurst(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[1]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const step = 6;                                 // was 16 — much denser
+  for (let y = 0; y < h; y += step) {
+    const phase = Math.sin(y * 0.04 + t * spd * 3);
+    if (phase > -0.2) {                           // wider window = more bars visible
+      ctx.fillStyle = pal[0];
+      ctx.fillRect(0, y, w, step - 2);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 23. (removed: Letterbox stripes) --
+
+// -- 24. Cellular automaton (rule 30 scrolling) — MUCH busier (multiple seeds, finer cells) --
+function gCellular(ctx, w, h, pal, t, spd, den, opa) {
+  const cell = 2;                                     // was 3, finer cells = busier
+  const cols = Math.ceil(w/cell);
+  const maxRows = Math.ceil(h/cell);
+  if (!State.cellRow || State.cellRow.length !== cols) {
+    // seed with MULTIPLE on-bits spread across the row instead of just one center
+    State.cellRow = new Uint8Array(cols);
+    const seeds = 6 + ((cols / 60) | 0);              // ~6-20 seed bits depending on width
+    for (let s = 0; s < seeds; s++) {
+      State.cellRow[((s + 1) * cols / (seeds + 1)) | 0] = 1;
+    }
+    State.cellRows = [];
+    for (let g = 0; g < maxRows; g++) {
+      const row = State.cellRow;
+      const nx = new Uint8Array(cols);
+      for (let i = 0; i < cols; i++) {
+        const l = row[(i-1+cols)%cols], c = row[i], r = row[(i+1)%cols];
+        nx[i] = (l ^ (c | r)) & 1;
+      }
+      State.cellRow = nx;
+      State.cellRows.push(nx);
+    }
+  }
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const stepInterval = Math.max(1, 30 - (spd * 28)) | 0;
+  if (!State.cellTick) State.cellTick = 0;
+  State.cellTick++;
+  if (State.cellTick % stepInterval === 0) {
+    const row = State.cellRow;
+    const nx = new Uint8Array(cols);
+    for (let i = 0; i < cols; i++) {
+      const l = row[(i-1+cols)%cols], c = row[i], r = row[(i+1)%cols];
+      nx[i] = (l ^ (c | r)) & 1;
+    }
+    State.cellRow = nx;
+    State.cellRows.push(nx);
+    if (State.cellRows.length > maxRows) State.cellRows.shift();
+  }
+  ctx.fillStyle = pal[1];
+  for (let y = 0; y < State.cellRows.length; y++) {
+    const row = State.cellRows[y];
+    const drawY = h - (State.cellRows.length - y) * cell;
+    for (let x = 0; x < cols; x++) {
+      if (row[x]) ctx.fillRect(x*cell, drawY, cell, cell);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 25. (removed: Color burst grid) --
+
+// -- 26. Glitch text (random char streams) --
+function gGlitchText(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  ctx.font = 'bold 18px monospace';
+  const cellY = 22;
+  const phase = (t * spd * 10) | 0;
+  const chars = 'FRONTRUN0x123456789abcdef█▓▒░';
+  for (let y = 0; y < h; y += cellY) {
+    let line = '';
+    const len = (w / 11) | 0;
+    for (let i = 0; i < len; i++) {
+      const idx = (((i * 7.3 + y * 1.3 + phase) | 0) % chars.length + chars.length) % chars.length;
+      line += chars[idx];
+    }
+    ctx.fillStyle = (y/cellY|0) % 2 ? pal[1] : pal[2];
+    ctx.fillText(line, 0, y + cellY - 3);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// -- 27. (removed: Matrix rain) --
+
+// -- 28. (removed: Frequency bars) --
+
+// -- 29. (removed: Concentric circles) --
+
+// -- 30. Two-color flood (alternate every N frames) --
+function gFloodFlash(ctx, w, h, pal, t, spd, den, opa) {
+  const phase = (t * spd * 8) | 0;
+  ctx.fillStyle = (phase % 2) ? pal[1] : pal[2];
+  ctx.globalAlpha = opa;
+  ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = 1;
+}
+
+// -- 31. NONE (clear / nothing) --
+function gNone(ctx, w, h) { ctx.clearRect(0,0,w,h); }
+
+// ===========================================================================
+// TUNNEL-TEXTURE-ONLY glitches (restored from earlier removals — not in
+// figure-glitch dropdown, but available as wall textures since they often
+// work great in perspective even when they don't work over the figure).
+// ===========================================================================
+
+function gHalftone_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[1]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const cell = 14;
+  const phase = t * spd * 2;
+  for (let y = 0; y < h; y += cell) for (let x = 0; x < w; x += cell) {
+    const d = Math.sin(x * 0.02 + y * 0.02 + phase);
+    const r = ((d + 1) / 2) * (cell * 0.7) * den;
+    ctx.fillStyle = pal[2];
+    ctx.beginPath(); ctx.arc(x + cell/2, y + cell/2, r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function gConcentric_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const cx = w/2, cy = h/2, maxR = Math.max(w,h)*0.9;
+  const N = 50 + ((den * 60) | 0);
+  const phase = (t * spd * 0.3) % 1;
+  for (let i = 0; i < N; i++) {
+    const k = ((i + phase) % N) / N; if (k < 0.02) continue;
+    const r = Math.pow(k, 1.6) * maxR;
+    ctx.strokeStyle = (i%2) ? pal[1] : pal[2];
+    ctx.lineWidth = Math.max(1, k * 2.5);
+    ctx.globalAlpha = opa * Math.min(1, k * 2.5);
+    ctx.strokeRect((cx-r)|0,(cy-r)|0,(r*2)|0,(r*2)|0);
+  }
+  ctx.globalAlpha = 1;
+}
+function gCircles_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const cx = w/2, cy = h/2, maxR = Math.max(w,h) * 0.8;
+  for (let r = 20; r < maxR; r += 22) {
+    const wob = Math.sin(t * spd * 3 + r * 0.05) * 8;
+    ctx.strokeStyle = (r % 44 < 22) ? pal[1] : pal[2];
+    ctx.lineWidth = 2 + Math.abs(wob) * 0.3;
+    ctx.beginPath(); ctx.arc(cx, cy, r + wob, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function gHexTunnel_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const cx = w/2, cy = h/2, maxR = Math.max(w,h) * 0.9;
+  const N = 40 + ((den * 60) | 0);
+  const phase = (t * spd * 0.3) % 1;
+  for (let i = 0; i < N; i++) {
+    const k = ((i + phase) % N) / N; if (k < 0.02) continue;
+    const r = Math.pow(k, 1.6) * maxR;
+    ctx.strokeStyle = (i%2) ? pal[1] : pal[2];
+    ctx.lineWidth = Math.max(1, k * 2.5);
+    ctx.globalAlpha = opa * Math.min(1, k * 2.5);
+    ctx.beginPath();
+    for (let j = 0; j < 6; j++) {
+      const a = (j/6) * Math.PI * 2 - Math.PI/2;
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      if (j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath(); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function gRadial_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const cx = w/2, cy = h/2;
+  const N = 250 + ((den * 550) | 0);
+  const maxR = Math.max(w, h) * 1.2;
+  for (let i = 0; i < N; i++) {
+    const ang = (i / N) * Math.PI * 2 + Math.sin(i * 0.31) * 0.4;
+    const t2 = ((t * spd * 0.5 + i * 0.007) % 1);
+    const r1 = t2 * maxR, r2 = r1 + maxR * 0.18 * t2;
+    ctx.strokeStyle = (i%3 === 0) ? pal[2] : pal[1];
+    ctx.lineWidth = 1 + t2 * 5;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(ang)*r1, cy + Math.sin(ang)*r1);
+    ctx.lineTo(cx + Math.cos(ang)*r2, cy + Math.sin(ang)*r2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function gBlocks_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const count = (den * 200) | 0;
+  const tick = (t * spd * 4) | 0;
+  for (let i = 0; i < count; i++) {
+    const fx = (Math.sin(i * 1.13 + tick) + 1) / 2;
+    const fy = (Math.sin(i * 2.71 + tick * 1.3) + 1) / 2;
+    const fw = ((Math.sin(i * 3.7 + tick) + 1) / 2 * 60) + 10;
+    const fh = ((Math.sin(i * 4.2 + tick) + 1) / 2 * 30) + 8;
+    ctx.fillStyle = (i % 3 === 0) ? pal[1] : pal[2];
+    ctx.fillRect(fx * w, fy * h, fw, fh);
+  }
+  ctx.globalAlpha = 1;
+}
+function gDiagonal_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const sp = 14, drift = (t * spd * 60) % (sp * 2);
+  ctx.save(); ctx.translate(w/2, h/2); ctx.rotate(Math.PI/4);
+  for (let x = -w - drift; x < w; x += sp * 2) {
+    ctx.fillStyle = pal[1]; ctx.fillRect(x, -h*1.5, sp, h*3);
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+function gLetterbox_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const sh = 30;
+  for (let y = 0; y < h; y += sh * 2) {
+    const drift = (t * spd * 20) % (sh * 2);
+    ctx.fillStyle = ((y/sh|0) % 2) ? pal[1] : pal[2];
+    ctx.fillRect(0, y - drift, w, sh);
+  }
+  ctx.globalAlpha = 1;
+}
+function gMatrix_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  if (!State.matrixTexCols || State.matrixTexCols.length !== Math.ceil(w/14)) {
+    State.matrixTexCols = [];
+    for (let i = 0; i < Math.ceil(w/14); i++) {
+      State.matrixTexCols.push({ y: Math.random() * h, spd: 1 + Math.random() * 3 });
+    }
+  }
+  ctx.font = 'bold 14px monospace';
+  for (let i = 0; i < State.matrixTexCols.length; i++) {
+    const c = State.matrixTexCols[i];
+    c.y += c.spd * (0.5 + spd);
+    if (c.y > h + 50) c.y = -Math.random() * h;
+    for (let j = 0; j < 8; j++) {
+      const tt = c.y - j * 16;
+      if (tt > 0 && tt < h) {
+        const a = j === 0 ? 1 : (1 - j/8) * 0.7;
+        ctx.globalAlpha = opa * a;
+        ctx.fillStyle = j === 0 ? pal[2] : pal[1];
+        const ch = '0123456789ABCDEF'[(((c.y + j) * 7) | 0) % 16];
+        ctx.fillText(ch, i * 14, tt);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function gHexText_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha = opa;
+  const chars = '0123456789abcdef';
+  ctx.font = 'bold 14px monospace';
+  const cellX = 12, cellY = 16;
+  const phase = (t * spd * 8) | 0;
+  for (let y = 0; y < h; y += cellY) for (let x = 0; x < w; x += cellX) {
+    const idx = (((x * 7.1 + y * 13.3 + phase) | 0) % 16 + 16) % 16;
+    const r = (Math.sin(x * 0.13 + y * 0.09 + phase * 0.1) + 1) / 2;
+    if (r < den) {
+      ctx.fillStyle = r < den * 0.6 ? pal[1] : pal[2];
+      ctx.fillText(chars[idx], x, y + cellY - 2);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ===========================================================================
+// PRETEXT-POWERED TEXT TUNNELS
+// Text wall textures laid out with chenglou/pretext (window.Pretext) for
+// accurate multi-line measurement + wrapping, so tokens fill the 256px wall
+// edge-to-edge and NOTHING clips off the right edge. (The old fillText address
+// wall was unreadable because 42-char strings ran straight off the texture.)
+// Wrapping is computed ONCE per seed change and cached in State.txt; each frame
+// only scrolls the cached lines, so there is zero per-frame layout cost —
+// safe at 60fps including iPhone.
+// ===========================================================================
+const TEXT_PAD = 6;
+
+// Wallet-responsive hex: when a wallet is loaded, the "random" hex used by every
+// address treatment is drawn from THAT wallet's own digits (cycling) — so the
+// tunnel literally shows the holder's address. No wallet loaded = random as before.
+let WHEX = '';   // wallet's 40 hex chars (no 0x prefix); '' = random mode
+let WPTR = 0;    // rolling read pointer into WHEX
+function rhex(n) {
+  let s = '';
+  if (WHEX) { for (let i = 0; i < n; i++) { s += WHEX[WPTR % WHEX.length]; WPTR++; } return s; }
+  for (let i = 0; i < n; i++) s += '0123456789abcdef'[(Math.random()*16)|0];
+  return s;
+}
+
+// Wrap a long string into lines that fit the texture width using pretext.
+// prepareOpts (optional) passes pretext options, e.g. { whiteSpace:'pre-wrap' }
+// to honour hard \n breaks. Falls back to a naive split for the first frame(s)
+// before the pretext module loads (the cache is flagged so it rebuilds once ready).
+function wrapToTexture(text, font, lineHeight, prepareOpts, maxWidthOverride) {
+  const maxW = maxWidthOverride || (TEX_SIZE - TEXT_PAD * 2);
+  const P = window.Pretext;
+  if (!P) return (prepareOpts && prepareOpts.whiteSpace === 'pre-wrap') ? text.split('\n') : text.split(/\s+/);
+  const prepared = P.prepareWithSegments(text, font, prepareOpts);
+  const { lines } = P.layoutWithLines(prepared, maxW, lineHeight);
+  // trimEnd: pretext keeps trailing whitespace on a line but (correctly) excludes
+  // it from the wrap width; drop it so left-aligned fillText never visually clips.
+  return lines.map(l => l.text.trimEnd());
+}
+
+// Draw one row with the requested alignment. justify distributes space between
+// tokens to hit the full wall width (uses pretext-measured fit via canvas widths).
+function drawTextRow(ctx, line, y, maxW, align) {
+  if (!line || align === 'left') { ctx.fillText(line, TEXT_PAD, y); return; }
+  if (align === 'justify') {
+    const toks = line.split(' ').filter(Boolean);
+    if (toks.length < 2) { ctx.fillText(line, TEXT_PAD, y); return; }
+    let tw = 0; for (let k = 0; k < toks.length; k++) tw += ctx.measureText(toks[k]).width;
+    const gap = (maxW - tw) / (toks.length - 1);
+    if (gap <= 0 || gap > 48) { ctx.fillText(line, TEXT_PAD, y); return; }  // don't over-stretch sparse rows
+    let x = TEXT_PAD;
+    for (let k = 0; k < toks.length; k++) { ctx.fillText(toks[k], x, y); x += ctx.measureText(toks[k]).width + gap; }
+    return;
+  }
+  const lw = ctx.measureText(line).width;
+  const x = align === 'center' ? TEXT_PAD + (maxW - lw) / 2 : TEXT_PAD + (maxW - lw);  // center | right
+  ctx.fillText(line, x, y);
+}
+
+// -- FRONTRUNNER — faithful port of Renascent #8's tri-layer datamosh. Sparse colour blocks
+//    + per-row HORIZONTAL displacement (rows slide & wrap) + ACCUMULATION (builds on the last
+//    frame) + feedback zoom (tunnel). Low-res buffer, pixelated. The actual source-art glitch.
+const FR_PAL = ['#61708d', '#181318', '#fd008e', '#2f3751', '#1c161c'];   // original palette
+function _frStep(c, W, H, tunnel) {
+  if (tunnel) { const z = 2; if (W > z*2 && H > z*2) c.drawImage(c.canvas, z, z, W-z*2, H-z*2, 0, 0, W, H); }
+  const s = (4 + Math.random()*8) | 0;                    // colour-block grid size
+  const iters = tunnel ? 10 : 25;
+  for (let k = 0; k < iters; k++) {
+    const x = ((Math.random()*W)|0 / s | 0) * s, y = ((Math.random()*H)|0 / s | 0) * s;
+    if (Math.random() > 0.5) { c.fillStyle = FR_PAL[(Math.random()*FR_PAL.length)|0]; c.fillRect(x, y, s, s); }
+  }
+  for (let i = 0; i < H; i += 3 + (Math.random()*5|0)) {  // per-row horizontal slide (the datamosh)
+    let range = tunnel ? Math.max(0, Math.floor(100 * Math.pow(Math.abs(i - H/2)/(H/2), 2))) : 4;
+    const shift = (Math.random()*(2*range+1)|0) - range;
+    if (shift !== 0) {
+      c.drawImage(c.canvas, 0, i, W, 1, shift, i, W, 1);
+      if (shift > 0) c.drawImage(c.canvas, W-shift, i, shift, 1, 0, i, shift, 1);
+      else c.drawImage(c.canvas, 0, i, -shift, 1, W+shift, i, -shift, 1);
+    }
+  }
+  if (Math.random() > 0.95) {                             // occasional vertical slice slip
+    const x = (Math.random()*W)|0, ws = (2 + Math.random()*8)|0, sh = (2 + Math.random()*8)|0;
+    c.drawImage(c.canvas, x, 0, ws, H, x, sh, ws, H);
+  }
+}
+let _frFig = null, _frFigC = null, _frTun = null, _frTunC = null;
+function gFrontrunner(ctx, w, h, pal, t, spd, den, opa) {              // FIGURE glitch (fixed low-res, accumulates)
+  const LW = 128, LH = 128;
+  if (!_frFig) { _frFig = document.createElement('canvas'); _frFig.width = LW; _frFig.height = LH;
+    _frFigC = _frFig.getContext('2d', { willReadFrequently: true }); _frFigC.imageSmoothingEnabled = false;
+    _frFigC.fillStyle = FR_PAL[1]; _frFigC.fillRect(0, 0, LW, LH); }
+  _frStep(_frFigC, LW, LH, false);
+  ctx.imageSmoothingEnabled = false; ctx.globalAlpha = opa;
+  ctx.drawImage(_frFig, 0, 0, w, h); ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true;
+}
+function gFrontrunnerTun(ctx, w, h, pal, t, spd, den, opa) {           // TUNNEL texture (fixed low-res, feedback zoom)
+  const LW = 110, LH = 110;
+  if (!_frTun) { _frTun = document.createElement('canvas'); _frTun.width = LW; _frTun.height = LH;
+    _frTunC = _frTun.getContext('2d', { willReadFrequently: true }); _frTunC.imageSmoothingEnabled = false;
+    _frTunC.fillStyle = FR_PAL[1]; _frTunC.fillRect(0, 0, LW, LH); }
+  _frStep(_frTunC, LW, LH, true);
+  ctx.imageSmoothingEnabled = false; ctx.globalAlpha = opa;
+  ctx.drawImage(_frTun, 0, 0, w, h); ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true;
+}
+
+// Factory: content-builder + font (+ opts) => a scrolling pretext-laid-out wall.
+// opts: { align:'left'|'center'|'right'|'justify', prepare:{...}, rowColor(li,pal,line) }
+function makeTextTunnel(id, buildContent, font, lineHeight, opts) {
+  opts = opts || {};
+  const align = opts.align || 'left';
+  return function(ctx, w, h, pal, t, spd, den, opa) {
+    if (!State.txt) State.txt = {};
+    const slot = State.txt[id] || (State.txt[id] = {});
+    const ready = !!window.Pretext;
+    const key = id + '|' + SEED;
+    if (slot.key !== key || !slot.lines || (slot.fallback && ready)) {
+      slot.key = key;
+      slot.fallback = !ready;
+      slot.lines = wrapToTexture(buildContent(), font, lineHeight, opts.prepare);
+    }
+    const lines = slot.lines;
+    ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+    if (!lines.length) { return; }
+    ctx.globalAlpha = opa;
+    ctx.font = font;
+    ctx.textBaseline = 'top';
+    const maxW = TEX_SIZE - TEXT_PAD * 2;
+    const rowH = lineHeight;
+    const total = t * spd * 35;
+    const scroll = ((total % rowH) + rowH) % rowH;
+    const base = Math.floor(total / rowH);
+    const rows = Math.ceil(h / rowH) + 2;
+    for (let i = -1; i < rows; i++) {
+      const y = i * rowH - scroll;
+      const li = (((base + i) % lines.length) + lines.length) % lines.length;
+      const line = lines[li];
+      ctx.fillStyle = opts.rowColor ? opts.rowColor(li, pal, line) : ((li % 2) ? pal[1] : pal[2]);
+      drawTextRow(ctx, line, y, maxW, align);
+    }
+    ctx.globalAlpha = 1;
+  };
+}
+
+// Factory: swirling vortex of pretext-laid-out text. Same cached-lines model as
+// makeTextTunnel (layout once per seed, only animate per frame), but instead of
+// flat scrolling rows it pivots the whole field around the texture centre and
+// twists each row by an angle proportional to its distance from centre — a
+// whirlpool of addresses. Mapped onto the receding tunnel walls this reads as a
+// vortex spinning down the throat of the tunnel.
+// opts: { spin, twist, wrapWidth, prepare, rowColor }
+function makeTextSwirl(id, buildContent, font, lineHeight, opts) {
+  opts = opts || {};
+  const spinK  = opts.spin  != null ? opts.spin  : 0.22;   // global rotation rate
+  const twistK = opts.twist != null ? opts.twist : 0.0075; // radians per px from centre
+  const wrapW  = opts.wrapWidth || Math.round(TEX_SIZE * 1.5); // wider rows reach the corners when spun
+  return function(ctx, w, h, pal, t, spd, den, opa) {
+    if (!State.txt) State.txt = {};
+    const slot = State.txt[id] || (State.txt[id] = {});
+    const ready = !!window.Pretext;
+    const key = id + '|' + SEED;
+    if (slot.key !== key || !slot.lines || (slot.fallback && ready)) {
+      slot.key = key;
+      slot.fallback = !ready;
+      slot.lines = wrapToTexture(buildContent(), font, lineHeight, opts.prepare, wrapW);
+    }
+    const lines = slot.lines;
+    ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+    if (!lines.length) { return; }
+    ctx.globalAlpha = opa;
+    ctx.font = font;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    const rowH = lineHeight;
+    const total = t * spd * 35;
+    const scroll = ((total % rowH) + rowH) % rowH;
+    const base = Math.floor(total / rowH);
+    const spin = t * spd * spinK;
+    // cover the texture diagonal so the spun field leaves no centre-band gaps
+    const half = Math.ceil((Math.SQRT2 * Math.max(w, h)) / rowH / 2) + 2;
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(spin);
+    for (let i = -half; i <= half; i++) {
+      const ry = i * rowH - scroll;                 // signed offset from centre
+      const li = (((base + i) % lines.length) + lines.length) % lines.length;
+      const line = lines[li];
+      if (!line) continue;
+      ctx.save();
+      ctx.rotate(ry * twistK);                       // per-row twist → whirlpool
+      ctx.fillStyle = opts.rowColor ? opts.rowColor(li, pal, line) : ((li % 2) ? pal[1] : pal[2]);
+      ctx.fillText(line, 0, ry);
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';                          // reset shared ctx state for other tex fns
+    ctx.textBaseline = 'top';
+  };
+}
+
+// -- content builders (run once per seed, cached) --
+const KW = ['FRONTRUN','GAS','NONCE','BLOCK','MEMPOOL','PENDING','0xCONF','1 AHEAD','VANGUARD'];
+function contentAddresses() {
+  const out = [];
+  for (let n = 0; n < 70; n++) {
+    const r = Math.random();
+    if (r < 0.6)       out.push('0x' + rhex(4) + rhex(4));               // 8-hex chunk
+    else if (r < 0.85) out.push('0x' + rhex(4) + rhex(4) + rhex(4) + '…');
+    else               out.push(KW[(Math.random()*KW.length)|0]);
+  }
+  return out.join('  ');
+}
+const MANIFESTO = ('ALWAYS ONE BLOCK AHEAD. VANGUARD NOT VICTIM. FRONT RUN THE FUTURE. ' +
+  'THE GANG PUSHES FORWARD EVER FORWARD. WE DO NOT WAIT FOR THE NEXT BLOCK. WE ARE THE NEXT BLOCK. ').repeat(3);
+function contentManifesto() {
+  const words = MANIFESTO.split(' ');
+  for (let i = 8; i < words.length; i += 9) words.splice(i, 0, '0x' + rhex(6));   // weave hashes through
+  return words.join(' ');
+}
+function contentHexWall() {
+  const out = [];
+  for (let n = 0; n < 400; n++) out.push(rhex(2));   // dense 2-char pairs
+  return out.join(' ');
+}
+// Wallet roll: one entry per line (hard \n breaks) — truncated 0x…  + ENS names.
+const ENS = ['frontrun.eth','vanguard.eth','oneblock.eth','pacer.eth','mempool.eth','gigabrain.eth','nextblock.eth','aheadof.eth','theforward.eth'];
+function contentWallet() {
+  const out = [];
+  for (let i = 0; i < 64; i++) {
+    out.push(Math.random() < 0.24 ? ENS[(Math.random()*ENS.length)|0]
+                                  : '0x' + rhex(4) + '…' + rhex(4));
+  }
+  return out.join('\n');
+}
+// Monolith: a few full addresses chunked into 3-char groups so they wrap huge.
+function contentGiant() {
+  const out = [];
+  for (let a = 0; a < 6; a++) {
+    let s = '0x';
+    for (let g = 0; g < 13; g++) s += (g ? ' ' : '') + rhex(3);
+    out.push(s);
+  }
+  return out.join('  ');
+}
+
+// pretext-powered tunnel-tex functions (defined before TUNNEL_TEX_EXTRA uses them)
+const gAddresses_tex = makeTextTunnel('addr',      contentAddresses, 'bold 13px monospace', 15);
+const gManifesto_tex = makeTextTunnel('manifesto', contentManifesto, 'bold 16px "Helvetica Neue", Arial, sans-serif', 19);
+const gHexWall_tex   = makeTextTunnel('hexwall',   contentHexWall,   'bold 11px monospace', 13);
+// --- creative ETH-address treatments (each shows off a different pretext trick) ---
+// 1. Ledger: full-justify both edges → flush data-ledger / explorer dump look.
+const gAddrLedger_tex = makeTextTunnel('addrledger', contentAddresses, 'bold 13px monospace', 16, { align: 'justify' });
+// 2. Wallet roll: one truncated address / ENS name per centered line (pre-wrap \n).
+const gAddrWallet_tex = makeTextTunnel('addrwallet', contentWallet, 'bold 15px monospace', 20,
+  { align: 'center', prepare: { whiteSpace: 'pre-wrap' }, rowColor: (li, pal, line) => line && line.includes('.eth') ? pal[1] : pal[2] });
+// 3. Monolith: a single address blown up huge, wrapping across the whole wall.
+const gAddrGiant_tex  = makeTextTunnel('addrgiant', contentGiant, 'bold 26px monospace', 30, { align: 'left' });
+// 4. READABLE: the holder's OWN full address, big and centered, one per line — you can
+//    actually read your wallet streaming down the walls. The most legible address look.
+function contentAddrRead() {
+  const full = WHEX ? ('0x' + WHEX) : '0xd8da6bf26964af9d7eed9e03e53415d37aa96045';
+  const out = [];
+  for (let i = 0; i < 28; i++) out.push(full);
+  return out.join('\n');
+}
+const gAddrRead_tex = makeTextTunnel('addrread', contentAddrRead, 'bold 17px monospace', 22,
+  { align: 'center', prepare: { whiteSpace: 'pre-wrap' },
+    rowColor: (li, pal) => (li % 2) ? pal[1] : pal[2] });
+// SIGNATURE: the word FRONTRUN itself, tiled big and bold across the tunnel walls.
+function contentFrontrun() { const o = []; for (let i = 0; i < 90; i++) o.push('FRONTRUN'); return o.join('  '); }
+const gFrontrun_tex = makeTextTunnel('frontrun', contentFrontrun, 'bold 30px monospace', 34, { align: 'left' });
+// the word FRONTRUN as straight radial beams (sun rays) — intact lines, the whole
+// sunburst rotates slowly as ONE rigid wheel. No per-line twist, nothing fragments.
+function gFrontrunSwirl_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(t * spd * 0.10);                  // slow rigid rotation of the whole sunburst
+  ctx.font = 'bold 20px monospace';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.globalAlpha = opa;
+  const word = 'FRONTRUN ';
+  const ww = ctx.measureText(word).width || 110;
+  const str = word.repeat(Math.ceil((Math.SQRT2 * w) / ww) + 1);
+  const N = 16;                                // 16 straight beams radiating from centre
+  for (let i = 0; i < N; i++) {
+    ctx.save();
+    ctx.rotate((i / N) * Math.PI * 2);
+    ctx.fillStyle = (i % 2) ? pal[1] : pal[2];
+    ctx.fillText(str, 8, 0);                    // one straight intact beam of FRONTRUN, outward
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+// THE VORTEX — the word FRONTRUN as rigid arms spiralling INTO a giant glowing sun at the
+// centre. Arms stay intact (drawn straight, just at spiralling angles), whole thing spins.
+function gFrontrunVortex_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(t * spd * 0.12);                  // the whole vortex turns
+  ctx.font = 'bold 17px monospace';
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.globalAlpha = opa;
+  const word = 'FRONTRUN ';
+  const ww = ctx.measureText(word).width || 95;
+  const maxR = Math.SQRT2 * w * 0.5;
+  const N = 7, curl = 1.15;                     // 7 arms, log-spiral curl into the centre
+  for (let i = 0; i < N; i++) {
+    const base = (i / N) * Math.PI * 2;
+    ctx.fillStyle = (i % 2) ? pal[1] : pal[2];
+    for (let r = 26; r < maxR; r += ww) {
+      const ang = base + Math.log(r / 26) * curl;
+      ctx.save(); ctx.rotate(ang); ctx.fillText(word, r, 0); ctx.restore();
+    }
+  }
+  // the giant sun in the middle — the thing he runs toward
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, maxR * 0.30);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(0.30, pal[1]); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, maxR * 0.30, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+// GRAIL: the FRONTRUN site copy itself, streaming the manifesto across the walls.
+const SITE_TEXT = ('FRONTRUNNING THE CULTURE, ONE BLOCK AT A TIME. EVERY WALLET A DIFFERENT PIECE. ' +
+  'THE WALLET THAT HOLDS A PIECE WRITES HOW IT LOOKS. NO TWO RESOLVE THE SAME. ' +
+  'THE ART IS BUILT FROM YOUR WALLET. ITS ADDRESS IS THE MATERIAL THE WORK IS MADE OF. ' +
+  'FRONTRUN IS A HOMAGE TO US. EVERY TRANSFER IS THE SAME PIECE RUNNING A NEW LANE. ' +
+  'FULLY ON-CHAIN. ALL OF IT. IT FELT LIKE A HABIT. IT WAS A HEAD START. ').repeat(2);
+function contentSiteText() { return SITE_TEXT; }
+const gSite_tex = makeTextTunnel('sitetext', contentSiteText, 'bold 17px "Helvetica Neue", Arial, sans-serif', 21, { align: 'justify' });
+// META-GRAIL: the piece's OWN source code, walling the tunnel. Reuses the already-
+// loaded engine source (window.FRONTRUN_SRC) — zero extra on-chain bytes.
+function contentCode() {
+  var s = (window.FRONTRUN_SRC || '').replace(/\s+/g, ' ').trim();
+  if (s.length < 200) s = 'function frontrun(wallet){ return render(seed(wallet)); } // fully on-chain ';
+  return s.slice(0, 5200);
+}
+const gCode_tex = makeTextTunnel('code', contentCode, 'bold 11px monospace', 13, { align: 'left' });
+// 4. Swirl: the address stream spun into a whirlpool/vortex around the wall centre.
+const gAddrSwirl_tex  = makeTextSwirl('addrswirl', contentAddresses, 'bold 15px monospace', 18,
+  { spin: 0.22, twist: 0.0075, rowColor: (li, pal) => (li % 3 === 0) ? pal[1] : pal[2] });
+
+// 5. Matrix rain, but every column is a falling ETH address — read a column
+//    top-to-bottom and you get "0x…" cascading. Bright head, fading tail.
+function colAddr() { return '0x' + rhex(3 + ((Math.random() * 38) | 0)); }
+function gAddrMatrix_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+  ctx.globalAlpha = opa;
+  const colW = 13, rowH = 15, cols = Math.ceil(w / colW), trail = 11;
+  if (!State.addrMatrix || State.addrMatrix.length !== cols) {
+    State.addrMatrix = [];
+    for (let i = 0; i < cols; i++) State.addrMatrix.push({ y: Math.random() * h, spd: 1 + Math.random() * 3, s: colAddr() });
+  }
+  ctx.font = 'bold 14px monospace'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+  for (let i = 0; i < cols; i++) {
+    const c = State.addrMatrix[i];
+    c.y += c.spd * (0.5 + spd);
+    if (c.y - trail * rowH > h) { c.y = -((Math.random() * h) | 0); c.s = colAddr(); }
+    const headRow = (c.y / rowH) | 0;
+    for (let j = 0; j < trail; j++) {
+      const row = headRow - j, ty = row * rowH;
+      if (ty > -rowH && ty < h) {
+        const a = j === 0 ? 1 : (1 - j / trail) * 0.8;
+        ctx.globalAlpha = opa * a;
+        ctx.fillStyle = j === 0 ? pal[2] : pal[1];
+        ctx.fillText(c.s[((row % c.s.length) + c.s.length) % c.s.length], i * colW, ty);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 6. Ribbon: ONE continuous address string spiralling from centre outward — a
+//    single swirling line of text that *is* the tunnel. Spins + scrolls in place.
+function ribbonContent() {
+  let out = '';
+  for (let n = 0; n < 160; n++) out += '0x' + rhex(4 + ((Math.random() * 6) | 0)) + '  ';
+  return out;
+}
+function gAddrRibbon_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+  if (!State.ribbon || State.ribbonKey !== SEED) { State.ribbonKey = SEED; State.ribbon = ribbonContent(); }
+  const s = State.ribbon, n = s.length;
+  ctx.globalAlpha = opa;
+  ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const cx = w / 2, cy = h / 2;
+  const b = 4.4;                                       // radius gain per radian (spiral tightness)
+  const rmax = Math.SQRT2 * Math.max(w, h) / 2 + 14;
+  const spin = t * spd * 0.5;
+  const scroll = (t * spd * 7) | 0;
+  let theta = 0.7, r = 9, i = 0;
+  while (r < rmax && i < 4000) {
+    const ang = theta + spin;
+    const ch = s[(((i + scroll) % n) + n) % n];
+    if (ch !== ' ') {
+      ctx.save();
+      ctx.translate(cx + r * Math.cos(ang), cy + r * Math.sin(ang));
+      ctx.rotate(ang + Math.PI / 2);
+      ctx.fillStyle = (i % 2) ? pal[1] : pal[2];
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+    }
+    theta += 10 / r;                                   // advance ~one char width along the arc
+    r = 9 + b * theta;
+    i++;
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+
+// 7. Fluid smoke — ASCII-fluid sim (technique from somnai-dreams/pretext-demos
+//    "fluid-smoke"): a density grid advected through a procedural curl field,
+//    orbiting emitters inject smoke, density→glyph via a brightness-sorted ramp.
+//    Here the ramp is built from hex/address glyphs, so the smoke IS addresses.
+const SMOKE_CHARS = " .:-=+*x0123456789abcdef#";
+let SMOKE_PAL = null;
+function smokeMeasure(ch) {
+  const m = State._smokeM || (State._smokeM = (function () {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 24;
+    return cv.getContext('2d', { willReadFrequently: true });
+  })());
+  m.clearRect(0, 0, 24, 24); m.font = 'bold 14px monospace'; m.fillStyle = '#fff';
+  m.textBaseline = 'middle'; m.fillText(ch, 2, 12);
+  const d = m.getImageData(0, 0, 24, 24).data; let sum = 0;
+  for (let k = 3; k < d.length; k += 4) sum += d[k];
+  return sum / (255 * 576);
+}
+function buildSmokePalette() {
+  const arr = [];
+  for (const ch of SMOKE_CHARS) { if (ch === ' ') continue; arr.push({ ch, b: smokeMeasure(ch) }); }
+  const max = Math.max.apply(null, arr.map(p => p.b)) || 1;
+  for (const p of arr) p.b /= max;
+  arr.sort((a, b) => a.b - b.b);
+  return arr;
+}
+function gAddrSmoke_tex(ctx, w, h, pal, t, spd, den, opa) {
+  ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, w, h);
+  if (!SMOKE_PAL) SMOKE_PAL = buildSmokePalette();
+  const CELL = 11, COLS = Math.max(8, (w / CELL) | 0), ROWS = Math.max(8, (h / CELL) | 0);
+  let S = State.smoke;
+  if (!S || S.COLS !== COLS || S.ROWS !== ROWS) {
+    S = State.smoke = {
+      COLS, ROWS, den: new Float32Array(COLS * ROWS), tmp: new Float32Array(COLS * ROWS),
+      em: [ { cx: .28, cy: .42, r: .14, f: .30, p: 0,   s: .40 },
+            { cx: .70, cy: .34, r: .10, f: .25, p: 2.1, s: .34 },
+            { cx: .46, cy: .66, r: .16, f: .35, p: 4.2, s: .44 },
+            { cx: .80, cy: .60, r: .08, f: .40, p: 1.0, s: .32 } ]
+    };
+  }
+  const dens = S.den, tmp = S.tmp, em = S.em;
+  const tt = t * (0.6 + spd);                          // sim time scaled by speed slider
+  // 1) advect: semi-Lagrangian backtrace on a layered-sine curl field
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const nx = c / COLS, ny = r / ROWS;
+    const vx = Math.sin(ny * 6.28 + tt * 0.3) * 2 + Math.cos((nx + ny) * 12.5 + tt * 0.55) * 0.7;
+    const vy = Math.cos(nx * 5 + tt * 0.4) * 1.5 + Math.sin((nx - ny) * 10 + tt * 0.4) * 0.8;
+    let sx = c - vx; if (sx < 0) sx = 0; else if (sx > COLS - 1.001) sx = COLS - 1.001;
+    let sy = r - vy; if (sy < 0) sy = 0; else if (sy > ROWS - 1.001) sy = ROWS - 1.001;
+    const x0 = sx | 0, y0 = sy | 0, x1 = Math.min(x0 + 1, COLS - 1), y1 = Math.min(y0 + 1, ROWS - 1);
+    const fx = sx - x0, fy = sy - y0;
+    tmp[r * COLS + c] = dens[y0 * COLS + x0] * (1 - fx) * (1 - fy) + dens[y0 * COLS + x1] * fx * (1 - fy)
+                      + dens[y1 * COLS + x0] * (1 - fx) * fy + dens[y1 * COLS + x1] * fx * fy;
+  }
+  dens.set(tmp);
+  // 2) light diffusion (smoke softening)
+  tmp.set(dens);
+  for (let r = 1; r < ROWS - 1; r++) for (let c = 1; c < COLS - 1; c++) {
+    const i = r * COLS + c;
+    tmp[i] = dens[i] * 0.9 + (dens[i - 1] + dens[i + 1] + dens[i - COLS] + dens[i + COLS]) * 0.025;
+  }
+  dens.set(tmp);
+  // 3) emitters inject density (slider raises strength)
+  const spread = 3;
+  for (let e = 0; e < em.length; e++) {
+    const E = em[e];
+    const ec = ((E.cx + Math.cos(tt * E.f + E.p) * E.r) * COLS) | 0;
+    const er = ((E.cy + Math.sin(tt * E.f * 0.7 + E.p) * E.r * 0.8) * ROWS) | 0;
+    for (let dr = -spread; dr <= spread; dr++) for (let dc = -spread; dc <= spread; dc++) {
+      const rr = er + dr, cc = ec + dc;
+      if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS) {
+        const fall = 1 - Math.sqrt(dr * dr + dc * dc) / (spread + 1);
+        if (fall > 0) { const idx = rr * COLS + cc; dens[idx] = Math.min(1, dens[idx] + fall * E.s * (0.5 + den)); }
+      }
+    }
+  }
+  // 4) decay (slow — lets smoke cores billow and linger)
+  for (let i = 0; i < COLS * ROWS; i++) dens[i] *= 0.991;
+  // 5) render: density → address glyph
+  ctx.font = 'bold 13px monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const N = SMOKE_PAL.length;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const b = dens[r * COLS + c];
+    if (b < 0.04) continue;
+    let gi = Math.round(b * (N - 1)); if (gi < 0) gi = 0; else if (gi >= N) gi = N - 1;
+    ctx.fillStyle = b > 0.62 ? pal[2] : pal[1];
+    ctx.globalAlpha = opa * Math.min(1, 0.35 + b);
+    ctx.fillText(SMOKE_PAL[gi].ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+}
+
+// TUNNEL_TEX_EXTRA: tunnel-texture-only entries (NOT in figure-glitch dropdown)
+const TUNNEL_TEX_EXTRA = [
+  { id: 'frontrun_tex',  label: '★  FRONTRUN (the word)',         fn: gFrontrun_tex },
+  { id: 'frontrun_swirl',label: '★  FRONTRUN (the sun)',          fn: gFrontrunSwirl_tex },
+  { id: 'frontrun_vortex',label: '★  FRONTRUN (the vortex)',      fn: gFrontrunVortex_tex },
+  { id: 'frontrunner_tex',label: '★  Frontrunner (origin datamosh walls)', fn: gFrontrunnerTun },
+  { id: 'addr_read',     label: '★  Address readable (your wallet)', fn: gAddrRead_tex },
+  { id: 'sitetext_tex',  label: '★  Site manifesto (grail)',      fn: gSite_tex },
+  { id: 'code_tex',      label: '★  Source code (meta-grail)',     fn: gCode_tex },
+  { id: 'addresses_tex', label: '★  ETH addresses (pretext)',     fn: gAddresses_tex },
+  { id: 'addr_ledger',   label: '★  Address ledger (justified)',  fn: gAddrLedger_tex },
+  { id: 'addr_wallet',   label: '★  Wallet roll (ENS + 0x…)',     fn: gAddrWallet_tex },
+  { id: 'addr_giant',    label: '★  Address monolith (giant)',    fn: gAddrGiant_tex },
+  { id: 'addr_swirl',    label: '★  Address swirl (vortex)',      fn: gAddrSwirl_tex },
+  { id: 'addr_matrix',   label: '★  Address rain (matrix)',       fn: gAddrMatrix_tex },
+  { id: 'addr_ribbon',   label: '★  Address ribbon (1-line spiral)', fn: gAddrRibbon_tex },
+  { id: 'addr_smoke',    label: '★  Address smoke (fluid)',       fn: gAddrSmoke_tex },
+  { id: 'manifesto_tex', label: '★  Manifesto stream (pretext)',  fn: gManifesto_tex },
+  { id: 'hexwall_tex',   label: '★  Hex wall (pretext)',          fn: gHexWall_tex },
+  { id: 'cellular',      label: '24  Cellular automaton', fn: gCellular },
+  { id: 'halftone_tex',  label: '14  Halftone dots',       fn: gHalftone_tex },
+  { id: 'concsq_tex',    label: '17  Concentric squares',  fn: gConcentric_tex },
+  { id: 'radial_tex',    label: '18  Radial warp',         fn: gRadial_tex },
+  { id: 'hextun_tex',    label: '21  Hex tunnel',          fn: gHexTunnel_tex },
+  { id: 'circles_tex',   label: '29  Concentric circles',  fn: gCircles_tex },
+  { id: 'blocks_tex',    label: '06  Block chunks',        fn: gBlocks_tex },
+  { id: 'diagonal_tex',  label: '07  Diagonal stripes',    fn: gDiagonal_tex },
+  { id: 'letterbox_tex', label: '23  Letterbox stripes',   fn: gLetterbox_tex },
+  { id: 'matrix_tex',    label: '27  Matrix rain',         fn: gMatrix_tex },
+  { id: 'hextext_tex',   label: '11  Hex text scatter',    fn: gHexText_tex },
+];
+
+// -- glitch registry --
+const GLITCHES = [
+  { id: 'none',      label: '— none / clean —',          fn: gNone },
+  { id: 'static',    label: '01  Static (white noise)',  fn: gStatic },
+  { id: 'palstatic', label: '02  Palette static',        fn: gPaletteStatic },
+  { id: 'scanlines', label: '03  Horizontal scanlines',  fn: gScanlines },
+  { id: 'tear',      label: '08  Horizontal tear',       fn: gTear },
+  { id: 'rgbsplit',  label: '09  RGB split',             fn: gRGBSplit },
+  { id: 'scatter',   label: '13  Pixel scatter',         fn: gScatter },
+  { id: 'mirror',    label: '20  Mirror tear',           fn: gMirror },
+  { id: 'invert',    label: '22  Invert burst',          fn: gInvertBurst },
+  { id: 'glitchtext',label: '26  Glitch text stream',    fn: gGlitchText },
+  { id: 'flood',     label: '30  Two-color flood',       fn: gFloodFlash },
+  { id: 'frontrunner', label: '★  Frontrunner (origin datamosh)', fn: gFrontrunner },
+];
+
+function populateDropdown(id, def) {
+  const sel = $(id);
+  GLITCHES.forEach(g => {
+    const o = document.createElement('option');
+    o.value = g.id; o.textContent = g.label;
+    sel.appendChild(o);
+  });
+  sel.value = def;
+}
+
+// ===========================================================================
+// FIGURE — Frontrunner #8 via CSS mask, fill by mode
+// ===========================================================================
+// Some devices can't apply a CSS GIF mask (the masked canvas renders fully
+// transparent = tunnel-only, no runner). Hybrid: CSS mask where it works
+// (animated pose), canvas destination-in clipping everywhere else (static
+// pose, glitch still animates). ?nomask=1 forces the fallback for testing.
+let maskFallback = false, figImg = null;
+// animated-webp run cycle decoded to frames, so it can play in-canvas under nomask
+let figFrames = null, figDurs = null, figTotal = 0;
+async function decodeFigFrames(dataUrl) {
+  try {
+    if (typeof ImageDecoder === 'undefined') return;
+    const u = Uint8Array.from(atob(dataUrl.split(',')[1]), c => c.charCodeAt(0));
+    const dec = new ImageDecoder({ data: u, type: 'image/webp' });
+    await dec.tracks.ready;
+    const n = dec.tracks.selectedTrack.frameCount;
+    const frames = [], durs = []; let total = 0;
+    for (let i = 0; i < n; i++) {
+      const { image } = await dec.decode({ frameIndex: i });
+      frames.push(image); const d = (image.duration || 100000) / 1000; durs.push(d); total += d;
+    }
+    figFrames = frames; figDurs = durs; figTotal = total;
+    try { window.FR_FIGTOTAL = total; } catch (e) {}   // expose run-cycle length to the GIF maker
+  } catch (e) {}
+}
+function currentFigFrame() {
+  if (!figFrames || !figTotal) return figImg;
+  let t = performance.now() % figTotal, i = 0;
+  while (i < figDurs.length - 1 && t >= figDurs[i]) { t -= figDurs[i]; i++; }
+  return figFrames[i];
+}
+async function loadFigureMask() {
+  let b64 = window.FRONTRUN_FIGURE;            // on-chain: injected by the contract
+  if (!b64) { const res = await fetch('figure.b64'); b64 = (await res.text()).trim(); }  // local fallback
+  figImg = new Image();
+  const decoded = new Promise(r => { figImg.onload = () => r(true); figImg.onerror = () => r(false); });
+  figImg.src = b64;
+  const imgOK = await decoded;
+  const cssOK = !!(window.CSS && CSS.supports &&
+    (CSS.supports('mask-image', 'url("data:,")') || CSS.supports('-webkit-mask-image', 'url("data:,")')));
+  const force = new URLSearchParams(location.search).has('nomask');
+  maskFallback = true;   // always canvas-clip: animates the run-cycle (CSS mask freezes anim) + reliable headroom
+  if (maskFallback) {
+    fig.style.webkitMaskImage = 'none';
+    fig.style.maskImage = 'none';
+    decodeFigFrames(b64);   // decode the run cycle so it plays in-canvas (nomask / capture)
+  } else {
+    fig.style.webkitMaskImage = 'url(' + b64 + ')';
+    fig.style.maskImage = 'url(' + b64 + ')';
+    decodeFigFrames(b64);   // decode the run cycle so it plays in-canvas (nomask / capture)
+  }
+}
+
+function updateFigure() {
+  const opa = $('fig-opa').value / 100;
+  fig.style.opacity = opa;
+  $('v-fig-opa').textContent = opa.toFixed(2);
+}
+
+// ===========================================================================
+// MAIN LOOP — single glitch rendered into the figure-masked canvas
+// ===========================================================================
+let start = performance.now();
+let activeGlitch = 'palstatic';
+
+const PRESET_TUN = { rain:{shape:'hex',tex:'addr_matrix'}, ticker:{shape:'square-flat',tex:'addr_ledger'}, addrwall:{shape:'square-flat',tex:'addr_read'}, frontrun:{shape:'square-flat',tex:'frontrun_tex'}, frontrunspin:{shape:'square-flat',tex:'frontrun_swirl'}, frontrunsun:{shape:'square-flat',tex:'frontrun_swirl'}, frontrunvortex:{shape:'square-flat',tex:'frontrun_vortex'}, frontrunnerwall:{shape:'hex',tex:'frontrunner_tex'}, sitetext:{shape:'square-flat',tex:'sitetext_tex'}, code:{shape:'square-flat',tex:'code_tex'} };
+function setTunnelShape(shapeName) {
+  var _gl=document.getElementById('bg-gl'), _b2=document.getElementById('bg2d');
+  if (shapeName === 'sealedflat') { activeBg='sealedflat'; activeShaderTunnel=null; if(_gl)_gl.style.display='none'; if(_b2)_b2.style.display='block'; return; }
+  if (shapeName === 'dreamweaver') { activeBg='dreamweaver'; activeShaderTunnel=null; if(_gl)_gl.style.display='none'; if(_b2)_b2.style.display='block'; return; }
+  activeBg=null; if(_gl)_gl.style.display=''; if(_b2)_b2.style.display='none';
+  if (PRESET_TUN[shapeName]) { activeShaderTunnel=null; var _pr=PRESET_TUN[shapeName]; tunnelTex=_pr.tex; var _ts=document.getElementById('tunnel-tex'); if(_ts)_ts.value=_pr.tex; var _ps=SHAPES.find(function(s){return s.name===_pr.shape;}); if(_ps){activeShape=_ps; buildTunnelGeometry(_ps);} return; }
+  if (SHADER_TUNNELS[shapeName]) { activeShaderTunnel = shapeName; return; }
+  activeShaderTunnel = null;
+  const sh = SHAPES.find(s => s.name === shapeName);
+  if (sh) { activeShape = sh; buildTunnelGeometry(sh); }
+}
+
+// --- FLASH STATE ---
+let flashFrame = 0;
+let flashOn = 10;  // visible frames
+let flashOff = 1;  // dim-overlay frames
+let flashEnabled = false;
+
+function setFlashMode(mode) {
+  flashEnabled = (mode !== 'off');
+  if (!flashEnabled) { $('flash-black').style.display = 'none'; return; }
+  const [on, off] = mode.split('+').map(n => parseInt(n, 10));
+  flashOn = on; flashOff = off; flashFrame = 0;
+}
+
+function applyFlashOpacity() {
+  const opa = $('flash-opa').value / 100;
+  $('flash-black').style.background = `rgba(0, 0, 0, ${opa.toFixed(2)})`;
+  $('v-flash-opa').textContent = opa.toFixed(2);
+}
+
+let activeBg = null;
+let dwImg=null, dwCtx=null, dwStars=[], dwNeb=[], dwShoot=null, dwLastShoot=0, dwAddr=null;
+const DW_SPACE='#030508', DW_NEB=['rgb(255,60,160)','rgb(0,130,255)','rgb(140,40,255)'];
+const dwSouthern=(()=>{try{const tz=Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();return ['australia','auckland','sydney','melbourne','brisbane','perth','adelaide','hobart','darwin','sao_paulo','buenos_aires','santiago','johannesburg','cape_town'].some(z=>tz.includes(z));}catch(e){return false;}})();
+function dwInit(){
+  if(!dwCtx){ const c=document.getElementById('bg2d'); if(!c) return; dwCtx=c.getContext('2d'); }
+  const sd=seedFrom('dream:'+(WALLET||'x')), r=sfc32(sd[0],sd[1],sd[2],sd[3]); const md=Math.max(W,H);
+  dwStars=[]; for(let i=0;i<260;i++) dwStars.push({a:r()*6.2832, rad:r()*md*0.78+2, sp:0.004+r()*0.013, size:r()*1.4+0.3});
+  const cols=[{r:255,g:60,b:160,a:0.04},{r:0,g:130,b:255,a:0.035},{r:140,g:40,b:255,a:0.025}];
+  dwNeb=[]; for(let i=0;i<10;i++){const cc=cols[(r()*cols.length)|0]; dwNeb.push({x:r()*W,y:r()*H,radius:(r()*0.4+0.25)*W,color:cc,vx:(r()-0.5)*0.05,vy:(r()-0.5)*0.05});}
+  dwAddr=WALLET;
+}
+function dwMoon(x,w,h){
+  const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.169;
+  // phase 0=new → 0.5=full → 1=new. window.DW_PHASE overrides the live date (time-lapse).
+  let phase;
+  if (typeof window!=='undefined' && window.DW_PHASE!=null) phase=window.DW_PHASE;
+  else { const lp=2551442877, ref=new Date("2026-01-18T19:51:00Z"); phase=(((new Date()).getTime()-ref.getTime())%lp)/lp; if(phase<0)phase+=1; }
+  // POCKET OF DARK — dim the stars/nebula right around the moon so it sits against black.
+  x.save();
+  const halo=x.createRadialGradient(cx,cy,r*0.9,cx,cy,r*2.1);
+  halo.addColorStop(0,'rgba(2,3,6,0.92)'); halo.addColorStop(1,'rgba(2,3,6,0)');
+  x.fillStyle=halo; x.beginPath(); x.arc(cx,cy,r*2.1,0,Math.PI*2); x.fill();
+  x.restore();
+  // OPAQUE BODY — drawn over the stars so none shine through, even at new moon.
+  x.save();
+  const bg=x.createRadialGradient(cx-r*0.3,cy-r*0.3,r*0.1,cx,cy,r);
+  bg.addColorStop(0,'#0a0b0e'); bg.addColorStop(1,'#040509');   // near-sky, de-blued so the dark disc sits back
+  x.fillStyle=bg; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
+  x.restore();
+  // LIT PHASE on top — tight glow so light doesn't leak into the sky behind it.
+  x.save(); x.globalCompositeOperation='screen';
+  if(dwSouthern){ x.translate(cx,cy); x.rotate(Math.PI); x.translate(-cx,-cy); }
+  x.fillStyle='#E6F7FF'; x.shadowColor='rgba(180,230,255,0.28)'; x.shadowBlur=r*0.4;
+  x.beginPath(); const sweep=Math.cos(2*Math.PI*phase);
+  if(phase<=0.5){ x.arc(cx,cy,r,-Math.PI/2,Math.PI/2,false); x.ellipse(cx,cy,r*Math.abs(sweep),r,0,Math.PI/2,-Math.PI/2,sweep>0); }
+  else { x.arc(cx,cy,r,Math.PI/2,-Math.PI/2,false); x.ellipse(cx,cy,r*Math.abs(sweep),r,0,-Math.PI/2,Math.PI/2,sweep>0); }
+  x.fill(); x.restore();
+}
+function drawDreamweaver(t){
+  if(!dwCtx||dwAddr!==WALLET) dwInit();
+  const x=dwCtx; if(!x) return; const w=W,h=H, cx=w*0.5, cy=h*0.26, md=Math.max(w,h);
+  x.fillStyle=DW_SPACE; x.fillRect(0,0,w,h);
+  x.save(); x.globalCompositeOperation='screen';
+  dwNeb.forEach(c=>{ c.x+=c.vx; c.y+=c.vy;
+    if(c.x<-c.radius)c.x=w+c.radius; if(c.x>w+c.radius)c.x=-c.radius;
+    if(c.y<-c.radius)c.y=h+c.radius; if(c.y>h+c.radius)c.y=-c.radius;
+    const g=x.createRadialGradient(c.x,c.y,0,c.x,c.y,c.radius);
+    g.addColorStop(0,'rgba('+c.color.r+','+c.color.g+','+c.color.b+','+c.color.a+')');
+    g.addColorStop(1,'rgba('+c.color.r+','+c.color.g+','+c.color.b+',0)');
+    x.fillStyle=g; x.beginPath(); x.arc(c.x,c.y,c.radius,0,Math.PI*2); x.fill();
+  });
+  x.restore();
+  const spd=0.5+1.6*(($('spd')?$('spd').value:50)/100);
+  dwStars.forEach(s=>{ s.rad*=1+s.sp*spd*0.012; if(s.rad>md*0.95){ s.a=Math.random()*6.2832; s.rad=2+Math.random()*8; }
+    const px=cx+Math.cos(s.a)*s.rad, py=cy+Math.sin(s.a)*s.rad; const f=Math.min(1,s.rad/(md*0.42));
+    x.fillStyle='rgba(255,255,255,'+(0.22+0.78*f)+')'; x.beginPath(); x.arc(px,py,s.size*(0.4+f),0,Math.PI*2); x.fill();
+  });
+  const now=performance.now();
+  if(now-dwLastShoot>=5000){ const sp=w*0.016, col=DW_NEB[(Math.random()*DW_NEB.length)|0]; dwShoot={x:Math.random()*w*0.6,y:Math.random()*h*0.35,opacity:1,dx:sp,dy:sp*0.35,color:col}; dwLastShoot=now; }
+  if(dwShoot){ dwShoot.x+=dwShoot.dx; dwShoot.y+=dwShoot.dy; dwShoot.opacity-=0.008;
+    if(dwShoot.opacity<=0) dwShoot=null; else { x.save();
+      const g=x.createLinearGradient(dwShoot.x,dwShoot.y,dwShoot.x-dwShoot.dx*7,dwShoot.y-dwShoot.dy*7); const cr=dwShoot.color.match(/\d+/g);
+      g.addColorStop(0,'rgba('+cr[0]+','+cr[1]+','+cr[2]+','+dwShoot.opacity+')'); g.addColorStop(1,'rgba('+cr[0]+','+cr[1]+','+cr[2]+',0)');
+      x.strokeStyle=g; x.lineWidth=2.2; x.lineCap='round'; x.beginPath(); x.moveTo(dwShoot.x,dwShoot.y); x.lineTo(dwShoot.x-dwShoot.dx*7,dwShoot.y-dwShoot.dy*7); x.stroke(); x.restore(); }
+  }
+  x.save(); x.globalAlpha=0.1;
+  for(let i=0;i<1500;i++){ const px=Math.random()*w,py=Math.random()*h,sz=Math.random()*1.4,rr=Math.random(); x.fillStyle= rr<0.2?'#ff3ca0':(rr<0.4?'#0082ff':'#ffffff'); x.fillRect(px,py,sz,sz); }
+  x.restore();
+  dwMoon(x,w,h);   // topmost — opaque body occludes stars, lit phase glows over it
+}
+
+// SEALED (pre-reveal) look — flat white field, solid black runner. Minimal + distinct
+// from the dreamweaver rare so the reveal never resembles the sealed state.
+let _sfTmp=null, _sfCtx=null, _sfNoise=null, _sfNoiseCtx=null, _sfWord=null;
+const SEALED_WORDMARK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA68AAACaCAYAAABGx35qAAAQAElEQVR4AezdSYgtVxkH8DyNGiOKRpwxuhJRdKGIU0QFcaHRZYKYjaKgxhlUHBIFE4UXB4xRxGHhiCIuklVAhOCEiJqViAoKgkGExKDGJGZ4/k+GZ/ql+966Q1Wdc+oXzpe63beqzjm/r6rP/br73X7Aaf4jQIAAAQIECBAgQIAAAQKVCyhed06QExAgQIAAAQIECBAgQIDA2AKK17GFnX+9gD0IECBAgAABAgQIECCwRkDxugbI0wRaEDBGAgQIECBAgAABAr0LKF57z7D5ESAwRMA+BAgQIECAAAEClQsoXitPkOERIECgDQGjJECAAAECBAiMK6B4HdfX2QkQIECAwDABexEgQIAAAQIrBRSvK3k8SYAAAQIECLQiYJwECBAg0LeA4rXv/JodAQIECBAgQGCogP0IECBQtYDiter0GBwBAgQIECBAgEA7AkZKgMCYAorXMXWdmwABAgQIECBAgACB4QL2JLBCQPG6AsdTBAgQIECAAAECBAgQaEmg57EqXnvOrrkRIECAAAECBAgQIECgE4GJitdOtEyDAAECBAgQIECAAAECBGYRULzOwr5Fpw4hQIAAAQIECBAgQIDAggUUrwtO/tKmbr4ECBAgQIAAAQIECLQroHhtN3dGTmBqAf0RIECAAAECBAgQmE1A8TobvY4JEFiegBkTIECAAAECBAhsK6B43VbOcQQIECAwvYAeCRAgQIAAgcUKKF4Xm3oTJ0CAAIElCpgzAQIECBBoVUDx2mrmjJsAAQIECBCYQ0CfBAgQIDCTgOJ1JnjdEiBAgAABAgSWKWDWBAgQ2E5A8bqdm6MIECBAgAABAgQIzCOgVwILFVC8LjTxpk2AAAECBAgQIEBgqQLm3aaA4rXNvBk1AQIECBAgQIAAAQIE5hKYpV/F6yzsOiVAgAABAgQIECBAgACBTQT6Kl43mbl9CRAgQIAAAQIECBAgQKAZAcVrM6maZqB6IUCAAAECBAgQIECAQI0Citcas2JMLQsYOwECBAgQIECAAAECIwgoXkdAdUoCBHYRcCwBAgQIECBAgACB+wsoXu9v4jMECBBoW8DoCRAgQIAAAQIdCiheO0yqKREgQIDAbgKOJkCAAAECBOoTULzWlxMjIkCAAAECrQsYPwECBAgQ2LuA4nXvpE5IgAABAgQIENhVwPEECBAgcKqA4vVUER8TIECAAAECBAi0L2AGBAh0J6B47S6lJkSAAAECBAgQIEBgdwFnIFCbgOK1towYDwECBAgQIECAAAECPQiYw54FFK97BnU6AgQIECBAgAABAgQIENiHwMFzKF4PeviIAAECBAgQIECAAAECBCoUULxukRSHECBAgAABAgQIECBAgMC0AorXab31dreA/xMgQIAAAQIECBAgQGAjAcXrRlx2JlCLgHEQIECAAAECBAgQWJaA4nVZ+TZbAgTuFbAlQIAAAQIECBBoSkDx2lS6DJYAAQL1CBgJAQIECBAgQGBKAcXrlNr6IkCAAAEC/xfwiAABAgQIENhAQPG6AZZdCRAgQIAAgZoEjIUAAQIEliSgeF1Sts2VAAECBAgQIHBfAY8JECDQkIDitaFkGSoBAgQIECBAgEBdAkZDgMB0AorX6az1RIAAAQIECBAgQIDAQQEfERgsoHgdTGVHAgQIECBAgAABAgQI1CawnPEoXpeTazMlQIAAAQIECBAgQIBAswKjFa/Nihg4AQIECBAgQIAAAQIECFQnoHitLiUnB+QBAQIECBAgQIAAAQIECNwjoHi9B8KmRwFzIkCAAAECBAgQIECgFwHFay+ZNA8CYwg4JwECBAgQIECAAIFKBBSvlSTCMAgQ6FPArAgQIECAAAECBPYjoHjdj6OzECBAgMA4As5KgAABAgQIELhLQPF6F4P/ESBAgACBXgXMiwABAgQI9CGgeO0jj2ZBgAABAgQIjCXgvAQIECBQhYDitYo0GAQBAgQIECBAoF8BMyNAgMA+BBSv+1B0DgIECBAgQIAAAQLjCTgzAQIRULwGQSNAgAABAgQIECBAoGcBc+tBQPHaQxbNgQABAgQIECBAgAABAmMKVHBuxWsFSTAEAgQIECBAgAABAgQIEFgt0Hrxunp2niVAgAABAgQIECBAgACBLgQUr12kcZdJOJYAAQIECBAgQIAAAQL1Cyhe68+REdYuYHwECBAgQIAAAQIECIwuoHgdnVgHBAisE/A8AQIECBAgQIAAgXUCitd1Qp4nQIBA/QJGSIAAAQIECBDoXkDx2n2KTZAAAQIE1gvYgwABAgQIEKhdQPFae4aMjwABAgQItCBgjAQIECBAYGQBxevIwE5PgAABAgQIEBgiYB8CBAgQWC2geF3t41kCBAgQIECAAIE2BIySAIHOBRSvnSfY9AgQIECAAAECBAgME7AXgboFFK9158foCBAgQIAAAQIECBBoRcA4RxVQvI7K6+QECBAgQIAAAQIECBAgMFRg1X6K11U6niNAgAABAgQIECBAgACBKgQUr4PSYCcCBAgQIECAAAECBAgQmFNA8Tqn/pL6NlcCBAgQIECAAAECBAjsIKB43QHPoQSmFNAXAQIECBAgQIAAgSULKF6XnH1zJ7AsAbMlQIAAAQIECBBoWEDx2nDyDJ0AAQLTCuiNAAECBAgQIDCfwE7F64kTJ56Q+GriJ4mfVhJlLJdlLI+aj7XPnmP63MSViVpyXcZxTcbz1sSD+1SfZ1bxfGDi/MSPEsW5lrg643lF4tg8Mn32Gs+HJj6c+HHiqFyXr61fyfNP3lUh5xj6teS72fdpu/ZX1fEVDCam1u4K8jDVEJLvoffbUff+GJ+3do9wASTXQ9fu8vV859fK6W/o1xJr9zj5XuTavVPxmjw8NPHCxDmJF1cSZSzPy1gelND2K3BWTvfyRC25LuN4acZTXtzuei3nNNopAmfn49ry/bKM6fEJxWsQ9thOz7menXhJotxXh0X52vqmPH88L1gene0ubejXkjKeh+/SkWMPFWh67T50Rj65SmDo/XbYfT/W56zdqzK223ND1u7y9Xwfr5WHfi2xdu+W06OOXuTa7QX/UZeDzxMgQIDAYQLn55PvSwF7ZrYaAQLtCRgxAQLLE+hm7Va8Lu/iNWMCBAjsIlB+6v3unOCNKWD9hksgNAIEliZgvgSaE+hm7Va8NnftGTABAgRmF3hIRvDxxLkpYB+YrUaAAAECBIYL2HMOgS7WbsXrHJeOPgkQINC+wCMzhc8mnp8CtnxHNw81AgQIECBAYAqBLftofu1WvG6ZeYcRIECAwGlPicHnE+VN07LRCBAgQIAAgcoFml6791i8Vp4mwyNAgACBMQSek5N+Kj99Le8CnYcaAQIECBAgULlAs2u34rWmK8tYCBAg0KbAuRn2R1PAPiJbjQABAgQIEKhfoMm1W/Fa/4VlhBsI2JUAgdkE3pSeL0wBe0a2GgECBAgQIFC/QHNr95TF61XJ38WJi0aOj+T8X07clNDmEbgl3ZYc7JLrS3KOPya0aQW26e26HHQ8sUu+P5fjb0xo7QqcnqF/OHFeCljvQByIitsNGVt5s62yXm5y3347x92eWNe2WQPKWMq6Ye1epzve89vk7dTrx9o9Xn6cmcAYAs2t3VMVr7dG+/uJS48dO3bJyFH6+E76sAAGfKZWXhh9OTnYOtcZdymGrs1Wq1+gfJPh0zvm+/JMsxTB2bTeFj3+h2X25d59eQpY70AcjBpb7tUbE19NlPVy8NfpzOXriZsT69o2a0AZi7V7ney4z2+TtwPXT4ZX7n9rdyA0Ag0JNLV2T1W8NpQ/QyVAgACBHQQel2PLOxA/O9vtmqMIECBAgACBKQWaWbsVr1NeFvoiQIDAMgSenml+Lj99PTtbbQYBXRIgQIAAgQ0Fmli7pypeHxK8bybuyIuZKdo16eSx6U+bR+CJ6fZXycHWLcf/M3FeQiNAoE2Bl2bYn8wXgbOy1Qi0JrDE8Vq7l5h1cyZwUKD6tXuq4vUgi48IECBAYAkCr8sk358C9sxsNQIEFiVgsgQINCpQ9dqteG30qjJsAgQINCBQ3rTp3RnnG1LAPihbjQABAgSGCtiPwDwCVa/ditd5Lgq9EiBAoFWB8u7Sm/xZo/LPRsqfzzg3Baw1p9WsGzcBAgQaFDDkkwLdrN1eSJzMqQcECBAgMEDg6uzzzkT5d+nZDGqPzF6fSTw/BWz5jm4eagQIECBAgMBEAtuu3dWt3YrXia4Y3RAgQKATgTsyjysTH0rcmhjanpody5/QeVq2CtggaAQIECBAYCKBbtbu9orXiTKsGwIECBA4UuC/eeZrieOJOxND23Oz42WJ8q6m2WgECBAgQIDARAJdrN2K14mulpq6MRYCBAjsKnDs2LFbco5PJUoRm83g9prseWniYQmNAAECBAgQmEigh7Vb8TrRxaKbrgRMhgCBCGQRLP/u9eI8vCqxSSs/ebX+bCJmXwIECBAgsAeB1tduLx72cBE4BQECmwrYvxeBLIJ/y1zek/hFQiNAgAABAgQqF2h57Z6qeL09OfxE4iUTxDnp48LEPxLaPALF/s3p+r75/kg+Lr9mmM3g9pfseUHivuc59fGL8/zlifJ7/NloBBYiUNE0swj+KcN5e+IPCY0AgTYFrN1t5s2oCWwl0OraPVXxWt7h6neR/Xmgfjpy/Czn/23itvSnzSNwc7q9Njk4met8/OnExxKb5OXs7P/axO/ve65THpdr6s/53CZvGpNTagQI7FngNznf2xLlJ7HZ1N+MkACBAwLW7gMcPiCwCIHm1u6pitdFZN8kjxZIcVl+6vqF7HFF4kRiaDsvO1504sSJh2erESBQqUDu8XJfX5PhvTfx74TWv4AZdi6Q+9ra3XmOTW/ZArnHm1u7Fa/LvmYnnX1ukPKC9pJ0+q3EJu2t2fntKWDPyFarT+CsDOkFyc8520aOf17CNyiC0HLLPV5+y+YHmUP5ZwJ+lT8QGoHVAvU/m/va2l1/mrYZobV7G7UOj8k93tTarXjt8CKseUq5QW7I+D6YuDoxtJ2eHcuL4denOCqP86FWkcCzMpYrEz/ZIb6bY5+c0BoXyD1eitavZBqfSZTv6GajESDQskDu63rX7pZh5x27tXte/6p6zz3ezNqteK3q0lnGYHKD/DUzfWfil4mh7czseFniVSlgXbeB0AjUKpB7/D8Z2/HE1xMaAQIdCOS+tnZ3kMfDpuBzBIpA7vEm1m5FQMmWmFwgN8gf02n5deDfZzu0PSo7fj7xohSwx7LVCBCoVCD3eHnn0vIbE5v8lkWlszEsAgSKQO5ra3eBEAQOCnTzUe7x6tduxWs3l1uTE7k2oy4F7HXZDm3lHYi/mJ2fkdAIEKhYIItg+UnNuzLEXyc0AgT6ELB295FHsyBwqMA8a/ehQzn0k4rXQ1l8cgqB3Bzl38P9OH29I3FjYmgr/07jivz09SlDD7AfAQKzCZSf1JQ/oVP+Fuxsg9AxAQL7EbB2SdEO1AAABQFJREFU48fRWQhULlDt2q14PeLK8elpBLIIlnc4uyq9fSBR3pI/m0HtZdnreArYx2SrESBQqUDu8fJNql9leBcm/p7QCBBoXCD3tbW78RwaPoFVArnHq127Fa+rMue5XQQGH5sb5Pbs/I3ExxPlcTaD2nnZ6+IUsP7ESiA0ArUK5B6/M2P7YeJ9iZsSGgECjQvkvi7rtbW78TwaPoGjBHKPV7l2K16PypjPTyqQG6T81PXydHpFYpP2luz8jhSwHf4N2MxMI9CJQO7x8pOa72U6H0vcltAIEGhcIPe1tbvxHBo+gVUCucerW7sVr6sy5rlJBXKD3PuH0L+9Qcfl775elP0vSAFbHuehRuAeAZuqBHKP35oBfSmx6TepcohGgECNArmvrd01JsaYCOxJIPd4VWu34nVPiXWa/QjkBrk+Zyr//rX8imEeDmrlp67lb0q+OgWsa3oQmZ0IDBPY9165x8sL3Utz3k2+SZXdNQIEahXIfW3trjU5xkVgDwK5x6tZu3d6oZ+J/CnxzMS6dkZ2+Fai/O70HgidYg6B5O+HiUck1rUnZYet/zRGjv1r4pWJTdpZ2fnKhGtsDxdHHO9IXJZ4QKKm5mvJHvJ76imS4H8lzk8Mae/JTuVXBU89zeCPc/z1iQsS69pOX0sGD2jcHbs5e5I1yRrQDVglE5kqb+nH2j1zzpMDa/fMOZiy++R7kWv3TsXrlAnSFwECBAgQILBEAXMmQIAAAQJ3Cyhe73bwfwIECBAgQIBAnwJmRYAAgU4EFK+dJNI0CBAgQIAAAQIExhFwVgIE6hBQvNaRB6MgQIAAAQIECBAg0KuAeRHYi4DidS+MTkKAAAECBAgQIECAAIGxBJy3CChei4IgQIAAAQIECBAgQIAAgaoFdipeq56ZwREgQIAAAQIECBAgQIBANwKK13lTqXcCBAgQIECAAAECBAgQGCCgeB2AZJeaBYyNAAECBAgQIECAAIElCChel5BlcySwSsBzBAgQIECAAAECBBoQULw2kCRDJECgbgGjI0CAAAECBAgQGF9A8Tq+sR4IECBAYLWAZwkQIECAAAECawUUr2uJ7ECAAAECBGoXMD4CBAgQINC/gOK1/xybIQECBAgQILBOwPMECBAgUL2A4rX6FBkgAQIECBAgQKB+ASMkQIDA2AKK17GFnZ8AAQIECBAgQIDAegF7ECCwRkDxugbI0wQIECBAgAABAgQItCBgjL0LKF57z7D5ESBAgAABAgQIECBAYIhA5fsoXitPkOERIECAAAECBAgQIECAwGmntVC8yhMBAgQIECBAgAABAgQILFxA8bqIC8AkCRAgQIAAAQIECBAg0LaA4rXt/Bn9VAL6IUCAAAECBAgQIEBgVgHF66z8OiewHAEzJUCAAAECBAgQILCLgOJ1Fz3HEiBAYDoBPREgQIAAAQIEFi2geF10+k2eAAECSxIwVwIECBAgQKBlAcVry9kzdgIECBAgMKWAvggQIECAwIwCitcZ8XVNgAABAgQILEvAbAkQIEBgewHF6/Z2jiRAgAABAgQIEJhWQG8ECCxYQPG64OSbOgECBAgQIECAwNIEzJdAuwKK13ZzZ+QECBAgQIAAAQIECEwtoL/ZBBSvs9HrmAABAgQIECBAgAABAssT2HbGitdt5RxHgAABAgQIECBAgAABApMJKF5PUntAgAABAgQIECBAgAABArUK/A8AAP//9v8FpgAAAAZJREFUAwACMQWt7NIHUgAAAABJRU5ErkJggg==";
+function drawSealedFlat(){
+  if(!dwCtx){ const c=document.getElementById('bg2d'); if(!c) return; dwCtx=c.getContext('2d'); }
+  const x=dwCtx, w=W, h=H;
+  // 1) black-and-white glitch static — low-res buffer scaled up (chunky), re-randomized per frame (flicker)
+  const nw=Math.max(8,Math.ceil(w/4)), nh=Math.max(8,Math.ceil(h/4));
+  if(!_sfNoise){ _sfNoise=document.createElement('canvas'); _sfNoiseCtx=_sfNoise.getContext('2d'); }
+  if(_sfNoise.width!==nw||_sfNoise.height!==nh){ _sfNoise.width=nw; _sfNoise.height=nh; }
+  const nc=_sfNoiseCtx, nimg=nc.createImageData(nw,nh), nd=nimg.data;
+  for(let i=0;i<nd.length;i+=4){ const v=Math.random()<0.55?0:255; nd[i]=nd[i+1]=nd[i+2]=v; nd[i+3]=255; }
+  nc.putImageData(nimg,0,0);
+  x.imageSmoothingEnabled=false; x.drawImage(_sfNoise,0,0,w,h); x.imageSmoothingEnabled=true;
+  // 2) solid black runner silhouette — RUNNING (live frame), fill, bottom-aligned
+  if(figImg && figImg.width){
+    const rf=(typeof figFrames!=='undefined' && figFrames && figFrames.length) ? currentFigFrame() : figImg;
+    const ms=Math.min(w/figImg.width, h*0.9/figImg.height);   // 10% headroom
+    const mw=(figImg.width*ms)|0, mh=(figImg.height*ms)|0, dx=((w-mw)/2)|0, dy=(h-mh)|0;
+    if(!_sfTmp){ _sfTmp=document.createElement('canvas'); _sfCtx=_sfTmp.getContext('2d'); }
+    if(_sfTmp.width!==mw||_sfTmp.height!==mh){ _sfTmp.width=mw; _sfTmp.height=mh; }
+    const tc=_sfCtx; tc.clearRect(0,0,mw,mh); tc.drawImage(rf,0,0,mw,mh);
+    tc.globalCompositeOperation='source-in'; tc.fillStyle='#000000'; tc.fillRect(0,0,mw,mh); tc.globalCompositeOperation='source-over';
+    x.drawImage(_sfTmp,dx,dy);
+  }
+  // 3) white FRONTRUN wordmark (Inversionz) centered across the middle
+  if(!_sfWord){ _sfWord=new Image(); _sfWord.src=SEALED_WORDMARK; }
+  if(_sfWord.complete && _sfWord.naturalWidth){
+    const ww=w*0.78, wh=ww*_sfWord.naturalHeight/_sfWord.naturalWidth, wx=(w-ww)/2, wy=h*0.52-wh/2;
+    x.save(); x.shadowColor="rgba(0,0,0,0.95)"; x.shadowBlur=Math.round(w*0.02); x.drawImage(_sfWord,wx,wy,ww,wh); x.drawImage(_sfWord,wx,wy,ww,wh); x.restore();
+    x.drawImage(_sfWord,wx,wy,ww,wh);
+  }
+}
+
+function frame() {
+  const t = (performance.now() - start) / 1000;
+  const spd = $('spd').value / 100;
+  const den = $('den').value / 100;
+  $('v-spd').textContent = spd.toFixed(2);
+  $('v-den').textContent = den.toFixed(2);
+
+  // 1. background — sealed flat / dreamweaver bg trait, else the tunnel
+  if (activeBg === 'sealedflat') drawSealedFlat(t);
+  else if (activeBg === 'dreamweaver') drawDreamweaver(t);
+  else drawTunnel(t);
+
+  // 2. figure-clipped glitch on top
+  const g = GLITCHES.find(gl => gl.id === activeGlitch);
+  if (g && g.id !== 'none') {
+    g.fn(fCtx, W, H, palette, t, spd, den, 1);
+    if (maskFallback && figImg && figImg.width) {
+      // canvas clipping replaces the CSS mask: contain, center bottom
+      fCtx.globalCompositeOperation = 'destination-in';
+      const ms = Math.min(W / figImg.width, H * 0.9 / figImg.height);   // 10% headroom so the head never clips
+      const mw = figImg.width * ms, mh = figImg.height * ms;
+      fCtx.drawImage(currentFigFrame(), (W - mw) / 2, H - mh, mw, mh);   // current run-cycle frame
+      fCtx.globalCompositeOperation = 'source-over';
+    }
+  } else {
+    fCtx.clearRect(0, 0, W, H);
+  }
+
+  // 3. flash overlay — cycle through (on + off) frames
+  if (flashEnabled) {
+    flashFrame = (flashFrame + 1) % (flashOn + flashOff);
+    const isBlack = flashFrame >= flashOn;
+    $('flash-black').style.display = isBlack ? 'block' : 'none';
+  }
+
+  requestAnimationFrame(frame);
+}
+
+// ===========================================================================
+// CYCLE — auto-step through all glitches (in the figure mask)
+// ===========================================================================
+let cycleId = null;
+function cycleGlitches() {
+  stopCycle();
+  let idx = 1;
+  cycleId = setInterval(() => {
+    if (idx >= GLITCHES.length) idx = 1;
+    const g = GLITCHES[idx];
+    activeGlitch = g.id; $('fig-glitch').value = g.id;
+    idx++;
+  }, 2000);
+}
+function stopCycle() { if (cycleId) { clearInterval(cycleId); cycleId = null; } }
+
+function cycleSavedLooks() {
+  stopCycle();
+  const looks = loadLooks();
+  if (!looks.length) { alert('No saved looks yet. Hit 🎲 RANDOM COMBO and save the ones you like first.'); return; }
+  let idx = 0;
+  restoreLook(looks[idx]);
+  cycleId = setInterval(() => {
+    idx = (idx + 1) % looks.length;
+    restoreLook(looks[idx]);
+  }, 3000);
+}
+
+function randomCombo() {
+  stopCycle();
+  const all = GLITCHES.filter(gl => gl.id !== 'none');
+  const g = all[(Math.random()*all.length)|0];
+  const pal = (Math.random() * PALETTES.length)|0;
+  $('palette-sel').value = pal; palette = PALETTES[pal];
+  $('fig-glitch').value = g.id; activeGlitch = g.id;
+  $('spd').value = 30 + ((Math.random()*60)|0);
+  $('den').value = 30 + ((Math.random()*60)|0);
+  // roll tunnel shape
+  const sh = SHAPES[(Math.random() * SHAPES.length)|0];
+  $('tunnel-shape').value = sh.name;
+  setTunnelShape(sh.name);
+  // roll tunnel texture
+  const texOpts = [
+    'noise',
+    // curated 11
+    'static','palstatic','scanlines','tear','rgbsplit','scatter','mirror','invert','cellular','glitchtext','flood',
+    // restored / texture-only 10
+    'halftone_tex','concsq_tex','radial_tex','hextun_tex','circles_tex','blocks_tex','diagonal_tex','letterbox_tex','matrix_tex','hextext_tex',
+    // pretext text tunnels
+    'addresses_tex','addr_ledger','addr_wallet','addr_giant','addr_swirl','addr_matrix','addr_ribbon','addr_smoke','manifesto_tex','hexwall_tex',
+  ];
+  const texVal = texOpts[(Math.random() * texOpts.length)|0];
+  $('tunnel-tex').value = texVal;
+  tunnelTex = texVal;
+  if (tunnelTex === 'noise') buildTunnelTexture();
+  updateFigure();
+}
+
+// ===========================================================================
+// WALLET-RESPONSIVE MODE
+// Paste a wallet → derive the whole piece from it, deterministically.
+//   • obvious layer: every address treatment renders THIS wallet's hex digits
+//   • subtle layer:  palette / shape / speed / density / glitch / treatment
+//                    are all a pure function of the wallet hash
+// Same wallet always produces the same piece. (Demo for community manager.)
+// ===========================================================================
+let WALLET = '';
+const LOUD_TEX   = ['addr_matrix','addr_ledger','addr_giant','addr_wallet','addresses_tex','addr_swirl','addr_ribbon','addr_read'];
+const SUBTLE_TEX = ['noise','scanlines','cellular','rgbsplit','circles_tex','halftone_tex','radial_tex','hextun_tex','flood','mirror'];
+
+function walletToHex(addr) {
+  const a = addr.trim().toLowerCase();
+  if (/^0x[0-9a-f]{40}$/.test(a)) return a.slice(2);           // real address → its own digits
+  const s = seedFrom(a), r = sfc32(s[0], s[1], s[2], s[3]);    // ENS / anything → stable 40-hex fingerprint
+  let h = ''; while (h.length < 40) h += (((r() * 0xffffffff) >>> 0)).toString(16).padStart(8, '0');
+  return h.slice(0, 40);
+}
+function bustContentCaches() {
+  if (State.txt) State.txt = {};                 // text-tunnel cached line layouts
+  State.ribbon = null; State.ribbonKey = null;   // single-line spiral cache
+  State.addrMatrix = null;                        // falling-address columns
+}
+// HARD traits = the piece's fixed identity (palette + figure glitch). Set by a
+// "roll" — or, for a shared link, derived once from the wallet. NOT changed when
+// a different holder address is entered.
+// HARDKEY ties the SOFT traits to the piece's identity, so the same holder
+// re-skins each piece DIFFERENTLY (soft = f(seed, holder), not f(holder)).
+let HARDKEY = 'genesis';
+function rollSeed() {
+  HARDKEY = 'roll:' + Math.random().toString(36).slice(2);
+  const pal = (Math.random() * PALETTES.length) | 0;
+  $('palette-sel').value = pal; palette = PALETTES[pal];
+  const gl = GLITCHES.filter(g => g.id !== 'none');
+  const g = gl[(Math.random() * gl.length) | 0];
+  $('fig-glitch').value = g.id; activeGlitch = g.id;
+  { const RR = Math.random(), RB = Math.random();
+  // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
+  // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
+  HARD_BG = null; HARD_SHADER = null;
+  if (RR < 0.007) HARD_BG = 'dreamweaver';
+  else if (RR < 0.057) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';
+  else if (RR < 0.107) HARD_SHADER = 'towers';
+  else if (RR < 0.152) HARD_SHADER = 'datastream';
+  else if (RR < 0.197) HARD_SHADER = 'datacity';
+  else if (RR < 0.242) HARD_SHADER = 'whirlwind';
+  else if (RR < 0.287) HARD_SHADER = 'barcode';
+  else if (RR < 0.332) HARD_SHADER = 'rain';
+  else if (RR < 0.377) HARD_SHADER = 'ticker';
+  else if (RR < 0.407) HARD_SHADER = 'thepull';
+  else if (RR < 0.457) HARD_SHADER = 'frontrunnerwall'; }
+  // frontrun / sitetext / code are NOT rolled — they're hard-assigned grails (window.FRONTRUN_GRAIL)
+}
+function seedFromWallet(addr) {   // deterministic identity from a wallet/seed (shared links / on-chain)
+  HARDKEY = 'hard:' + addr.toLowerCase();
+  const s = seedFrom('hard:' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
+  for (let i = 0; i < 6; i++) wr();
+  const pal = (wr() * PALETTES.length) | 0;
+  $('palette-sel').value = pal; palette = PALETTES[pal];
+  // contract assigns the palette on reveal (source of truth for metadata)
+  if (typeof window !== 'undefined' && window.FRONTRUN_PALETTE != null && PALETTES[+window.FRONTRUN_PALETTE]) {
+    palette = PALETTES[+window.FRONTRUN_PALETTE]; var _ps = $('palette-sel'); if (_ps) _ps.value = +window.FRONTRUN_PALETTE;
+  }
+  const gl = GLITCHES.filter(g => g.id !== 'none');
+  const g = gl[(wr() * gl.length) | 0];
+  $('fig-glitch').value = g.id; activeGlitch = g.id;
+  // genesis double-grail: contract can force the figure glitch (paired with the FRONTRUN_GRAIL tunnel)
+  if (typeof window !== 'undefined' && window.FRONTRUN_GLITCH && GLITCHES.some(function(x){ return x.id === window.FRONTRUN_GLITCH; })) {
+    activeGlitch = window.FRONTRUN_GLITCH; var _fgs = $('fig-glitch'); if (_fgs) _fgs.value = window.FRONTRUN_GLITCH;
+  }
+  { const RR = wr(), RB = wr();
+  // RARE TUNNEL IDENTITY (HARD trait, fixed by the seed, permanent on transfer)
+  // gold ~1/50 · liquid ~1/20 · towers ~1/12.5 · else holder-driven geometry
+  HARD_BG = null; HARD_SHADER = null;
+  if (RR < 0.007) HARD_BG = 'dreamweaver';
+  else if (RR < 0.057) HARD_SHADER = (RB < 0.5) ? 'liquid' : 'blackwater';
+  else if (RR < 0.107) HARD_SHADER = 'towers';
+  else if (RR < 0.152) HARD_SHADER = 'datastream';
+  else if (RR < 0.197) HARD_SHADER = 'datacity';
+  else if (RR < 0.242) HARD_SHADER = 'whirlwind';
+  else if (RR < 0.287) HARD_SHADER = 'barcode';
+  else if (RR < 0.332) HARD_SHADER = 'rain';
+  else if (RR < 0.377) HARD_SHADER = 'ticker';
+  else if (RR < 0.407) HARD_SHADER = 'thepull';
+  else if (RR < 0.457) HARD_SHADER = 'frontrunnerwall'; }
+  // on reveal the contract is the source of truth for the tunnel: it injects FRONTRUN_TUNNEL
+  // for the rare identities and nothing for holder-driven pieces. Drop the engine's own roll
+  // so the rendered tunnel can never disagree with the on-chain metadata.
+  if (typeof window !== 'undefined' && window.FRONTRUN_SEED) { HARD_BG = null; HARD_SHADER = null; }
+  // frontrun / sitetext / code are NOT rolled — they're hard-assigned grails (window.FRONTRUN_GRAIL)
+}
+// SOFT traits only — the holder address shapes the LOOK (tunnel shape, motion,
+// treatment, the digits). Palette + figure glitch (the identity) are left as-is,
+// so entering a new address re-skins the SAME piece instead of re-rolling it.
+function applyWallet(addr) {
+  addr = (addr || '').trim();
+  if (!addr) { clearWallet(); return; }
+  WALLET = addr;
+  WHEX = walletToHex(addr);
+  WPTR = 0;
+  bustContentCaches();
+  const s = seedFrom('soft:' + HARDKEY + ':' + addr.toLowerCase()), wr = sfc32(s[0], s[1], s[2], s[3]);
+  for (let i = 0; i < 8; i++) wr();
+  // a rare piece keeps its hard shader identity; everyone else gets holder-driven geometry
+  // FRONTRUN_GRAIL (contract-assigned: frontrun/sitetext/code) overrides everything.
+  var _grail = (typeof window !== 'undefined' && window.FRONTRUN_GRAIL) ? window.FRONTRUN_GRAIL : null;
+  var _tun = (typeof window !== 'undefined' && window.FRONTRUN_TUNNEL) ? window.FRONTRUN_TUNNEL : null;  // contract-assigned rare tunnel
+  const shName = (SEALED ? 'sealedflat' : (_grail || _tun || HARD_BG || HARD_SHADER || SHAPES[(wr() * SHAPES.length) | 0].name));
+  const shSel = $('tunnel-shape'); if (shSel) shSel.value = shName;
+  setTunnelShape(shName);
+  if (SEALED) activeGlitch = 'none';   // sealed = flat white + black runner only; no figure glitch
+  $('spd').value = 30 + ((wr() * 60) | 0);
+  $('den').value = 30 + ((wr() * 60) | 0);
+  const pool = (wr() < 0.5) ? LOUD_TEX : SUBTLE_TEX;
+  const texVal = pool[(wr() * pool.length) | 0];
+  // grail tunnels carry their own fixed text texture — never overwrite it with a holder tex
+  if (!(shName === 'frontrun' || shName === 'sitetext' || shName === 'code' || shName === 'frontrunnerwall')) { $('tunnel-tex').value = texVal; tunnelTex = texVal; }
+  buildTunnelTexture();
+  updateFigure();
+  const cur = $('wallet-cur'); if (cur) cur.textContent = WALLET.length > 16 ? WALLET.slice(0,8)+'…'+WALLET.slice(-6) : WALLET;
+}
+function clearWallet() {
+  WALLET = ''; WHEX = ''; WPTR = 0;
+  bustContentCaches();
+  const inp = $('wallet-addr'); if (inp) inp.value = '';
+  const cur = $('wallet-cur'); if (cur) cur.textContent = '(random)';
+}
+// SEALED (pre-reveal) — every token renders the flat white field + black runner.
+// Deliberately distinct from the dreamweaver rare so reveal never echoes the sealed state.
+function applySealed(owner) {
+  SEALED = true; HARD_BG = null; HARD_SHADER = null;
+  let a = (owner || '').trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(a) && !/\.eth$/i.test(a)) { a = '0x'; for (let i = 0; i < 40; i++) a += '0123456789abcdef'[(Math.random() * 16) | 0]; }
+  applyWallet(a);
+}
+function unseal() { SEALED = false; }
+function randomWallet() {
+  let a = '0x'; for (let i = 0; i < 40; i++) a += '0123456789abcdef'[(Math.random() * 16) | 0];
+  const inp = $('wallet-addr'); if (inp) inp.value = a;
+  applyWallet(a);
+}
+function usePreset(addr) {
+  const inp = $('wallet-addr'); if (inp) inp.value = addr;
+  applyWallet(addr);
+}
+
+// --- public preview mode (clean: no dev panel) ---
+function syncPreviewURL(v) {
+  try { const u = new URL(location.href); if (v) u.searchParams.set('w', v); history.replaceState(null, '', u); } catch (e) {}
+}
+function applyPreview(v) { applyWallet(v); syncPreviewURL(v); const i = $('preview-addr'); if (i) i.value = (v || '').trim(); postParentState(); }
+function postParentState(){ try { if (window.parent && window.parent !== window) window.parent.postMessage({ type:'frontrun:state', wallet: WALLET }, '*'); } catch(e){} }
+function rollPreview() {
+  rollSeed();   // new piece identity (palette + glitch)
+  let a = '0x'; for (let i = 0; i < 40; i++) a += '0123456789abcdef'[(Math.random() * 16) | 0];
+  applyPreview(a);   // fresh look from a new holder
+}
+
+// ===========================================================================
+// FIGURE SIZE
+// ===========================================================================
+function applyFigureSize() {
+  const pct = $('fig-size').value;
+  document.documentElement.style.setProperty('--fig-scale', pct / 100);
+  $('v-fig-size').textContent = pct + '%';
+}
+
+// ===========================================================================
+// LOCKED LOOKS
+// ===========================================================================
+const LOOKS_KEY = 'frontrun.glitchlab.looks.v1';
+function captureLook() {
+  return {
+    palette: $('palette-sel').value,
+    shape:   $('tunnel-shape').value,
+    tex:     $('tunnel-tex').value,
+    glitch:  $('fig-glitch').value,
+    flash:   $('flash-mode').value,
+    flashOpa: $('flash-opa').value,
+    spd:     $('spd').value,
+    den:     $('den').value,
+    figSize: $('fig-size').value,
+    figOpa:  $('fig-opa').value,
+    seed:    SEED,
+  };
+}
+function restoreLook(L) {
+  $('palette-sel').value = L.palette; palette = PALETTES[+L.palette];
+  $('fig-glitch').value = L.glitch; activeGlitch = L.glitch;
+  $('spd').value = L.spd;
+  $('den').value = L.den;
+  // backwards compat: legacy looks may have stored "tunnel:hex" in `bg`
+  let shapeName = L.shape || L.tunnel;
+  if (!shapeName && L.bg && L.bg.startsWith('tunnel:')) shapeName = L.bg.slice(7);
+  if (!shapeName) shapeName = 'hex';
+  $('tunnel-shape').value = shapeName;
+  setTunnelShape(shapeName);
+  // tunnel texture
+  const texVal = L.tex || 'noise';
+  $('tunnel-tex').value = texVal;
+  tunnelTex = texVal;
+  if (tunnelTex === 'noise') buildTunnelTexture();
+  $('fig-size').value = L.figSize; $('fig-opa').value = L.figOpa;
+  applyFigureSize(); updateFigure();
+  // flash (may be missing on legacy looks)
+  const flashVal = L.flash || 'off';
+  $('flash-mode').value = flashVal;
+  setFlashMode(flashVal);
+  if (L.flashOpa !== undefined) { $('flash-opa').value = L.flashOpa; applyFlashOpacity(); }
+}
+function loadLooks(){try{return JSON.parse(localStorage.getItem(LOOKS_KEY)||'[]');}catch{return [];}}
+function persist(arr){try{localStorage.setItem(LOOKS_KEY,JSON.stringify(arr));}catch(e){}} // storage forbidden in sandboxed/data: iframes (OpenSea) - must never kill the render
+
+// CURATED STARTER LOOKS — one entry per glitch with sensible defaults
+// Each starter pairs a tunnel SHAPE + tunnel TEXTURE + figure GLITCH
+const STARTER_LOOKS = [
+  { name: 'hex + noise + static',           palette:'0', shape:'hex',         tex:'noise',         glitch:'static',    spd:'50', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'hex + cellular walls + palstatic', palette:'0', shape:'hex',       tex:'cellular',      glitch:'palstatic', spd:'50', den:'55', figSize:'92', figOpa:'100' },
+  { name: 'square-flat + scanlines walls',  palette:'0', shape:'square-flat', tex:'scanlines',     glitch:'scanlines', spd:'40', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'triangle + matrix walls',        palette:'0', shape:'triangle',    tex:'matrix_tex',    glitch:'scatter',   spd:'50', den:'60', figSize:'92', figOpa:'100' },
+  { name: 'oct + RGB walls + mirror',       palette:'0', shape:'oct',         tex:'rgbsplit',      glitch:'mirror',    spd:'50', den:'55', figSize:'92', figOpa:'100' },
+  { name: 'twelve + circles walls',         palette:'0', shape:'twelve',      tex:'circles_tex',   glitch:'flood',     spd:'50', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'pentagon + halftone walls',      palette:'0', shape:'pentagon',    tex:'halftone_tex',  glitch:'invert',    spd:'50', den:'60', figSize:'92', figOpa:'100' },
+  { name: 'twisted + radial walls',         palette:'0', shape:'twisted',     tex:'radial_tex',    glitch:'tear',      spd:'50', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'hex recursive (hextun walls)',   palette:'0', shape:'hex',         tex:'hextun_tex',    glitch:'glitchtext',spd:'50', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'square + concentric walls',      palette:'0', shape:'square',      tex:'concsq_tex',    glitch:'palstatic', spd:'50', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'square-flat + diagonal walls',   palette:'0', shape:'square-flat', tex:'diagonal_tex',  glitch:'tear',      spd:'50', den:'50', figSize:'92', figOpa:'100' },
+  { name: 'oct + glitchtext walls',         palette:'0', shape:'oct',         tex:'glitchtext',    glitch:'palstatic', spd:'50', den:'50', figSize:'92', figOpa:'100' },
+];
+
+function seedStarterLooks() {
+  if (loadLooks().length > 0) return; // user already has saved looks — don't overwrite
+  persist(STARTER_LOOKS.slice());
+}
+function renderLooks() {
+  const list = $('looks-list'); list.innerHTML = '';
+  const looks = loadLooks();
+  if (!looks.length) { list.innerHTML='<div style="color:#555;font-size:10px;padding:4px 0">(none yet)</div>'; return; }
+  looks.forEach((L,i)=>{
+    const row=document.createElement('div'); row.className='row'; row.style.gap='2px';
+    const b=document.createElement('button'); b.textContent=L.name; b.title=L.bottom+' / '+L.top;
+    b.style.cssText='margin:0;flex:1;text-align:left;font-size:10px;padding:3px 6px';
+    b.onclick=()=>restoreLook(L);
+    const d=document.createElement('button'); d.textContent='×'; d.style.cssText='margin:0;flex:0 0 22px;color:#666';
+    d.onclick=e=>{e.stopPropagation();persist(loadLooks().filter((_,j)=>j!==i));renderLooks();};
+    row.appendChild(b); row.appendChild(d); list.appendChild(row);
+  });
+}
+function saveLook(){
+  const name=($('look-name').value||'').trim()||('look '+(loadLooks().length+1));
+  const L=captureLook(); L.name=name;
+  const a=loadLooks(); a.push(L); persist(a); $('look-name').value=''; renderLooks();
+}
+
+// ===========================================================================
+// PANEL TOGGLE
+// ===========================================================================
+function togglePanel(){
+  const p=$('panel'),t=$('toggle-panel');
+  if(p.style.display==='none'){p.style.display='block';t.style.display='none';}
+  else{p.style.display='none';t.style.display='block';}
+}
+
+// ===========================================================================
+// TITLE / FADE  — promo video ending
+// Toggle: tunnel dissolves to black while the FRONTRUN wordmark resolves and
+// holds. Wordmark colour tracks the live palette accent. Press F again (or Esc)
+// to bring the scene back.
+// ===========================================================================
+function hexToRGBA(hex, a){
+  const h = hex.replace('#',''); const n = parseInt(h,16);
+  const r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  return `rgba(${r},${g},${b},${a})`;
+}
+function titleFade(){
+  const f = $('frame');
+  const accent = palette[1] || '#ED1E79';
+  f.style.setProperty('--title-color', accent);
+  f.style.setProperty('--title-glow', hexToRGBA(accent, 0.55));
+  f.classList.toggle('titled');
+}
+
+// ===========================================================================
+// BOOT
+// ===========================================================================
+populateDropdown('fig-glitch', 'palstatic');
+
+$('palette-sel').addEventListener('change', e => {
+  palette = PALETTES[+e.target.value];
+  buildTunnelTexture();   // texture uses palette colors
+});
+$('fig-glitch').addEventListener('change', e => activeGlitch = e.target.value);
+$('tunnel-shape').addEventListener('change', e => setTunnelShape(e.target.value));
+$('flash-mode').addEventListener('change', e => setFlashMode(e.target.value));
+$('flash-opa').addEventListener('input', applyFlashOpacity);
+$('tunnel-tex').addEventListener('change', e => {
+  tunnelTex = e.target.value;
+  if (tunnelTex === 'noise') buildTunnelTexture();  // bake static noise once
+});
+$('fig-opa').addEventListener('input', updateFigure);
+$('fig-size').addEventListener('input', applyFigureSize);
+$('save-look').addEventListener('click', saveLook);
+$('look-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveLook(); });
+$('wallet-addr').addEventListener('change', e => applyWallet(e.target.value));
+$('wallet-addr').addEventListener('keydown', e => { if (e.key === 'Enter') applyWallet(e.target.value); });
+
+// Promo / screen-recording controls:
+//   • Click/tap the image (anywhere outside the panel) → new RANDOM COMBO
+//   • Press SPACE or R → new RANDOM COMBO
+// Works whether the panel is open or hidden, so you can record and trigger
+// fresh looks live. The panel + its [ + ] button are excluded.
+document.addEventListener('click', e => {
+  if (e.target.closest('#panel, #toggle-panel, #preview-bar')) return; // don't hijack the controls
+  if ($('frame').classList.contains('titled')) return;   // don't reroll while the title holds
+  if (document.body.classList.contains('preview')) return; // public: don't reroll on taps (it would wipe a typed wallet — use the 🎲 button)
+  randomCombo();
+});
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return; // allow typing
+  // F → title fade (FRONTRUN wordmark resolves as the tunnel dies). Esc → undo.
+  if (e.key === 'f' || e.key === 'F') { e.preventDefault(); titleFade(); return; }
+  if (e.key === 'Escape') { e.preventDefault(); $('frame').classList.remove('titled'); return; }
+  if (e.code === 'Space' || e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    if (document.body.classList.contains('preview')) rollPreview(); else randomCombo();
+  }
+});
+
+// WebGL tunnel boot — happens here so PALETTES/SHAPES/palette are all available
+setupWebGL();
+resize();
+activeShape = SHAPES[2]; // default hex
+buildTunnelGeometry(activeShape);
+buildTunnelTexture();
+
+reseed();
+applyFigureSize();
+loadFigureMask();
+updateFigure();
+applyFlashOpacity();                   // sync overlay's bg color to slider value
+setFlashMode($('flash-mode').value);   // activate flash if dropdown defaults to a non-off option
+seedStarterLooks();    // pre-load curated combos if none saved yet
+renderLooks();
+frame();
+
+// PUBLIC PREVIEW MODE — activate when URL has ?preview (or ?clean):
+//   hides the dev panel entirely, shows only the minimal wallet bar + art.
+//   ?w=0x… loads a specific wallet (shareable links); otherwise rolls one.
+(function initPreview() {
+  const p = new URLSearchParams(location.search);
+  const onchain = !!window.FRONTRUN_OWNER;                     // contract injects the holder address
+  if (!(onchain || p.has('preview') || p.has('clean'))) return;
+  document.body.classList.add('preview');
+  if (onchain || p.has('embed')) document.body.classList.add('embed');   // on-chain render = bare art, no bar
+  // let a parent site control the art via postMessage
+  window.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type === 'frontrun:wallet') applyPreview(d.value || '');
+    else if (d.type === 'frontrun:roll') rollPreview();
+    else if (d.type === 'frontrun:ping') postParentState();
+  });
+  const inp = $('preview-addr');
+  if (inp) {
+    // apply the moment a complete address/ENS is pasted or typed — no Enter needed
+    inp.addEventListener('input', e => {
+      const v = e.target.value.trim();
+      if (/^0x[0-9a-fA-F]{40}$/.test(v) || /\.eth$/i.test(v)) applyPreview(v);
+    });
+    inp.addEventListener('change', e => applyPreview(e.target.value));   // blur / commit fallback
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyPreview(e.target.value); inp.blur(); } });
+  }
+  const w = window.FRONTRUN_OWNER || p.get('w');
+  // PRE-REVEAL: contract injects FRONTRUN_SEALED=true and withholds the tunnel
+  // seed entirely → every token is the dreamweaver mystery, tinted by the holder.
+  if (window.FRONTRUN_SEALED || p.has('sealed')) { applySealed(w); if (inp && w) inp.value = w; return; }
+  // HARD identity comes from the reveal-day seed (contract-injected); the holder
+  // only re-skins (tunnel texture, motion, digits). Falls back to the wallet for
+  // pre-seed / local viewing.
+  const hard = window.FRONTRUN_SEED || w;
+  if (w) { seedFromWallet(hard); applyWallet(w); if (inp) inp.value = w; }
+  else rollPreview();    // never start blank
+  // ?shape=liquidmetal|blackwater|towers|canary — force a tunnel (showcase / shareable links)
+  const _shp = p.get('shape');
+  if (_shp) { setTunnelShape(_shp); const _ss=$('tunnel-shape'); if(_ss) _ss.value=_shp; }
+  // ?tex= force a wall texture (trait explorer / gallery)
+  const _tex = p.get('tex');
+  if (_tex) { tunnelTex = _tex; const _tt=$('tunnel-tex'); if(_tt) _tt.value=_tex; if (typeof buildTunnelTexture==='function') buildTunnelTexture(); }
+  // ?glitch= force the figure glitch (trait explorer / double-trait demo)
+  const _gl = p.get('glitch');
+  if (_gl) { activeGlitch = _gl; const _gs=$('fig-glitch'); if(_gs) _gs.value=_gl; }
+  // ?palette=N force a palette by index
+  const _pal = p.get('palette');
+  if (_pal !== null && PALETTES[parseInt(_pal, 10)]) { const pi = parseInt(_pal, 10); palette = PALETTES[pi]; const psel = $('palette-sel'); if (psel) psel.value = pi; if (typeof buildTunnelTexture==='function') buildTunnelTexture(); if (typeof updateFigure==='function') updateFigure(); }
+})();
+</script>
+</body>
+</html>

@@ -33,7 +33,7 @@ button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cur
 </style></head><body>
 <h1 class="brand">FRONTRUN</h1><div class="tag">gif maker</div>
 
-<div class="stage"><iframe id="art" src="./sketch-v4-glitch-lab.html?preview=1&embed=1&cap=1" title="FRONTRUN"></iframe></div>
+<div class="stage"><iframe id="art" src="./engine.html?preview=1&embed=1&cap=1" title="FRONTRUN"></iframe></div>
 
 <div class="card">
   <div class="row">
@@ -57,11 +57,11 @@ const $=id=>document.getElementById(id);
 const art=$("art"), MAXBYTES=15*1024*1024;
 let ready=false;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function setPiece(w){ try{art.contentWindow.postMessage({type:'frontrun:piece',value:w},'*');}catch(e){} }
+function setPiece(w){ try{art.contentWindow.postMessage({type:'frontrun:wallet',value:w},'*');}catch(e){} }
 function status(t){ $("status").textContent=t||""; }
 
 // roll a random wallet -> a random piece (no typing needed)
-function rollRandom(){ const h='0123456789abcdef'; let a='0x'; for(let i=0;i<40;i++)a+=h[(Math.random()*16)|0]; $("wallet").value=''; setPiece(a); }
+function rollRandom(){ $("wallet").value=''; try{art.contentWindow.postMessage({type:'frontrun:roll'},'*');}catch(e){} }
 // engine boots inside the iframe — enable the buttons once it's up and show a starter piece
 window.addEventListener('load',()=>{ setTimeout(()=>{ ready=true; $("make").disabled=false; rollRandom(); status(''); },2000); });
 $("rand").onclick=()=>{ if(ready){ rollRandom(); status('new piece — hit Make GIF'); setTimeout(()=>status(''),1500); } };
@@ -116,7 +116,13 @@ $("make").onclick=async()=>{
     $("make").disabled=true; $("connect").disabled=true; $("rand").disabled=true; $("out").style.display="none";
     $("prog").style.display="block"; $("bar").style.width="0";
     status("capturing… keep this tab in front");
-    const FRAMES=30, DELAY=66; // ~2s at 15fps
+    // sync to the running-man cycle so the GIF shows at least one full run (loops clean)
+    let cyc=0; try{cyc=art.contentWindow.FR_FIGTOTAL||0;}catch(e){}
+    const CYCLE = cyc>200 ? cyc : 1800;     // ms (fallback if not yet known)
+    const LOOPS = CYCLE<1400 ? 2 : 1;       // short cycle -> capture two for clarity
+    const WINDOW = CYCLE*LOOPS;
+    const FRAMES = Math.min(40, Math.max(20, Math.round(WINDOW/70)));
+    const DELAY = Math.max(40, Math.round(WINDOW/FRAMES));
     let size=480;
     const frames=await captureFrames(size,FRAMES,DELAY);
     if(!frames.length) throw new Error("nothing captured — reload and try again");
