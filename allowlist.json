@@ -1,0 +1,1600 @@
+{
+  "collection": "FRONTRUN",
+  "contract": "0xc6d3e992de90d79643a8da51369b8d08fbac15f7",
+  "seadrop": "0x00005EA00Ac477B1030CE78506496e8C2dE24bf5",
+  "merkleRoot": "0x8ed5290a3071af786332296bb6fd82be2bf4511d6f5f8f5d8c20f2882ad725d4",
+  "note": "SeaDrop 1.0 allow list. leaf = keccak256(abi.encode(minter, MintParams)); sorted-pair hashing. Verified on Sepolia.",
+  "stages": {
+    "team": {
+      "dropStageIndex": 1,
+      "price": "0 ETH",
+      "maxPerWallet": 1,
+      "start": "2026-07-01T13:00:00+01:00",
+      "end": "sale end"
+    },
+    "gtd": {
+      "dropStageIndex": 2,
+      "price": "0.008 ETH",
+      "maxPerWallet": 1,
+      "start": "2026-07-01T15:00:00+01:00",
+      "end": "2026-07-01T17:00:00+01:00"
+    }
+  },
+  "counts": {
+    "team": 1,
+    "gtd": 68,
+    "total": 69
+  },
+  "records": [
+    {
+      "address": "0xEf682B1D0835Df1F971d5D1F4565E9f6c121f706",
+      "stage": "team",
+      "mintParams": {
+        "mintPrice": "0",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782907200,
+        "endTime": 1814457600,
+        "dropStageIndex": 1,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xe12039587ac5f2a337cccc70bc1ae4613a448879cc9c9be9bde57ba0035867ce",
+        "0x2f40bb8b3be5c7b898a421cd31e802c754b757e342109a931f827451797558a0",
+        "0xbe58dc74b04999c94a4376255919c584379917861c31d4161d8997ed5c63ab26",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x126f443256FEf5FDabd18302Ee2BA248f3D07793",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x28c309402cf62417523d3ea30c915cd68cb9b69b2099ad70d1b7ce6b3542d3fc",
+        "0x2f40bb8b3be5c7b898a421cd31e802c754b757e342109a931f827451797558a0",
+        "0xbe58dc74b04999c94a4376255919c584379917861c31d4161d8997ed5c63ab26",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x6DC33c46eac58562ca28d9aA8Be4f4632e666ff7",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x80d27b7d68e80e877f4b503c2f378dfa3aff0909b5e7fbe460e1eaa30c657598",
+        "0xe7ed76dbd726376b2316b2e0ba61c2a558f801d89269eec108e9f5aedbc5312d",
+        "0xbe58dc74b04999c94a4376255919c584379917861c31d4161d8997ed5c63ab26",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xB12897740478eeC7B86b9eBf14245cDAcBBa4F2f",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x2ca4fff934a4889ee9f7354631995d49af3eb00bb8dc3a243df6d9fc2c9872ed",
+        "0xe7ed76dbd726376b2316b2e0ba61c2a558f801d89269eec108e9f5aedbc5312d",
+        "0xbe58dc74b04999c94a4376255919c584379917861c31d4161d8997ed5c63ab26",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xD293AD190e394223766f3a50E321C810D8747e7b",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xcf8e3456cab7ae5afdad6eaa87f1693a4aca7b5bf8954a51e7948a760e77321e",
+        "0xc04958f76b1cdbe74e2b61f4caf2574e62e9228754254e86b9b72a795eddfa6d",
+        "0x667045f145f0e27427aecf7284237144b280e3d701e9b1f53262f0195d866343",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xD6495442F78Ca06a8286b33E6061B12cE9af6b7B",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x9629ba4fbf0b76f180fab71322299ca5cd942eac076f3781d6d5074e26f7b519",
+        "0xc04958f76b1cdbe74e2b61f4caf2574e62e9228754254e86b9b72a795eddfa6d",
+        "0x667045f145f0e27427aecf7284237144b280e3d701e9b1f53262f0195d866343",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x686ADBFCAa75f7491bBA9F8d035613671c11B507",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xbde85bc09cebba0e5f6c02c7a21ad21b9e6f4f506cadd2b4687342fed1b3361d",
+        "0xcab10f3b86d5fc2274df867a4f345465f994cdfeb0618c68e082f775be27797b",
+        "0x667045f145f0e27427aecf7284237144b280e3d701e9b1f53262f0195d866343",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x6F95F5eB03496765742b3dBeaBd885d605946AF0",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x4e2ac3514a435c1b833876042bc35d662a34e98b1b20d82cc06d5ef2ca68aab7",
+        "0xcab10f3b86d5fc2274df867a4f345465f994cdfeb0618c68e082f775be27797b",
+        "0x667045f145f0e27427aecf7284237144b280e3d701e9b1f53262f0195d866343",
+        "0xc10a2f87eaba44cb1e9fdf00926f563f5a21442ffcc2914d8541cc3ad7af1bb9",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xAB3412BcA2ba14aB2B45EEDfb5aD0Ec7Dc3A8891",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x37d1e38058da998d3ec8e4c696e4a8bc302acc8b07486d31e35db43b2bbc5074",
+        "0x1968d496a5c9f2c62329451ab362b66e2005112e3dbfe9c45e9ff9d15d6638d0",
+        "0x07e7e94d27cb20b8f0749e2260e412e2c24d15a8f958ea00fecb098febb7686c",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xA66efF1127f7Ec4006D5127Ac6c6d2a8A911f04a",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x9ca962e7e065c7022834565c1b9759ba166978ad7ed32f9e4190d64ccab0184a",
+        "0x1968d496a5c9f2c62329451ab362b66e2005112e3dbfe9c45e9ff9d15d6638d0",
+        "0x07e7e94d27cb20b8f0749e2260e412e2c24d15a8f958ea00fecb098febb7686c",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x748909a5984a02C24BE962AD0E32340969bA9CAA",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xa1c504aad99aff74011437b3c0ca7582e8568bcc06902d25b45ba86b7809a60d",
+        "0x5603a5cec3fcbade8cfefe1ce03b2cea2705909a12e5d316a2402c8fc87d0387",
+        "0x07e7e94d27cb20b8f0749e2260e412e2c24d15a8f958ea00fecb098febb7686c",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x54e09B5aC394d84C908cbdB8A5b949ede6779D97",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x7f5d1622d80e3352b0775591e5961cfb8ad971ecfd89270856c979194ba15d5c",
+        "0x5603a5cec3fcbade8cfefe1ce03b2cea2705909a12e5d316a2402c8fc87d0387",
+        "0x07e7e94d27cb20b8f0749e2260e412e2c24d15a8f958ea00fecb098febb7686c",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x82ce5eb885F6205cbc86140D7B9fc2f5416fE418",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x0dc68aa18d91f32a927864b5079ba9affd332836d38746bb09124ec350812f6c",
+        "0xea06d9562c21162ceaf23e0ee996b27ad6759aec69a5e734b59a5fa6700b3f78",
+        "0xca579a9d585025810127db340ea5c17ceb9824034b23d3861892d5cacfaab275",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x3B4D8B4AF3659361334927960525029082C8Ce68",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x3a6ad6531caa683e05f2285bcf9d0acdd4970da8f3223cdfea64e90ca962901a",
+        "0xea06d9562c21162ceaf23e0ee996b27ad6759aec69a5e734b59a5fa6700b3f78",
+        "0xca579a9d585025810127db340ea5c17ceb9824034b23d3861892d5cacfaab275",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x053e8A02d818dd22150E4D71BeaF2c8D33e96bde",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xda0de552403ccb6f912af182509dce453f5b32067bd4a6dc52d106108deffdc8",
+        "0x91b58b23570126312f77da5b27b914b968b320beeb18b96f60f9fcbbaf23ea6e",
+        "0xca579a9d585025810127db340ea5c17ceb9824034b23d3861892d5cacfaab275",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x1b4b3220292a30089061cE4d774D3a622Dbae7d4",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x720e811884456cc112852021e289191092b30f07effd60eeaad7a91b86800da1",
+        "0x91b58b23570126312f77da5b27b914b968b320beeb18b96f60f9fcbbaf23ea6e",
+        "0xca579a9d585025810127db340ea5c17ceb9824034b23d3861892d5cacfaab275",
+        "0x3a27c3ef46b0e8a9f559ab244b45471e65fe5acd4bb89f004e094d89f8b5b135",
+        "0x72a0994dfb88c6ee38bbd1a563d54305506fd968d1851aaffef454c0b3ded74a",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xe00a9b6945f0A33436cCbf5C755AEad7d69109DC",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xb0fadfdef8d8040317fbb64a4bb0d42a0205271a0b9d07b11039c8c906c30e75",
+        "0x0b7439d8504478ac60689ad549dde83f90ccb48f676240abd73bcceb56079361",
+        "0x6cd49062e817de8a95c21ee16e11a93111076c539f2286fa178dbb22e3939b0f",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xb7E98f471862483410Da8Da52aE9597cF50B019A",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xcd4fe85885941d9122331105a5b1376e4a8fb960a9536dda03250e328f87a910",
+        "0x0b7439d8504478ac60689ad549dde83f90ccb48f676240abd73bcceb56079361",
+        "0x6cd49062e817de8a95c21ee16e11a93111076c539f2286fa178dbb22e3939b0f",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x1A9D8295f58D31D7a4F79Aa71556F04aF10C3Bea",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x9a2e35ded2dd812d9a851034afca15d460654414c9190d8aeb5a54f1fd567a55",
+        "0x5ac6f10c7509c8e7e678395ed8bacd1f1a4a77183655f7c47b1d07ce2d3aa2e3",
+        "0x6cd49062e817de8a95c21ee16e11a93111076c539f2286fa178dbb22e3939b0f",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xd088BDC872076691aBb10eF128703E089e463047",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x50ecd0a17817b0c9bbe89feb86c30751a303e39d8fe1ffc47bed4280efe4b59c",
+        "0x5ac6f10c7509c8e7e678395ed8bacd1f1a4a77183655f7c47b1d07ce2d3aa2e3",
+        "0x6cd49062e817de8a95c21ee16e11a93111076c539f2286fa178dbb22e3939b0f",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x10991Af33f44e88d74bf9DB1B2274d153C439abC",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x999b4dc6255879defae4f6042703a501b2c4b1b0ae254959498aad95614e3ad7",
+        "0x0bfc100a3c9f5f3c4acfd7bb8e6bf112ab2e04dfd9d0d8df4d2fd5f08189956b",
+        "0xc6bb724558d6331ae736853e60208fb24937a00b445e67f8991fa061448d7a74",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x8EFceB29863FB0B62C73C6C9c23f10F24243EBFA",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xfb800da7e08af0d40eef0ddce1281201e31fc47ad54b5282396be5a2949c3a14",
+        "0x0bfc100a3c9f5f3c4acfd7bb8e6bf112ab2e04dfd9d0d8df4d2fd5f08189956b",
+        "0xc6bb724558d6331ae736853e60208fb24937a00b445e67f8991fa061448d7a74",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xcf3F09bEdFF573b16cce2CdAf64154FE146f02c7",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x92054bb518adb2f90d47a3957380d3ec134e963d55883abc8f234ab79381c221",
+        "0x32bf20c4150f3ca1991357fbd6f41028826224320db5667dbf9c92b45e4c999a",
+        "0xc6bb724558d6331ae736853e60208fb24937a00b445e67f8991fa061448d7a74",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x6437aD369Ee5797256765a4130c967fe9Be77767",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x4f81c95e4d18f6b1e48eb7e843332accc4c1de8314e2acc7aca527bbd8a91649",
+        "0x32bf20c4150f3ca1991357fbd6f41028826224320db5667dbf9c92b45e4c999a",
+        "0xc6bb724558d6331ae736853e60208fb24937a00b445e67f8991fa061448d7a74",
+        "0xf3a74499a2c56a3eb91b57e76b59ea3dcd6b53a4837936f0dd53b544b9bc0a6d",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xe50661F180e6902e07e7336b967937C1A9541E44",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xdf4cf1d0a3b76d369ced881af74e5f421ff9948edf581ebca8517672a5b8af41",
+        "0xbd8e6316c6567332be2f2c49415dce97133f0fc969fbb787809432423e2b881f",
+        "0x46d60874e137039354f79d61a52f9778b0db7e19ce673bcae16d82bff30a6035",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x946F93d41e89c691fd913bA2b2cc5e3Af40b428c",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xc86b1f6df2cee44ea5d395ac13da06c8a8d905de7945e6f594131a808b15d734",
+        "0xbd8e6316c6567332be2f2c49415dce97133f0fc969fbb787809432423e2b881f",
+        "0x46d60874e137039354f79d61a52f9778b0db7e19ce673bcae16d82bff30a6035",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x0b5f937FEDF0513D7f5Ada10B4Fd6D42c4Cd8dA7",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x7ac0a08842c9320f0a7900348e3ec477eb3ae0b8f385d4c1a910d4b431a182f4",
+        "0x6b8d9f69df4cb137dc1aa90b3a4b3a9c55df039b6b4ca394901c9b33d7e4ac83",
+        "0x46d60874e137039354f79d61a52f9778b0db7e19ce673bcae16d82bff30a6035",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xEd1e74015fAA65a0d24277797038fCa9613a233D",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xfcd23ce4029f068841b2b61f00d6a6a74da8bdc7f4440309dd77d86691103c7b",
+        "0x6b8d9f69df4cb137dc1aa90b3a4b3a9c55df039b6b4ca394901c9b33d7e4ac83",
+        "0x46d60874e137039354f79d61a52f9778b0db7e19ce673bcae16d82bff30a6035",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x6d9ed472Da62B604eD479026185995889ae8f80e",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x317b2fdc8fa0fd8c89fec180f7dc10425ca73e74fc78961d20bc610b787c552b",
+        "0x3e05b5b43bbce4bad6ad124a97ddfed2b42a348592ffecc178ee1141f6d51cae",
+        "0xb60f7737f8ff766aa2d52facbee8143cf68da29ccc934f1d513026921de6737e",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xC5E203933a3D233B883f88Ef392Ce87287Df97Cb",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x9292661f260acbc131859552bf5fd8f2dc0f05ae01a380fd7069b53b60025f2c",
+        "0x3e05b5b43bbce4bad6ad124a97ddfed2b42a348592ffecc178ee1141f6d51cae",
+        "0xb60f7737f8ff766aa2d52facbee8143cf68da29ccc934f1d513026921de6737e",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x423bC78ae1cb6B7133A521Bb7bCAb9dC303Cf328",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x186711be73c048660059435bc5a5c4709273151f0f366308718982f1ace77071",
+        "0x1876a73fe49dde927c50bd91a4e2d3f4e6d8c4fef9088962d04816ed0cedb144",
+        "0xb60f7737f8ff766aa2d52facbee8143cf68da29ccc934f1d513026921de6737e",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x42Dd10D6315EcDfCBfcc8EcEaCCa0BdC9539acf2",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x7cb9c67cd0e680b6532cdb7d2c376dd4796ec6459cb890d43ab90016bf80c9b9",
+        "0x1876a73fe49dde927c50bd91a4e2d3f4e6d8c4fef9088962d04816ed0cedb144",
+        "0xb60f7737f8ff766aa2d52facbee8143cf68da29ccc934f1d513026921de6737e",
+        "0xe8b88e4c869099b7878bf9cf0bcefd9dd5ec0fd9f78c8ea0fc90dfa1030f2b66",
+        "0x3a097f2847c57ccbd914cc14fd6a6afa15ab27481c9b73a3206baaa891962d56",
+        "0xadddcdcffc0f692109817b64e76f559577ea56ccbcc873b90b41dd24f7d46ef7",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x3999F47534FB8f06D88bC2f67A833F7A8ace03ca",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x8795079624760d4b2b26ce869685d280e115485f0ff6a6912a88021f9294c395",
+        "0x4ae374c990c331d430d446381b6bdaeb60c8012286119381cb0fbb3548229df5",
+        "0x89ddc18dfa9758f94a5e66336bed799b7ba9466731f5d08366a42c195f8e91a3",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x591Ed302a389CbC4851ACC401105446047DCaDaB",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x4d89b5eba52144ce79b2a3eb1149911f1f462e34b152b654f5b92973f36f4b90",
+        "0x4ae374c990c331d430d446381b6bdaeb60c8012286119381cb0fbb3548229df5",
+        "0x89ddc18dfa9758f94a5e66336bed799b7ba9466731f5d08366a42c195f8e91a3",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x6FbAFF40D18E7a5dc755D37ae25680856d8ed83c",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x96c0121ea7a7117326e816da5a555d761eabbcb6575a4ea275c6ee4aa3c72a59",
+        "0x9697b40a3712ef68289b9a26213f98221e3a4ae7448895e7d78be5ae89a4804a",
+        "0x89ddc18dfa9758f94a5e66336bed799b7ba9466731f5d08366a42c195f8e91a3",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xA1bF1d294e692d2cD76E0Fe581893abB842d6Fb3",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x95487f80e6c9819ab25cc9b17c7f975f21dce1f9eeb128bf81d5705ff2e5b2db",
+        "0x9697b40a3712ef68289b9a26213f98221e3a4ae7448895e7d78be5ae89a4804a",
+        "0x89ddc18dfa9758f94a5e66336bed799b7ba9466731f5d08366a42c195f8e91a3",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x7d42e5B329ACC408C65f01b47e5e0191996008cC",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x63ede35285afb5831952a2488f9a0619141970443056b169f51a43c088a1fc84",
+        "0x66d4c9dea2269713b226cc16daef2ee570c70f729ed3ce8e97ce164e0195c6e0",
+        "0x8addb11b218058e7b9d3bdaaec3e175261ac83a9e611a6371fe38f26809ff7ed",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x28db08142b3FE503e644573B3F4bA05d34E6E254",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xcc874dfbe5474b339de59be81794b28a2480d4b2302468faa144eb518be3e630",
+        "0x66d4c9dea2269713b226cc16daef2ee570c70f729ed3ce8e97ce164e0195c6e0",
+        "0x8addb11b218058e7b9d3bdaaec3e175261ac83a9e611a6371fe38f26809ff7ed",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xF78D771314322E8DFeb0606D3a269a0fAb7b9763",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x7149d82263655f708e11d010906a0b4ee0015a92be8cd53d90a6978fcacd2b77",
+        "0x82810d9532caf58be3e3abe6239162b3f165b75bf1ebedc4843515fc415cff48",
+        "0x8addb11b218058e7b9d3bdaaec3e175261ac83a9e611a6371fe38f26809ff7ed",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xA1b1C8718C5142bf625CCF55193DF0A4e99D7934",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x05ff34eaea3b1a8e0a91e49f51ec1d17830b7bf95b84c31c8746377529bc978c",
+        "0x82810d9532caf58be3e3abe6239162b3f165b75bf1ebedc4843515fc415cff48",
+        "0x8addb11b218058e7b9d3bdaaec3e175261ac83a9e611a6371fe38f26809ff7ed",
+        "0x29462483937a52383fb4dfbd01c2a1c38516c348937961710e0ea4aa20934382",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x9B0A3bE650FE44cC07b33a3ffd502B1284Cb5C9A",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x63c3a96dc586efbb0cf0dffeee57deb344371094c71da59996734d48b42f54b9",
+        "0x2e08fbf5a37f1b988257cffbcfe58266fc32000e1d49f04af6ee2b030d1ab19f",
+        "0x0b21f6002d489d09e1ebf52e178cd50827790bf1e98b442c54cc5b8dbc4d9cf1",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xD69E257ae6088b717aE6D2ddeC9297703b4fB725",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x803a11123a58c7e54c06d7b1820d533dfb77edf837efb7c068d4788cade9797f",
+        "0x2e08fbf5a37f1b988257cffbcfe58266fc32000e1d49f04af6ee2b030d1ab19f",
+        "0x0b21f6002d489d09e1ebf52e178cd50827790bf1e98b442c54cc5b8dbc4d9cf1",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x2a2c578CAA20779f1b8eC3a613E88414Bd0dEFA6",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x599584dff3adfaf58f618311b1453f099f173bf53a43f1eef57a593964111741",
+        "0xb9caf1fa0c54461975d968cdd11f250136fbba11228887be1b5e6f7031226fea",
+        "0x0b21f6002d489d09e1ebf52e178cd50827790bf1e98b442c54cc5b8dbc4d9cf1",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x2daD49cf9C6Cc0f83B016934C41e6057Ad7a797a",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x3b8d2c26ad8148d1eb728f1c7a355245261e66664121cdeb81bb252eb98f2879",
+        "0xb9caf1fa0c54461975d968cdd11f250136fbba11228887be1b5e6f7031226fea",
+        "0x0b21f6002d489d09e1ebf52e178cd50827790bf1e98b442c54cc5b8dbc4d9cf1",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x4EBc62db01E26de06c87381cfCc7EcD6C79983A2",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xae59c4f4ba67acfa0774cd0b0b1dded2dacf112ea136b5a9db11922b00ca62d3",
+        "0xf1021e6e98645ad8d23afccd96662caac2828ab4a08041da552740d0f8daea45",
+        "0x68663cefe37dc53659fc54150a7efae25f7d57e81d6fc3645a5e20373af67cd4",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x598cc1b8010c18515849F95747b3a2053a185066",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xced66931e1ae712084d9d9b769b5664a1072bda0f593101af818b64497eb77bf",
+        "0xf1021e6e98645ad8d23afccd96662caac2828ab4a08041da552740d0f8daea45",
+        "0x68663cefe37dc53659fc54150a7efae25f7d57e81d6fc3645a5e20373af67cd4",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x01a18B4ADbc7A0e19fCfbdf63E85EC6F3c9ce9e7",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xdb0a7757589b70fe4e9e3828b4a6f1dd364563ab20f7e81e6595cf7aedd61790",
+        "0x4b6dba1b160e468fe072d985482981e5ca8ffb0987b218cbd72501cc33c36eec",
+        "0x68663cefe37dc53659fc54150a7efae25f7d57e81d6fc3645a5e20373af67cd4",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xdf0121dfEbddC9423C2D73c15f9DacD1DDb5b987",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xd0d340c82d325ae1f7576024fc08441157b5eb6f9814242838bf0e4463bfc860",
+        "0x4b6dba1b160e468fe072d985482981e5ca8ffb0987b218cbd72501cc33c36eec",
+        "0x68663cefe37dc53659fc54150a7efae25f7d57e81d6fc3645a5e20373af67cd4",
+        "0xc3ade5a02580410e1eeae99be3bd3580e21d5ab88a5328ab1c0a0acbf4ea8a85",
+        "0x4b77c2dc5da0018f5f35328a66a3ca6f1f1e1fe2d275554247ed3b2201bdb007",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x9D2ceA91C358457502C0f3851aB16f6CF219DC8e",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xa779bc4ef29977916bde4ca39744ba28f374678d3b6daa975b7bbfa052f64312",
+        "0xf3190d24a6c129fbd3b6dc1fe0df6d27c8f79f6b58e5dfa8f0e3afdec20472a8",
+        "0x066f8e851a391bfb3b20908f9c4a355a869ac3d44b70ccda7f6da870ad8014d4",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xeF59A40849388BA46DebFa8F8C578293947E59a2",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x16af1ba7ac56e61760e53b02ef3b4c2efed6c8d438bd3063b450bdcf55216ccc",
+        "0xf3190d24a6c129fbd3b6dc1fe0df6d27c8f79f6b58e5dfa8f0e3afdec20472a8",
+        "0x066f8e851a391bfb3b20908f9c4a355a869ac3d44b70ccda7f6da870ad8014d4",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xe09950b7f6dbcd80Dd5f307bed98AdAA7F619B1E",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xf43e048674a7b6021189bec52534434c1e1c23510d88646594be1e5c3270652c",
+        "0x958961d109eb0f5c42ea9464a512c28dc1bfe39793db5e881d5e7fa7da459ae5",
+        "0x066f8e851a391bfb3b20908f9c4a355a869ac3d44b70ccda7f6da870ad8014d4",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xfD9998FD5BD06C7a882d29960DFe83b46CaE7Fe3",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x593c31e7c11f0a113fec904af992368d57716e3206debe3b3ef9497abc88ef63",
+        "0x958961d109eb0f5c42ea9464a512c28dc1bfe39793db5e881d5e7fa7da459ae5",
+        "0x066f8e851a391bfb3b20908f9c4a355a869ac3d44b70ccda7f6da870ad8014d4",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xF5B407A5BD88F549F6E8FBF4Aa13364A7E93581e",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xf5ab479395d07d8357e2371bc52ae4684ef2c33f3ea4fa73bc11c52ddde887b8",
+        "0x961fcb85763e561301b82577796fb942bcca4c12f2d52218ad6d591059e23799",
+        "0xc8a361b2fbdacf00759fed70d228cc5c28a599ff66d60ea5e5a258dc553fa769",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xbAc5c05FEacef303D742BA8e32365bC37C51dC2C",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xa1920901677a8edeedc4ce88a9178ec6d21c510c7e4f4c92149f940e39dfe5df",
+        "0x961fcb85763e561301b82577796fb942bcca4c12f2d52218ad6d591059e23799",
+        "0xc8a361b2fbdacf00759fed70d228cc5c28a599ff66d60ea5e5a258dc553fa769",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x9215E8f7d8d09947F7E2B20BcB3DD5f3732dE312",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x4dce0dddd09262b1ab59058b849bba3f4619d207057b49fc22fbf3d55a021d8f",
+        "0x3cb49e518be75834b7e09e559337ff5f3df6c7d6cf830ab1c570135974d793a1",
+        "0xc8a361b2fbdacf00759fed70d228cc5c28a599ff66d60ea5e5a258dc553fa769",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xcd74616CB86B34E21Ac862173591D2AE4ba77271",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xec893cb22d2290693eacb74bcb927cfa091ca985e191a3da672455bc13c8b4d2",
+        "0x3cb49e518be75834b7e09e559337ff5f3df6c7d6cf830ab1c570135974d793a1",
+        "0xc8a361b2fbdacf00759fed70d228cc5c28a599ff66d60ea5e5a258dc553fa769",
+        "0x05a23f42e5eb4f14e4c9bb8119c3312d4301e48f5e57fd998dea541b2c41df1e",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x0DC3615B60f3afC8B0A003fe82D8DD7845e00D34",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x5197cdfc118810f3171205485cd7705e26efe4f5414e3b9c23193f706edda3d4",
+        "0xe3fc529571b6916b1164d2a2ba576a81ab7eb329f56b175a920ef2d818e9dd2c",
+        "0xb1c6e4092da91e92f9e166450637a7e0329c98b910d76fc13760026631eb7e6b",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x09846C9ED5D569b3c2429b03997Ca9f7bC76393a",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x6ffe93cb7a4c64093f0131b0c6a920510f448b3f5672bb02267ff6e7bf5c4016",
+        "0xe3fc529571b6916b1164d2a2ba576a81ab7eb329f56b175a920ef2d818e9dd2c",
+        "0xb1c6e4092da91e92f9e166450637a7e0329c98b910d76fc13760026631eb7e6b",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x4a950fF32a5a97482eEDdc0bd5D26A08CE2fe515",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x918f5b74a155d4c96a42c2905bb7898b001a6a9acbb5f2bf722c4ba67733c490",
+        "0xc0bae55a3ac06a58a3ea7aaf22d491cb78988363d62aa99bf59257b27bd37b7c",
+        "0xb1c6e4092da91e92f9e166450637a7e0329c98b910d76fc13760026631eb7e6b",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xF5e0855cf4C8AC5DE738B3755164c729C84340c4",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x8d9d2b9ffe247e5027a605e10b90aabf4270f36d236db0ee3cadf33100331cb6",
+        "0xc0bae55a3ac06a58a3ea7aaf22d491cb78988363d62aa99bf59257b27bd37b7c",
+        "0xb1c6e4092da91e92f9e166450637a7e0329c98b910d76fc13760026631eb7e6b",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xb6A51e2D6AE1b61A29331f9C705EC01A12d3eBdc",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xba84a523918d2e9a4091de503a967b96d53a40aff28592c105a4edb12bfd14bc",
+        "0x43c4b3d3d1bdd1bc53789197aae59e90bbc49798785de6c326a8c149fe284fb8",
+        "0x491fc8be4e0bd9ad0ca7c2e5bfd592d914cdf9e1907f2058e42053cb441d6700",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x1fF62267494FA014F17AB665cC53152bcd913aeA",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x1cfcb27d19a6f63d4ac36e0cfc75beda9dc0c12e8dcef08964115256a9d3f2cf",
+        "0x43c4b3d3d1bdd1bc53789197aae59e90bbc49798785de6c326a8c149fe284fb8",
+        "0x491fc8be4e0bd9ad0ca7c2e5bfd592d914cdf9e1907f2058e42053cb441d6700",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0xa649E73FEEBDCFfaE9709b2fc30D4467276826d6",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xe77fd3c6a4ffec66f28bdb3390c3d460eef8f2c339b6a85bceafee76f0555fc7",
+        "0xfa7b9ab9e44969e6191ed8e49aded5479f154810aa5e405373cb198a93091fb3",
+        "0x491fc8be4e0bd9ad0ca7c2e5bfd592d914cdf9e1907f2058e42053cb441d6700",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x847e8d10c85A63a22c0fE379e53BE0F7b9D471D6",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xfe56abcfeb1759c80d198f5755a96c0dd0eacd7f50ced51041fc266451430c86",
+        "0xfa7b9ab9e44969e6191ed8e49aded5479f154810aa5e405373cb198a93091fb3",
+        "0x491fc8be4e0bd9ad0ca7c2e5bfd592d914cdf9e1907f2058e42053cb441d6700",
+        "0x80a892a99466b7f295d457bb02d1cdabb8befdca980e8373f49abf873d276747",
+        "0xade7c1d3679ba0c563b38070956ec22e92607e7baa8876c07cf098d262bba0b7",
+        "0x7f58631b1f856eb6bada39a3f2b4e7478115ba3c7c0f3939bb75027853b8a286",
+        "0x3f29e88c1faa637d2985c3b27a9d463c6f9b124aadc518abf1d26850fc111cd9"
+      ]
+    },
+    {
+      "address": "0x50fc8d1d8dCA2605C26A3a8274A5430132E2aF13",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xf1ddb44523749f89867d5ecb0503bdc4b1a703c6d4b6d1e2c88dfcdf6b561031",
+        "0x37ccc9d51f204b7bca9646a6cb0d85c629d4b353b936ea8d4a5e7c525733aedf",
+        "0x00d98802178829f0cc65d00529f49cd8fe3e2a9c24f3d49bc4201dbad29da3c2",
+        "0x5de22a657e6837af472f5b866493b1def1d0a984b132cb151e29c719ea3d9e82"
+      ]
+    },
+    {
+      "address": "0xaE1D7ED78c65cC05A11d832de7f799ff77c8121f",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xe0384c25973967943732aff79000c10e0e040d9d7dc71af4d4ae83d6600fc062",
+        "0x37ccc9d51f204b7bca9646a6cb0d85c629d4b353b936ea8d4a5e7c525733aedf",
+        "0x00d98802178829f0cc65d00529f49cd8fe3e2a9c24f3d49bc4201dbad29da3c2",
+        "0x5de22a657e6837af472f5b866493b1def1d0a984b132cb151e29c719ea3d9e82"
+      ]
+    },
+    {
+      "address": "0x86C1485ea4A1f04CAA1E8b4eA8198d324abD70b3",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xbd3d091c2283c2ce7e25f6b9fb5a0871eae7fd93bad40b60a930852966a2deb7",
+        "0xd8c534a2fe336b57c76a82c39afdfddcf05b56a18d9a478a6324057fd50db28d",
+        "0x00d98802178829f0cc65d00529f49cd8fe3e2a9c24f3d49bc4201dbad29da3c2",
+        "0x5de22a657e6837af472f5b866493b1def1d0a984b132cb151e29c719ea3d9e82"
+      ]
+    },
+    {
+      "address": "0x4c4b8d30813a59ce6A3E590f745Ab9815A206858",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0x156d69ffdc0fcfeae29493151f6dc0a1a498a0043b62e86c2e0a46212788b245",
+        "0xd8c534a2fe336b57c76a82c39afdfddcf05b56a18d9a478a6324057fd50db28d",
+        "0x00d98802178829f0cc65d00529f49cd8fe3e2a9c24f3d49bc4201dbad29da3c2",
+        "0x5de22a657e6837af472f5b866493b1def1d0a984b132cb151e29c719ea3d9e82"
+      ]
+    },
+    {
+      "address": "0xA501eC048Fb89E3bd3e1354751A2C04e953aFb6F",
+      "stage": "gtd",
+      "mintParams": {
+        "mintPrice": "8000000000000000",
+        "maxTotalMintableByWallet": 1,
+        "startTime": 1782914400,
+        "endTime": 1782921600,
+        "dropStageIndex": 2,
+        "maxTokenSupplyForStage": 420,
+        "feeBps": 1000,
+        "restrictFeeRecipients": true
+      },
+      "proof": [
+        "0xd14987cd39ec80bc6626c24003fb80c400f5f79838de3edf67ead070006db465",
+        "0x5de22a657e6837af472f5b866493b1def1d0a984b132cb151e29c719ea3d9e82"
+      ]
+    }
+  ]
+}
