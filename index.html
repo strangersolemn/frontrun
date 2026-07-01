@@ -159,15 +159,15 @@
 
       <div class="mint reveal d4">
         <div class="stats">
-          <div class="stat"><div class="k" id="minted-k">Supply</div><div class="v" id="minted-v">420</div></div>
-          <div class="stat"><div class="k">Price</div><div class="v">TBA</div></div>
+          <div class="stat"><div class="k" id="minted-k">Supply</div><div class="v" id="minted-v">666</div></div>
+          <div class="stat"><div class="k">Price</div><div class="v">0.0069 ETH</div></div>
           <div class="stat"><div class="k">Chain</div><div class="v">Ethereum</div></div>
         </div>
         <div class="actions">
-          <button class="mintbtn" onclick="location.href='./mint.html'">MINT</button>
-          <button class="connect" onclick="location.href='./mint.html'">Connect Wallet</button>
+          <button class="mintbtn" onclick="window.open('https://opensea.io/collection/frontrun','_blank')">Mint on OpenSea</button>
+          <button class="connect" onclick="location.href='./gif-maker.html'">GIF Maker</button>
         </div>
-        <div class="note"><span><span class="blink">●</span> minting soon</span><span>100% on-chain</span></div>
+        <div class="note"><span><span class="blink">●</span> live on OpenSea</span><span>100% on-chain</span></div>
       </div>
     </div>
 
@@ -305,7 +305,7 @@
         if (j.error || !j.result) throw 0;
         var n = parseInt(j.result, 16);
         document.getElementById('minted-k').textContent = 'Minted';
-        document.getElementById('minted-v').textContent = n + ' / 420';
+        document.getElementById('minted-v').textContent = n + ' / 666';
       })
       .catch(function(){ tryRpc(i+1); });
     })(0);
