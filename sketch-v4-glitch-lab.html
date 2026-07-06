@@ -1940,13 +1940,17 @@ async function loadFigureMask() {
   const cssOK = !!(window.CSS && CSS.supports &&
     (CSS.supports('mask-image', 'url("data:,")') || CSS.supports('-webkit-mask-image', 'url("data:,")')));
   const force = new URLSearchParams(location.search).has('nomask');
-  maskFallback = force || !cssOK || !imgOK;
-  if (maskFallback) {
-    fig.style.webkitMaskImage = 'none';
-    fig.style.maskImage = 'none';
-  } else {
-    fig.style.webkitMaskImage = 'url(' + b64 + ')';
-    fig.style.maskImage = 'url(' + b64 + ')';
+  // If the run-cycle animation already loaded, it owns the render (canvas clip) —
+  // don't clobber it with the static CSS mask (this race broke the live crown).
+  if (!animReady) {
+    maskFallback = force || !cssOK || !imgOK;
+    if (maskFallback) {
+      fig.style.webkitMaskImage = 'none';
+      fig.style.maskImage = 'none';
+    } else {
+      fig.style.webkitMaskImage = 'url(' + b64 + ')';
+      fig.style.maskImage = 'url(' + b64 + ')';
+    }
   }
 }
 
