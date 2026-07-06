@@ -106,14 +106,23 @@
   .empty{border:1px dashed var(--line);padding:40px 24px;text-align:center;color:var(--dim);font-size:12px}
 
   /* leaderboard */
-  .board{border:1px solid var(--line);background:var(--paper-2)}
-  .lrow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:11px}
-  .lrow:last-child{border-bottom:0}
-  .lrow .rk{width:20px;color:var(--dim);font-weight:700}
-  .lrow .tk{font-weight:700}
-  .lrow .gr{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
-  .lrow.me{background:rgba(237,30,121,.06)}
-  .lrow .cr{font-size:12px}
+  /* race track leaderboard */
+  .board{border:1px solid var(--ink);background:var(--paper);position:relative}
+  .board::after{content:'THE FRONT';position:absolute;top:0;bottom:0;right:0;width:1px;background:var(--pink);
+    writing-mode:vertical-rl;font-size:8px;letter-spacing:.22em;color:var(--pink);padding:8px 0;text-align:center;box-shadow:0 0 0 0}
+  .lane{display:flex;align-items:center;gap:12px;height:52px;padding:0 46px 0 14px;border-bottom:1px solid var(--line);position:relative}
+  .lane:last-child{border-bottom:0}
+  .lane.me{background:rgba(237,30,121,.05)}
+  .lane.lead{background:rgba(216,178,74,.09)}
+  .lane .rk{width:18px;text-align:center;font-size:11px;color:var(--dim);font-weight:800;flex:none}
+  .lane .who{width:64px;font-size:11px;font-weight:700;flex:none;display:flex;align-items:center;gap:5px}
+  .lane .who .you{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--pink);border:1px solid var(--pink);border-radius:2px;padding:1px 3px}
+  .lane .ln{position:relative;flex:1;height:100%}
+  .lane .ln::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 12px)}
+  .lane .mark{position:absolute;top:50%;transform:translate(-50%,-50%);width:26px;height:44px;transition:left .8s cubic-bezier(.4,0,.2,1)}
+  .lane .mk-run{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
+  .lane .mk-crown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:2}
+  .lane .gr{width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;font-size:11px;flex:none}
 
   /* detail overlay */
   .overlay{position:fixed;inset:0;z-index:200;background:rgba(18,17,16,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:28px}
@@ -191,17 +200,16 @@
   </div>
   <div class="hint" id="hint">tip: a number opens that piece fullscreen. a wallet loads its whole squad.</div>
 
-  <div class="grid2">
-    <section>
-      <div class="sec-h"><span class="t">your squad</span><span class="c" id="squadCount">—</span></div>
-      <div class="squad" id="squad"></div>
-      <div class="empty" id="squadEmpty">connect a wallet or search an address to load a squad.</div>
-    </section>
-    <aside>
-      <div class="sec-h"><span class="t">front of the pack</span><span class="c">top ground</span></div>
-      <div class="board" id="board"></div>
-    </aside>
-  </div>
+  <section style="margin-top:44px">
+    <div class="sec-h"><span class="t">your squad</span><span class="c" id="squadCount">—</span></div>
+    <div class="squad" id="squad"></div>
+    <div class="empty" id="squadEmpty">connect a wallet or search an address to load a squad.</div>
+  </section>
+
+  <section style="margin-top:44px">
+    <div class="sec-h"><span class="t">front of the pack</span><span class="c">the race, live</span></div>
+    <div class="board" id="board"></div>
+  </section>
 
   <div class="foot" id="foot"></div>
 </main>
@@ -387,17 +395,27 @@ function renderSquad(list){
   tick();
 }
 
+// the pack as a race track: each runner sits along its lane by standing — the leader
+// (crown) breaks away out front, the pack strung out behind. runners animate via runLoop.
+function trackPos(rank, n){ if(rank===0) return 90; const hi=58, lo=9; return hi - (rank-1)/Math.max(1,n-2)*(hi-lo); }
 function renderBoard(list){
   const field = DEMO ? demoField() : [];
   const all = [...list.map(p=>({...p,me:true})), ...field]
     .sort((a,b)=> groundOf(b)-groundOf(a)).slice(0,8);
   const box=document.getElementById('board'); box.innerHTML='';
   all.forEach((p,i)=>{
-    const el=document.createElement('div'); el.className='lrow'+(p.me?' me':'');
-    el.innerHTML='<span class="rk">'+(i+1)+'</span>'+(i===0?'<span class="cr">👑</span>':'')+
-      '<span class="tk">#'+p.id+'</span><span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
+    const prim=palFor(p)[1], m='url(anim/runner_00.png)', x=trackPos(i, all.length);
+    const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(i===0?' lead':'');
+    el.innerHTML=
+      '<span class="rk">'+(i+1)+'</span>'+
+      '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
+      '<div class="ln"><div class="mark" style="left:'+x.toFixed(1)+'%">'+
+        (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
+        '<div class="rsil mk-run" data-run style="background:'+prim+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
+      '</div></div>'+
+      '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
     el.style.cursor='pointer';
-    el.addEventListener('click',()=>openDetail((p.me && list.find(x=>x.id===p.id)) || p)); // open the real piece; leader shows the crown
+    el.addEventListener('click',()=>openDetail((p.me && list.find(x=>x.id===p.id)) || p));
     box.appendChild(el);
   });
 }
