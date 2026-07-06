@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · the grails</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#07070b;color:#e8e8ec;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:26px 20px 34px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid #1c1c26;padding-bottom:14px;margin-bottom:18px}
+h1{font-size:30px;letter-spacing:.34em;font-weight:800}
+.sub{color:#8a8a96;font-size:12.5px;letter-spacing:.16em;margin-top:6px}
+.count{text-align:right}
+.count .cd{font-size:30px;font-weight:800;letter-spacing:.12em;color:#f6b73c;font-variant-numeric:tabular-nums}
+.count .lbl{color:#8a8a96;font-size:11px;letter-spacing:.22em;margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cell{border:1px solid #20202b;border-radius:12px;overflow:hidden;background:#0c0c12}
+.art{position:relative;width:100%;aspect-ratio:1/1;background:#000}
+.art iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.cap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-top:1px solid #1a1a24}
+.cap .nm{font-weight:800;letter-spacing:.2em;font-size:14px}
+.cap .nm small{display:block;color:#8a8a96;font-weight:400;letter-spacing:.06em;font-size:11px;margin-top:3px}
+.pill{font-size:11px;letter-spacing:.12em;color:#0a0a0f;background:#2ce1f5;border-radius:999px;padding:5px 10px;font-weight:800;white-space:nowrap}
+.pill.one{background:#f6b73c}
+.foot{display:flex;align-items:center;justify-content:space-between;margin-top:20px;color:#8a8a96;font-size:12px;letter-spacing:.14em}
+.foot b{color:#e8e8ec;letter-spacing:.2em}
+.run{color:#2ce1f5;font-weight:800;letter-spacing:.2em}
+</style></head><body><div class="wrap">
+<div class="top">
+  <div><h1>THE GRAILS</h1><div class="sub">8 HIDDEN IN 666 · FULLY ON-CHAIN · DECIDED LIVE AT REVEAL</div></div>
+  <div class="count"><div class="cd" id="cd">60:00</div><div class="lbl">TO REVEAL</div></div>
+</div>
+
+<div class="grid">
+  <div class="cell">
+    <div class="art"><iframe loading="eager" src="engine.html?clean&embed&w=0xEf682B1D0835Df1F971d5D1F4565E9f6c121f706&shape=frontrun"></iframe></div>
+    <div class="cap"><div class="nm">FRONTRUN<small>the name written down the tunnel</small></div><div class="pill">2 EXIST</div></div>
+  </div>
+  <div class="cell">
+    <div class="art"><iframe loading="eager" src="engine.html?clean&embed&w=0xa22b2f7d80c26d5b4e403d53eb520723858d37e7&shape=sitetext"></iframe></div>
+    <div class="cap"><div class="nm">MANIFESTO<small>the whole site streaming across the walls</small></div><div class="pill">2 EXIST</div></div>
+  </div>
+  <div class="cell">
+    <div class="art"><iframe loading="eager" src="engine.html?clean&embed&w=0x5595479d9Aa67722C58e9b098273dB10f7778B3E&shape=code"></iframe></div>
+    <div class="cap"><div class="nm">CODE<small>the piece's own source code walls the tunnel</small></div><div class="pill">3 EXIST</div></div>
+  </div>
+  <div class="cell">
+    <div class="art"><iframe loading="eager" src="engine.html?clean&embed&w=0xEf682B1D0835Df1F971d5D1F4565E9f6c121f706&shape=frontrun&glitch=frontrunner"></iframe></div>
+    <div class="cap"><div class="nm">GENESIS DOUBLE<small>two grails in one · datamosh runner + grail tunnel</small></div><div class="pill one">1 OF 1</div></div>
+  </div>
+</div>
+
+<div class="foot"><span>FRONTRUN · <b>666</b></span><span class="run">DON'T GET FRONTRUN 🏃</span></div>
+</div>
+<script>
+// one-hour countdown, purely visual for the teaser
+let t=60*60;const el=document.getElementById('cd');
+function tick(){const m=Math.floor(t/60),s=t%60;el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');if(t>0)t--;}
+tick();setInterval(tick,1000);
+</script>
+</body></html>

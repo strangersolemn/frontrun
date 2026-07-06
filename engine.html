@@ -2055,10 +2055,12 @@ async function loadFigSpritesheet() {
   figFrames = frames; figDurs = durs; figTotal = total;
   try { window.FR_FIGTOTAL = total; } catch (e) {}
 }
+let _figIdx = 0;
 function currentFigFrame() {
   if (!figFrames || !figTotal) return figImg;
   let t = performance.now() % figTotal, i = 0;
   while (i < figDurs.length - 1 && t >= figDurs[i]) { t -= figDurs[i]; i++; }
+  _figIdx = i;
   return figFrames[i];
 }
 async function loadFigureMask() {
@@ -2234,6 +2236,19 @@ function drawSealedFlat(){
   }
 }
 
+// ===========================================================================
+// CROWN — the king's runner wears it: a hand-drawn 29-frame PNG sequence
+// (head-tracked), overlaid frame-synced to the run cycle so it locks to the head.
+// Toggle: window.FRONTRUN_KING (the race contract sets it) or ?crown for testing.
+// ===========================================================================
+let IS_KING = false, crownFrames = null, CROWN_SCALE = 1, CROWN_DX = 0, CROWN_DY = -0.0725;
+function loadCrownFrames() {
+  const N = 29, base = (window.FRONTRUN_CROWN_BASE || 'crown-seq/PNGSet%2013/PNG_');
+  const arr = [];
+  for (let i = 1; i <= N; i++) { const im = new Image(); im.src = base + String(i).padStart(4, '0') + '.png'; arr.push(im); }
+  crownFrames = arr;
+}
+
 function frame() {
   const t = (performance.now() - start) / 1000;
   const spd = $('spd').value / 100;
@@ -2260,6 +2275,18 @@ function frame() {
     }
   } else {
     fCtx.clearRect(0, 0, W, H);
+  }
+
+  // 2.5 crown — king's runner wears it: hand-drawn 29-frame sequence, synced to the run cycle
+  if (IS_KING && !SEALED && crownFrames && figImg && figImg.width) {
+    const cf = crownFrames[_figIdx % crownFrames.length];
+    if (cf && cf.complete && cf.naturalWidth) {
+      const ms = Math.min(W / figImg.width, H * 0.9 / figImg.height);
+      const mw = figImg.width * ms, mh = figImg.height * ms;
+      const cw = mw * CROWN_SCALE, ch = mh * CROWN_SCALE;   // scale the crown overlay to fit the head
+      // CROWN_DX/DY are fractions of the runner size, so the fit holds at any canvas dimension
+      fCtx.drawImage(cf, (W - cw) / 2 + CROWN_DX * mw, (H - mh) + CROWN_DY * mh, cw, ch);
+    }
   }
 
   // 3. flash overlay — cycle through (on + off) frames
@@ -2725,6 +2752,12 @@ frame();
   // ?palette=N force a palette by index
   const _pal = p.get('palette');
   if (_pal !== null && PALETTES[parseInt(_pal, 10)]) { const pi = parseInt(_pal, 10); palette = PALETTES[pi]; const psel = $('palette-sel'); if (psel) psel.value = pi; if (typeof buildTunnelTexture==='function') buildTunnelTexture(); if (typeof updateFigure==='function') updateFigure(); }
+  // crown: the king's runner wears it (race contract sets window.FRONTRUN_KING; ?crown to test)
+  IS_KING = !!(window.FRONTRUN_KING || p.has('crown'));
+  if (p.get('crownscale') != null) CROWN_SCALE = parseFloat(p.get('crownscale'));
+  if (p.get('crowndx') != null) CROWN_DX = parseFloat(p.get('crowndx'));
+  if (p.get('crowndy') != null) CROWN_DY = parseFloat(p.get('crowndy'));
+  if (IS_KING) loadCrownFrames();
 })();
 </script>
 </body>

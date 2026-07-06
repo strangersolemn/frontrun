@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN — the race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:'Inversionz';src:url('./fonts/Inversionz.otf') format('opentype'),url('./fonts/Inversionz.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:'Inversionz Unboxed';src:url('./fonts/Inversionz-Unboxed.otf') format('opentype'),url('./fonts/Inversionz-Unboxed.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+  :root{
+    --paper:#F4F2EC; --paper-2:#EEEBE3; --ink:#121110; --dim:#8b877d; --faint:#bcb7ab;
+    --line:#dcd8cd; --pink:#ED1E79;
+    --font:'Martian Mono', ui-monospace, 'Courier New', monospace;
+    --display:'Inversionz Unboxed','Inversionz', var(--font);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden;letter-spacing:-.01em}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 38px}
+  .label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  .pink{color:var(--pink)}
+
+  header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:18px 38px;background:rgba(244,242,236,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .brand{font-weight:800;letter-spacing:.28em;font-size:13px}
+  .brand .dot{color:var(--pink)}
+  .navlinks{display:flex;gap:22px;align-items:center}
+  .navlinks a{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .navlinks a:hover{color:var(--ink)}
+  .navlinks a.on{color:var(--ink)}
+
+  main{padding-top:96px;padding-bottom:80px}
+  .kicker{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+  .kicker .bar{width:32px;height:1px;background:var(--pink)}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(40px,6.5vw,78px);line-height:.98;letter-spacing:.02em;margin:0;text-transform:uppercase}
+  h1 .pk{color:var(--pink)}
+  .lede{margin:20px 0 0;color:var(--dim);max-width:60ch;font-size:12px;line-height:1.7}
+  .lede b{color:var(--ink);font-weight:600}
+
+  /* mode banner */
+  .mode{display:inline-flex;align-items:center;gap:8px;margin-top:20px;border:1px solid var(--line);background:var(--paper-2);padding:7px 12px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .mode .d{width:7px;height:7px;border-radius:50%;background:var(--pink)}
+  .mode b{color:var(--ink);font-weight:700}
+
+  /* THE ONE UP FRONT — leader hero */
+  .leader{display:none;margin-top:26px;border:1px solid var(--ink);background:var(--paper);grid-template-columns:280px 1fr}
+  .leader.show{display:grid}
+  @media(max-width:680px){.leader.show{grid-template-columns:1fr}}
+  .leader .lrender{position:relative;background:#0b0b0f;aspect-ratio:1;min-height:240px;border-right:1px solid var(--line)}
+  @media(max-width:680px){.leader .lrender{border-right:0;border-bottom:1px solid var(--line)}}
+  .leader .lposter{position:absolute;inset:0}
+  .leader .lposter svg{width:100%;height:100%;display:block}
+  .leader .lrender iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .5s}
+  .leader .lrender iframe.live{opacity:1}
+  .leader .lcrown{position:absolute;top:10px;left:12px;z-index:3;font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+  .leader .linfo{padding:26px 28px;display:flex;flex-direction:column;justify-content:center}
+  .leader .llabel{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--pink);font-weight:700}
+  .leader .lname{font-family:var(--display);font-weight:400;font-size:clamp(26px,3.4vw,40px);letter-spacing:.02em;margin:8px 0 2px}
+  .leader .lg{font-size:clamp(30px,4vw,46px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:10px}
+  .leader .lg .u{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.14em;text-transform:uppercase;margin-left:9px}
+  .leader .lsub{color:var(--dim);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;margin-top:8px}
+  .leader .lholder{color:var(--faint);font-size:10.5px;letter-spacing:.04em;margin-top:6px}
+  .leader .lopen{align-self:flex-start;margin-top:18px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--font);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;cursor:pointer;transition:background .15s}
+  .leader .lopen:hover{background:var(--pink);border-color:var(--pink)}
+  .leader.empty .lrender{display:none}
+  .leader.empty{grid-template-columns:1fr}
+
+  /* console */
+  .console{margin-top:30px;border:1px solid var(--ink);background:var(--paper);max-width:720px}
+  .crow{display:flex;align-items:stretch}
+  .crow .pfx{display:flex;align-items:center;padding:0 12px;color:var(--pink);font-weight:700;border-right:1px solid var(--line)}
+  .crow input{flex:1;border:0;background:transparent;font-family:var(--font);font-size:13px;color:var(--ink);padding:15px 12px;outline:none;letter-spacing:-.01em}
+  .crow input::placeholder{color:var(--faint)}
+  .crow button{border:0;border-left:1px solid var(--line);background:transparent;font-family:var(--font);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:0 16px;cursor:pointer;transition:background .15s}
+  .crow button:hover{background:var(--ink);color:var(--paper)}
+  .crow button.primary{background:var(--ink);color:var(--paper)}
+  .crow button.primary:hover{background:var(--pink)}
+  .hint{margin-top:9px;color:var(--faint);font-size:10.5px;letter-spacing:.02em}
+
+  /* layout: squad + leaderboard */
+  .grid2{display:grid;grid-template-columns:1fr 300px;gap:38px;margin-top:44px;align-items:start}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .sec-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  .sec-h .t{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
+  .sec-h .c{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+  .squad{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+  .card{border:1px solid var(--line);background:var(--paper);cursor:pointer;transition:border-color .18s,transform .18s;position:relative;overflow:hidden}
+  .card:hover{border-color:var(--ink);transform:translateY(-2px)}
+  .card .thumb{position:relative;width:100%;aspect-ratio:1;background:#0b0b0f;overflow:hidden}
+  .card .thumb svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+  .card .meta{padding:11px 12px;border-top:1px solid var(--line)}
+  .card .id{font-weight:700;font-size:12px;letter-spacing:.04em}
+  .card .id .burned{color:var(--pink);font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin-left:6px}
+  .card .g{margin-top:5px;font-size:10px;letter-spacing:.06em;color:var(--dim)}
+  .card .g b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+
+  .empty{border:1px dashed var(--line);padding:40px 24px;text-align:center;color:var(--dim);font-size:12px}
+
+  /* leaderboard */
+  .board{border:1px solid var(--line);background:var(--paper-2)}
+  .lrow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:11px}
+  .lrow:last-child{border-bottom:0}
+  .lrow .rk{width:20px;color:var(--dim);font-weight:700}
+  .lrow .tk{font-weight:700}
+  .lrow .gr{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .lrow.me{background:rgba(237,30,121,.06)}
+  .lrow .cr{font-size:12px}
+
+  /* detail overlay */
+  .overlay{position:fixed;inset:0;z-index:200;background:rgba(18,17,16,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:28px}
+  .overlay.open{display:flex}
+  .detail{background:var(--paper);border:1px solid var(--ink);width:min(940px,100%);max-height:90vh;overflow:auto;display:grid;grid-template-columns:1.1fr .9fr}
+  @media(max-width:760px){.detail{grid-template-columns:1fr}}
+  .detail .render{position:relative;background:#0b0b0f;aspect-ratio:1;min-height:320px}
+  .detail .render .poster{position:absolute;inset:0}
+  .detail .render .poster svg{width:100%;height:100%;display:block}
+  .detail .render iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .5s}
+  .detail .render iframe.live{opacity:1}
+  .detail .render .fsbtn{position:absolute;bottom:12px;right:12px;z-index:4;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:#fff;font-family:var(--font);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer}
+  .detail .render .fsbtn:hover{background:var(--pink);border-color:var(--pink)}
+  .detail .info{padding:26px 26px 30px}
+  .detail .close{position:absolute;top:14px;right:16px;z-index:210;background:none;border:0;color:var(--paper);font-size:22px;cursor:pointer;line-height:1}
+  .detail h2{font-family:var(--display);font-weight:400;font-size:34px;margin:0;letter-spacing:.02em}
+  .detail .sub{color:var(--dim);font-size:10px;letter-spacing:.2em;text-transform:uppercase;margin-top:4px}
+  .bigG{margin:22px 0 6px;font-size:38px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .bigG .u{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.12em;text-transform:uppercase;margin-left:8px}
+  .accr{color:var(--pink);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:22px}
+  .statgrid .s{background:var(--paper);padding:12px 13px}
+  .statgrid .s .k{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .statgrid .s .v{font-size:14px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+  .traits{margin-top:22px}
+  .traits .th{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{border:1px solid var(--line);padding:6px 10px;font-size:10.5px;letter-spacing:.04em;background:var(--paper-2)}
+  .chip b{color:var(--pink);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-right:6px;font-size:9px}
+  .chip.sealed{color:var(--dim);font-style:italic}
+  .foot{margin-top:60px;border-top:1px solid var(--line);padding-top:22px;color:var(--faint);font-size:10px;letter-spacing:.06em;line-height:1.9}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./index.html">FRONTRUN<span class="dot">.</span></a>
+  <nav class="navlinks">
+    <a href="./index.html">home</a>
+    <a href="./race.html" class="on">the race</a>
+    <a href="./index.html#work">work</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="kicker"><span class="bar"></span><span class="label">a living race · fully on-chain</span></div>
+  <h1>THE <span class="pk">RACE</span></h1>
+  <p class="lede">every living piece covers <b>ground</b> passively, at the same rate, from reveal. the only move is to <b>burn</b> one of your pieces into another — the survivor absorbs everything the sacrifice carried, and the crown goes to the runner out front. connect your wallet to see your squad, or search a piece by number.</p>
+
+  <div class="mode"><span class="d"></span><span>data</span><b id="modeName">preview</b><span id="modeNote">— simulated, not live yet</span></div>
+
+  <!-- THE ONE UP FRONT — the current crown holder, featured -->
+  <section class="leader" id="leader">
+    <div class="lrender">
+      <div class="lposter" id="lPoster"></div>
+      <iframe id="lRender" title="current leader"></iframe>
+      <span class="lcrown">👑</span>
+    </div>
+    <div class="linfo">
+      <div class="llabel">the one up front</div>
+      <div class="lname" id="lName">FRONTRUN #—</div>
+      <div class="lg"><span id="lGround">0</span><span class="u">ground</span></div>
+      <div class="lsub" id="lSub">holds the crown · accruing +1 / second</div>
+      <div class="lholder" id="lHolder"></div>
+      <button class="lopen" id="lOpen">view the leader →</button>
+    </div>
+  </section>
+
+  <div class="console">
+    <div class="crow">
+      <span class="pfx">&gt;</span>
+      <input id="q" type="text" spellcheck="false" autocomplete="off" placeholder="connect a wallet, paste 0x… / name.eth, or type a piece number 0–419">
+      <button id="connect" class="primary">connect</button>
+      <button id="go">search</button>
+    </div>
+  </div>
+  <div class="hint" id="hint">tip: a number opens that piece fullscreen. a wallet loads its whole squad.</div>
+
+  <div class="grid2">
+    <section>
+      <div class="sec-h"><span class="t">your squad</span><span class="c" id="squadCount">—</span></div>
+      <div class="squad" id="squad"></div>
+      <div class="empty" id="squadEmpty">connect a wallet or search an address to load a squad.</div>
+    </section>
+    <aside>
+      <div class="sec-h"><span class="t">front of the pack</span><span class="c">top ground</span></div>
+      <div class="board" id="board"></div>
+    </aside>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</main>
+
+<!-- detail overlay -->
+<div class="overlay" id="overlay">
+  <div class="detail">
+    <button class="close" id="close">✕</button>
+    <div class="render">
+      <div id="dPoster" class="poster"></div>
+      <iframe id="dRender" title="piece render"></iframe>
+      <button class="fsbtn" id="fs">⛶ fullscreen</button>
+    </div>
+    <div class="info">
+      <h2 id="dTitle">FRONTRUN #0</h2>
+      <div class="sub" id="dHolder">held by 0x…</div>
+      <div class="bigG"><span id="dGround">0</span><span class="u">ground</span></div>
+      <div class="accr" id="dAccr">accruing +1 / second</div>
+      <div class="statgrid">
+        <div class="s"><div class="k">standing</div><div class="v" id="dRank">—</div></div>
+        <div class="s"><div class="k">status</div><div class="v" id="dStatus">running</div></div>
+        <div class="s"><div class="k">base (since reveal)</div><div class="v" id="dBase">0</div></div>
+        <div class="s"><div class="k">absorbed (burns)</div><div class="v" id="dAbs">0</div></div>
+      </div>
+      <div class="traits">
+        <div class="th">traits</div>
+        <div class="chips" id="dChips"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================================================
+// FRONTRUN — THE RACE  (data layer: demo → testnet → mainnet by one config)
+// Pure fetch + raw eth_call, no libraries — same plumbing as index.html.
+// ==========================================================================
+const ENGINE = './sketch-v4-glitch-lab.html';
+const P = new URLSearchParams(location.search);
+
+// ---- config: flip live by filling RACE (+ COLLECTION) for the chosen net ----
+const NET = P.has('testnet') ? 'testnet' : (P.has('mainnet') ? 'mainnet' : 'demo');
+const CFG = {
+  dem:     { rpcs:[], collection:'', race:'', reveal: 1751500000, supply: 666 }, // demo reveal ~2025-07-03
+  testnet: { rpcs:['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia'],
+             collection:'0xa803f060afd257b2a0a8ffc15c6b1a9fdc333e9c', race:'0xc262f48e6beb1c011d42600d418864e09fd6a110', reveal:1780705908, supply:420 }, // live Sepolia rehearsal 2026-07-05
+  mainnet: { rpcs:['https://ethereum-rpc.publicnode.com','https://eth.drpc.org','https://1rpc.io/eth'],
+             collection:'0x08d08D7f8CEF8EBb56D788a6c0C85cee313A1e17', race:'', reveal:0, supply:666 },
+};
+const C = NET==='demo' ? CFG.dem : CFG[NET];
+const DEMO = NET==='demo' || !C.race; // fall back to simulated squad until a race contract exists
+
+document.getElementById('modeName').textContent = NET;
+document.getElementById('modeNote').textContent = DEMO
+  ? (NET==='demo' ? '— simulated, not live yet' : '— collection live, race contract pending')
+  : '— live on-chain';
+
+// ---- selectors (keccak4, verified via `cast sig`) ----
+const SEL = { nextId:'0x61b8ce8c', ownerOf:'0x6352211e', groundOf:'0xf47f131b', crown:'0x8fac9622', absorbed:'0xb9821574', dead:'0xe77f7b4b' };
+
+async function ethCall(to, data){
+  for(const r of C.rpcs){
+    try{
+      const res = await fetch(r,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to,data},'latest']})});
+      const j = await res.json(); if(j.error||!j.result) throw 0; return j.result;
+    }catch(e){}
+  }
+  throw new Error('all rpcs failed');
+}
+const pad = a => a.replace(/^0x/,'').toLowerCase().padStart(64,'0');
+const hexNum = h => parseInt(h,16);
+
+// ---- ground formatting ----
+const nf = new Intl.NumberFormat('en-US');
+function fmtG(n){ return nf.format(Math.floor(n)); }
+function nowSec(){ return Math.floor(Date.now()/1000); }
+
+// ---- DEMO squad: deterministic from wallet, absorbed varied for a live-looking board ----
+function h32(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;} return h>>>0; }
+function demoSquad(wallet){
+  const seed = h32((wallet||'0x0').toLowerCase());
+  const n = 3 + (seed % 4); // 3–6 pieces
+  const out = [];
+  for(let i=0;i<n;i++){
+    const id = (h32(wallet+':'+i) % C.supply);
+    const absorbed = (i===0) ? (seed % 900000) : ((h32(wallet+'a'+i) % 300000)); // one bigger runner
+    out.push({ id, wallet, absorbed, dead:false, base: nowSec()-C.reveal });
+  }
+  // a couple of "field" leaders for the board (other holders)
+  return out;
+}
+function demoField(){
+  const field=[];
+  for(let i=0;i<6;i++){ const w='0x'+(h32('field'+i)).toString(16).padStart(40,'0').slice(0,40);
+    field.push({ id: h32('f'+i)%C.supply, wallet:w, absorbed: h32('fa'+i)%1500000, dead:false, base: nowSec()-C.reveal }); }
+  return field;
+}
+
+// ---- LIVE squad (testnet/mainnet): enumerate ownerOf, read groundOf ----
+async function liveSquad(wallet){
+  const total = hexNum(await ethCall(C.collection, SEL.nextId));
+  const mine=[]; const w = wallet.toLowerCase();
+  // batch ownerOf reads
+  const ids = [...Array(Math.min(total, C.supply)).keys()];
+  const owners = await Promise.all(ids.map(id => ethCall(C.collection, SEL.ownerOf+pad('0x'+id.toString(16))).catch(()=>null)));
+  for(let id=0; id<ids.length; id++){
+    const o = owners[id]; if(!o) continue;
+    if(('0x'+o.slice(26)).toLowerCase()===w){
+      let g=0; try{ g = hexNum(await ethCall(C.race, SEL.groundOf+pad('0x'+id.toString(16)))); }catch(e){}
+      mine.push({ id, wallet, ground:g, base:g, absorbed:0, dead:g===0, fetchTime:nowSec() });
+    }
+  }
+  return mine;
+}
+
+// ---- render ----
+let LAST_SQUAD=[];
+const SHAPE_NAMES=['square','square-flat','hex','oct','triangle','twelve','twisted','pentagon'];
+const SHAPE_SIDES={square:4,'square-flat':4,hex:6,oct:8,triangle:3,twelve:12,twisted:6,pentagon:5};
+// palette rows mirror the engine's PALETTES [bg, primary, secondary, dark]
+const PAL=[
+ ['#000','#ED1E79','#7E8AAA'],['#000','#FF003C','#5C6B7E'],['#000','#00FF95','#4A5566'],
+ ['#000','#FFAE00','#6B5A7E'],['#000','#00F0FF','#7E5C8A'],['#000','#FFE600','#5C7E6B'],
+ ['#000','#FF00FF','#6B6B6B'],['#0A0510','#9D00FF','#5C5C7E'],['#00030E','#3A7BFF','#1E3F9E'],
+ ['#000','#D5142A','#6E0C16'],['#000800','#00FF41','#119A33'],['#000','#FFF','#B0B0B0']];
+function groundOf(p){
+  if(p.dead) return 0;
+  // live (testnet/mainnet): on-chain snapshot + seconds elapsed since we read it (accrues +1/s)
+  if(!DEMO) return (p.ground||0) + (p.fetchTime ? Math.max(0, nowSec()-p.fetchTime) : 0);
+  // demo: shared base since reveal + simulated absorbed
+  return (nowSec()-C.reveal) + (p.absorbed||0);
+}
+function shapeFor(id){ return SHAPE_NAMES[id % SHAPE_NAMES.length]; }
+function palFor(p){ return PAL[ h32(p.wallet+':pal:'+p.id) % PAL.length ]; }
+// drive the live engine (detail view only) to a piece via the proven postMessage path.
+// crown=true makes the runner wear the leader's crown.
+function driveFrame(iframe, p, crown){
+  const push=()=>{ try{
+    iframe.contentWindow.postMessage({type:'frontrun:piece', value:p.wallet, shape:shapeFor(p.id)}, '*');
+    iframe.contentWindow.postMessage({type:'frontrun:crown', value:!!crown}, '*');
+  }catch(e){} };
+  const boot=()=>{ push(); let n=0; const t=setInterval(()=>{ if(n++>5){clearInterval(t);return} push(); }, 300); };
+  iframe.addEventListener('load',boot,{once:true});
+}
+// lightweight deterministic poster for grid thumbnails — receding tunnel + runner, per-piece palette/shape.
+// (the real animated engine renders in the detail/fullscreen view.)
+// a small gold crown sitting on the poster runner's head (head ellipse top ≈ y29.4)
+const CROWN_GFX =
+  '<g stroke="#7a5f22" stroke-width="0.3" stroke-linejoin="round">'+
+  '<path d="M43.8 30 L45.1 24.3 L47.4 27.7 L50 22.8 L52.6 27.7 L54.9 24.3 L56.2 30 Z" fill="#D8B24A"/>'+
+  '<rect x="43.6" y="29.2" width="12.8" height="2.9" rx="0.5" fill="#C9A24B"/>'+
+  '<circle cx="46.6" cy="30.6" r="0.45" fill="#7a5f22" stroke="none"/>'+
+  '<circle cx="50" cy="30.6" r="0.5" fill="#8a1f3d" stroke="none"/>'+
+  '<circle cx="53.4" cy="30.6" r="0.45" fill="#7a5f22" stroke="none"/></g>';
+function posterSVG(p, crowned){
+  const pal=palFor(p), sides=SHAPE_SIDES[shapeFor(p.id)]||6;
+  const bg=pal[0], prim=pal[1], sec=pal[2];
+  const cx=50, cy=50, rot=(h32('r'+p.id)%360)*Math.PI/180;
+  function poly(r,op){ let d=''; for(let i=0;i<sides;i++){ const a=rot+i*2*Math.PI/sides; const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a); d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); } return '<path d="'+d+'Z" fill="none" stroke="'+sec+'" stroke-width="'+(op*1.1).toFixed(2)+'" stroke-opacity="'+op.toFixed(2)+'"/>'; }
+  let rings=''; for(let i=8;i>=1;i--){ rings+=poly(i*7, i/9); }
+  // runner silhouette (simple stylized figure), primary color
+  const fig='<g fill="'+prim+'" opacity="'+(p.dead?0.28:0.92)+'">'+
+    '<ellipse cx="50" cy="34" rx="4.2" ry="4.6"/>'+
+    '<path d="M46 39 Q50 37 54 39 L56 60 Q53 63 50 63 Q47 63 44 60 Z"/>'+
+    '<path d="M46 42 L40 52 M54 42 L60 50" stroke="'+prim+'" stroke-width="3" fill="none" stroke-linecap="round"/>'+
+    '<path d="M47 62 L43 76 M53 62 L57 74" stroke="'+prim+'" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>';
+  const grain=p.dead?'<rect width="100" height="100" fill="#000" opacity="0.45"/>':'';
+  return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'+
+    '<rect width="100" height="100" fill="'+bg+'"/>'+rings+fig+(crowned&&!p.dead?CROWN_GFX:'')+grain+
+    '<rect width="100" height="100" fill="none" stroke="'+sec+'" stroke-opacity="0.15" stroke-width="1"/></svg>';
+}
+
+function renderSquad(list){
+  LAST_SQUAD=list;
+  const box=document.getElementById('squad'), empty=document.getElementById('squadEmpty');
+  document.getElementById('squadCount').textContent = list.length ? (list.length+' pieces') : '—';
+  box.innerHTML='';
+  if(!list.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  // crown = biggest ground in this view (real crown comes from contract in live mode)
+  const kingId = list.reduce((a,b)=>groundOf(b)>groundOf(a)?b:a, list[0]).id;
+  list.forEach(p=>{
+    const g = groundOf(p);
+    const el=document.createElement('div'); el.className='card'; el.dataset.id=p.id;
+    el.innerHTML =
+      '<div class="thumb">'+(p.id===kingId&&!p.dead?'<span class="crown">👑</span>':'')+posterSVG(p, p.id===kingId&&!p.dead)+'</div>'+
+      '<div class="meta"><div class="id">FRONTRUN #'+p.id+(p.dead?'<span class="burned">burned</span>':'')+'</div>'+
+      '<div class="g">ground <b data-g="'+p.id+'">'+fmtG(g)+'</b></div></div>';
+    el.addEventListener('click',()=>openDetail(p));
+    box.appendChild(el);
+  });
+  tick();
+}
+
+function renderBoard(list){
+  const field = DEMO ? demoField() : [];
+  const all = [...list.map(p=>({...p,me:true})), ...field]
+    .sort((a,b)=> groundOf(b)-groundOf(a)).slice(0,8);
+  const box=document.getElementById('board'); box.innerHTML='';
+  all.forEach((p,i)=>{
+    const el=document.createElement('div'); el.className='lrow'+(p.me?' me':'');
+    el.innerHTML='<span class="rk">'+(i+1)+'</span>'+(i===0?'<span class="cr">👑</span>':'')+
+      '<span class="tk">#'+p.id+'</span><span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>openDetail((p.me && list.find(x=>x.id===p.id)) || p)); // open the real piece; leader shows the crown
+    box.appendChild(el);
+  });
+}
+
+// lazy-load iframes only when scrolled into view (WebGL is heavy)
+function lazyframes(){
+  const io=new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting){
+      const f=e.target;
+      if(f.dataset.src){
+        f.src=f.dataset.src; f.removeAttribute('data-src');
+        const id=+f.closest('.card').dataset.id; const p=LAST_SQUAD.find(x=>x.id===id);
+        if(p) driveFrame(f,p);
+      }
+      io.unobserve(f);
+    }
+  }),{rootMargin:'300px'});
+  document.querySelectorAll('iframe[data-src]').forEach(f=>io.observe(f));
+}
+
+// live-ticking ground counters
+function tick(){
+  document.querySelectorAll('[data-g]').forEach(n=>{ const p=LAST_SQUAD.find(x=>x.id==n.dataset.g); if(p) n.textContent=fmtG(groundOf(p)); });
+  document.querySelectorAll('[data-lg]').forEach(n=>{ const p=[...LAST_SQUAD,...(DEMO?demoField():[])].find(x=>x.id==n.dataset.lg); if(p) n.textContent=fmtG(groundOf(p)); });
+  if(document.getElementById('overlay').classList.contains('open') && CUR){
+    document.getElementById('dGround').textContent = fmtG(groundOf(CUR));
+    document.getElementById('dBase').textContent = fmtG(CUR.dead?0:(nowSec()-C.reveal));
+  }
+  if(LEADER && LEADER.claimed!==false){ document.getElementById('lGround').textContent = fmtG(groundOf(LEADER)); }
+}
+setInterval(tick, 1000);
+
+// ---- THE ONE UP FRONT (current crown holder, featured) ----
+let LEADER=null, leaderWin=null;
+async function fetchLeader(){
+  if(DEMO){
+    const field=[...demoField(), ...LAST_SQUAD].sort((a,b)=>groundOf(b)-groundOf(a));
+    const top=field[0]; if(!top) return null;
+    return { id:top.id, wallet:top.wallet, ground:groundOf(top), absorbed:top.absorbed||0, claimed:true, dead:false, fetchTime:nowSec() };
+  }
+  try{
+    const r=await ethCall(C.race, SEL.crown); const w=r.replace(/^0x/,'');
+    if(parseInt(w.slice(0,64),16)===0) return { claimed:false };            // crown unclaimed (no burns yet)
+    const id=parseInt(w.slice(64,128),16), ground=parseInt(w.slice(128,192),16);
+    let wallet=''; try{ const o=await ethCall(C.collection, SEL.ownerOf+pad('0x'+id.toString(16))); wallet='0x'+o.slice(26); }catch(e){}
+    return { id, wallet, ground, claimed:true, dead:false, fetchTime:nowSec() };
+  }catch(e){ return null; }
+}
+function renderLeader(L){
+  LEADER=L;
+  const box=document.getElementById('leader');
+  const gEl=document.getElementById('lGround').parentElement;
+  if(!L){ box.classList.remove('show'); return; }
+  if(L.claimed===false){
+    box.classList.add('show','empty');
+    document.getElementById('lName').textContent='crown unclaimed';
+    gEl.style.display='none';
+    document.getElementById('lSub').textContent='no burns yet — the crown is up for grabs';
+    document.getElementById('lHolder').textContent='';
+    document.getElementById('lOpen').style.display='none';
+    return;
+  }
+  box.classList.add('show'); box.classList.remove('empty');
+  gEl.style.display=''; document.getElementById('lOpen').style.display='';
+  document.getElementById('lName').textContent='FRONTRUN #'+L.id;
+  document.getElementById('lGround').textContent=fmtG(groundOf(L));
+  document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
+  document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
+  document.getElementById('lPoster').innerHTML=posterSVG(L, true);
+  const f=document.getElementById('lRender'); f.classList.remove('live'); f.src=ENGINE+'?preview=1&embed=1';
+  leaderWin=null; f.addEventListener('load',()=>{ leaderWin=f.contentWindow; },{once:true});
+  driveFrame(f,L,true);                       // the leader wears the crown
+  document.getElementById('lOpen').onclick=()=>openDetail(L);
+}
+async function refreshLeader(){ renderLeader(await fetchLeader()); }
+
+// ---- detail overlay ----
+let CUR=null, detailWin=null;
+function openDetail(p){
+  CUR=p;
+  const g = groundOf(p);
+  document.getElementById('dTitle').textContent='FRONTRUN #'+p.id;
+  document.getElementById('dHolder').textContent='held by '+shorten(p.wallet);
+  document.getElementById('dGround').textContent=fmtG(g);
+  document.getElementById('dAccr').textContent = p.dead ? 'burned — ground absorbed into a survivor' : 'accruing +1 / second';
+  document.getElementById('dStatus').textContent = p.dead ? 'burned' : 'running';
+  document.getElementById('dBase').textContent = fmtG(p.dead?0:(nowSec()-C.reveal));
+  document.getElementById('dAbs').textContent = fmtG(p.absorbed||0);
+  const rankList=[...LAST_SQUAD,...(DEMO?demoField():[])].sort((a,b)=>groundOf(b)-groundOf(a));
+  const rank=rankList.findIndex(x=>x.id===p.id && x.wallet===p.wallet);
+  const isLeader = rank===0 && !p.dead;
+  document.getElementById('dRank').textContent = isLeader ? '👑 crown' : (rank>0?('#'+(rank+1)):'—');
+  // traits: show locally-derived ones immediately; the live engine refines them when it reports
+  const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
+  fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
+  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader);
+  const f=document.getElementById('dRender');
+  f.classList.remove('live'); f.src=ENGINE+'?preview=1&embed=1';
+  detailWin=null;
+  f.addEventListener('load',()=>{ detailWin=f.contentWindow; }, {once:true});
+  driveFrame(f,p,isLeader);   // the leader's runner wears the crown
+  document.getElementById('overlay').classList.add('open');
+}
+function fillTraits(s){
+  if(!document.getElementById('overlay').classList.contains('open')) return;
+  const chips=document.getElementById('dChips'); const c=[];
+  if(s.paletteName) c.push(chip('palette', s.paletteName));
+  if(s.shape) c.push(chip('tunnel', s.shape));
+  // HARD tier is pinned at reveal; pre-reveal it is genuinely unknown
+  if(s.hard) c.push(chip('rare tier', s.hard));
+  else c.push('<span class="chip sealed"><b>tier</b> sealed until reveal</span>');
+  if(s.speed) c.push(chip('pace', s.speed+''));
+  if(s.density) c.push(chip('density', s.density+''));
+  chips.innerHTML = c.join('');
+}
+function chip(k,v){ return '<span class="chip"><b>'+k+'</b>'+v+'</span>'; }
+
+document.getElementById('close').addEventListener('click',()=>{document.getElementById('overlay').classList.remove('open');document.getElementById('dRender').src='about:blank';CUR=null;});
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay'){document.getElementById('close').click();}});
+document.getElementById('fs').addEventListener('click',()=>{const el=document.getElementById('dRender');const r=el.requestFullscreen||el.webkitRequestFullscreen;if(r)r.call(el);});
+
+// engine reports the piece currently in the detail iframe: reveal the live render + fill traits
+addEventListener('message',e=>{
+  const d=e.data||{};
+  if(d.type==='frontrun:state' && e.source===detailWin){
+    document.getElementById('dRender').classList.add('live'); // engine has painted → cross-fade over the poster
+    fillTraits(d);
+  }
+  if(d.type==='frontrun:state' && e.source===leaderWin){
+    document.getElementById('lRender').classList.add('live');
+  }
+});
+
+// ---- input handling ----
+function shorten(w){ return w&&w.length>16 ? w.slice(0,8)+'…'+w.slice(-6) : (w||''); }
+const isAddr = v => /^0x[0-9a-fA-F]{40}$/.test(v) || /\.eth$/i.test(v);
+const isTok  = v => /^\d{1,3}$/.test(v) && +v>=0 && +v<C.supply;
+
+async function loadWallet(w){
+  document.getElementById('squadEmpty').textContent='loading squad…';
+  document.getElementById('squad').innerHTML='';
+  let list=[];
+  try{ list = DEMO ? demoSquad(w) : await liveSquad(w); }
+  catch(e){ document.getElementById('squadEmpty').textContent='could not read chain: '+e.message; return; }
+  if(!list.length) document.getElementById('squadEmpty').textContent='no FRONTRUN pieces in this wallet.';
+  renderSquad(list); renderBoard(list);
+}
+function openToken(id){
+  // synthesize a piece so search-a-number always works, even outside a squad
+  const inSquad = LAST_SQUAD.find(x=>x.id===id);
+  openDetail(inSquad || { id, wallet:'0x'+id.toString(16).padStart(40,'0'), absorbed:0, dead:false });
+}
+
+function submit(){
+  const v=document.getElementById('q').value.trim();
+  if(!v) return;
+  if(isTok(v)) return openToken(+v);
+  if(isAddr(v)) return loadWallet(v);
+  document.getElementById('hint').textContent='enter a wallet (0x… / name.eth) or a piece number 0–'+(C.supply-1)+'.';
+}
+document.getElementById('go').addEventListener('click',submit);
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}});
+
+document.getElementById('connect').addEventListener('click',async()=>{
+  if(!window.ethereum){ document.getElementById('hint').textContent='no wallet detected — paste an address or a piece number instead.'; return; }
+  try{
+    const acc = await window.ethereum.request({method:'eth_requestAccounts'});
+    if(acc&&acc[0]){ document.getElementById('q').value=acc[0]; document.getElementById('connect').textContent=shorten(acc[0]); loadWallet(acc[0]); }
+  }catch(e){ document.getElementById('hint').textContent='wallet connection cancelled.'; }
+});
+
+// ---- boot: seed a demo squad + board so the page is never empty to look at ----
+document.getElementById('foot').innerHTML =
+  'the race is a burn-only satellite contract. it touches the collection zero — it only reads ownership and moves pieces you approve. ground accrues equally for every living piece from reveal; burning banks it into a survivor; the crown is contestable forever. '+
+  (DEMO ? 'this page is showing <b>simulated</b> data — it flips to live reads the moment a race contract address is set for the chosen network.' : 'live on-chain.');
+
+(function boot(){
+  if(DEMO){
+    const demoWallet='0x'+h32('frontrun-demo').toString(16).padStart(40,'0').slice(0,40);
+    document.getElementById('q').placeholder='connect a wallet, paste 0x… / name.eth, or a piece number 0–'+(C.supply-1)+' — showing a demo squad';
+    loadWallet(demoWallet);
+  }
+  refreshLeader();                       // feature the one up front
+  setInterval(refreshLeader, 30000);     // re-check the crown holder every 30s (burns can change it)
+})();
+</script>
+</body>
+</html>

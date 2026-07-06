@@ -1,0 +1,9 @@
+
+# testnet burner (never commit)
+.sepolia-burner
+.env
+
+# macOS + local backups
+.DS_Store
+**/.DS_Store
+figure.b64.bak

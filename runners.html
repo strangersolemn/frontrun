@@ -1,0 +1,165 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · my runners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<style>
+@font-face{font-family:'Inversionz Unboxed';src:url('./fonts/Inversionz-Unboxed.otf') format('opentype'),url('./fonts/Inversionz-Unboxed.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+:root{--paper:#F4F2EC;--paper-2:#EEEBE3;--ink:#121110;--dim:#8b877d;--faint:#bcb7ab;--line:#dcd8cd;--pink:#ED1E79;
+  --font:'Martian Mono',ui-monospace,'Courier New',monospace;--display:'Inversionz Unboxed',var(--font)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.wrap{max-width:1180px;margin:0 auto;padding:34px 24px 70px}
+.top{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+h1{font-family:var(--display);font-size:30px;letter-spacing:.14em;font-weight:400}
+.sub{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);font-weight:500;margin-top:9px}
+.sub a{color:var(--pink)}
+.bar{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+input{flex:1;min-width:220px;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:2px;padding:12px 14px}
+input::placeholder{color:var(--faint)}
+button{font-family:var(--font);font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase;border-radius:2px;padding:13px 18px;cursor:pointer;transition:opacity .15s,background .15s,color .15s;white-space:nowrap}
+.b-primary{background:var(--pink);color:#fff;border:0}
+.b-primary:hover{opacity:.88}
+.b-ghost{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+.b-ghost:hover{background:var(--ink);color:var(--paper)}
+#status{color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:none;margin:16px 2px 0;min-height:18px}
+#status b{color:var(--ink);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.card{border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--paper-2);cursor:pointer;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--pink);transform:translateY(-2px)}
+.art{position:relative;width:100%;aspect-ratio:1/1;background:#000}
+.art iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;pointer-events:none}
+.ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4a4a4a;font-size:10px;letter-spacing:.24em;text-transform:uppercase}
+.exp{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.5);color:#fff;border-radius:3px;padding:4px 7px;font-size:11px}
+.cap{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px}
+.cap .id{font-weight:800;letter-spacing:.1em;font-size:13px}
+.badge{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--pink);border-radius:999px;padding:5px 9px;font-weight:800}
+.badge.g4{background:var(--ink)}
+/* fullscreen modal */
+#modal{position:fixed;inset:0;background:rgba(18,17,16,.96);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:50;padding:18px}
+#modal.on{display:flex}
+#modalArt{width:min(88vw,88vh);height:min(88vw,88vh);background:#000;border:1px solid #2a2926;border-radius:4px;overflow:hidden}
+#modalArt iframe{width:100%;height:100%;border:0;display:block}
+.mrow{display:flex;gap:12px;align-items:center;color:var(--paper);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.mrow button{background:transparent;color:var(--paper);border:1px solid #55534d}
+.mrow button:hover{background:var(--paper);color:var(--ink)}
+.mrow .close{border-color:var(--pink);color:#ff8fbe}
+.mrow .close:hover{background:var(--pink);color:#fff}
+</style></head><body><div class="wrap">
+<div class="top">
+  <h1>MY RUNNERS</h1>
+  <div class="sub">connect or paste a wallet · see your squad · tap any runner for fullscreen &nbsp;·&nbsp; <a href="index.html">← frontrun.strangersolemn.art</a></div>
+  <div class="bar">
+    <input id="addr" placeholder="paste 0x… or name.eth" spellcheck="false">
+    <button id="connect" class="b-ghost">Connect wallet</button>
+    <button id="view" class="b-primary">View runners</button>
+  </div>
+  <div id="status"></div>
+</div>
+<div class="grid" id="grid"></div>
+</div>
+
+<div id="modal">
+  <div id="modalArt"></div>
+  <div class="mrow"><span id="modalCap"></span><button id="fs">⛶ fullscreen</button><button class="close" id="close">✕ close</button></div>
+</div>
+
+<script>
+const CONTRACT='0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0';
+const MC3='0xcA11bde05977b3631167028862bE2a173976CA11';
+const RPCS=['https://ethereum-rpc.publicnode.com','https://cloudflare-eth.com','https://eth.llamarpc.com','https://rpc.ankr.com/eth'];
+const ercI=new ethers.Interface(['function ownerOf(uint256) view returns (address)','function tokenURI(uint256) view returns (string)','function totalSupply() view returns (uint256)']);
+const mcI=new ethers.Interface(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) view returns (tuple(bool success,bytes returnData)[])']);
+const $=id=>document.getElementById(id);
+const st=m=>{$('status').innerHTML=m;};
+
+async function ethCall(to,data){
+  let lastErr;
+  for(const url of RPCS){
+    try{
+      const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to,data},'latest']})});
+      const j=await r.json();
+      if(j.result) return j.result;
+      if(j.error) lastErr=new Error(j.error.message);
+    }catch(e){ lastErr=e; }
+  }
+  throw lastErr||new Error('all RPCs failed');
+}
+async function resolveInput(v){
+  v=v.trim();
+  if(/^0x[0-9a-fA-F]{40}$/.test(v)) return ethers.getAddress(v);
+  if(/\.eth$/i.test(v)){ try{ const p=new ethers.JsonRpcProvider(RPCS[0]); const a=await p.resolveName(v); if(a) return a; }catch(e){} }
+  throw new Error('enter a valid 0x address or .eth name');
+}
+async function ownedTokens(wallet){
+  const total=Number(ercI.decodeFunctionResult('totalSupply',await ethCall(CONTRACT,ercI.encodeFunctionData('totalSupply',[])))[0]);
+  const ids=[];for(let i=1;i<=total;i++)ids.push(i);
+  const owned=[]; const CH=200; const w=wallet.toLowerCase();
+  for(let i=0;i<ids.length;i+=CH){
+    const chunk=ids.slice(i,i+CH);
+    const calls=chunk.map(id=>({target:CONTRACT,allowFailure:true,callData:ercI.encodeFunctionData('ownerOf',[id])}));
+    const res=mcI.decodeFunctionResult('aggregate3',await ethCall(MC3,mcI.encodeFunctionData('aggregate3',[calls])))[0];
+    res.forEach((r,k)=>{ if(r.success){ try{ const o=ercI.decodeFunctionResult('ownerOf',r.returnData)[0]; if(o.toLowerCase()===w) owned.push(chunk[k]); }catch(e){} } });
+    st('scanning the pack… '+Math.min(i+CH,total)+'/'+total);
+  }
+  return owned;
+}
+async function tokenMeta(id){
+  const uri=ercI.decodeFunctionResult('tokenURI',await ethCall(CONTRACT,ercI.encodeFunctionData('tokenURI',[id])))[0];
+  const j=JSON.parse(atob(uri.split(',')[1]));
+  const at=(t)=>{const a=(j.attributes||[]).find(x=>x.trait_type===t);return a?a.value:null;};
+  return {id, anim:j.animation_url, grail:at('Grail'), tunnel:at('Tunnel'), glitch:at('Glitch')};
+}
+
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{ if(e.isIntersecting){ const c=e.target; io.unobserve(c); const f=document.createElement('iframe'); f.src=c.dataset.anim; f.setAttribute('scrolling','no'); c.querySelector('.art').prepend(f); c.querySelector('.ph')?.remove(); } });},{rootMargin:'300px'});
+
+function card(m){
+  const c=document.createElement('div'); c.className='card';
+  const isG4=m.glitch==='Frontrunner'||m.tunnel==='Origin Datamosh';
+  const badge=m.grail?`<span class="badge ${isG4?'g4':''}">${isG4?'GENESIS':m.grail}</span>`:'';
+  c.innerHTML=`<div class="art"><div class="ph">loading</div><span class="exp">⛶</span></div><div class="cap"><span class="id">#${m.id}</span>${badge}</div>`;
+  c.dataset.anim=m.anim;
+  c.onclick=()=>openModal(m);
+  io.observe(c);
+  return c;
+}
+function openModal(m){
+  $('modalArt').innerHTML='';
+  const f=document.createElement('iframe'); f.src=m.anim; f.setAttribute('allowfullscreen','');
+  $('modalArt').appendChild(f);
+  $('modalCap').textContent='#'+m.id+(m.grail?'  ·  '+m.grail+' grail':'');
+  $('modal').classList.add('on');
+}
+function closeModal(){ $('modal').classList.remove('on'); $('modalArt').innerHTML=''; }
+$('close').onclick=closeModal;
+$('modal').onclick=e=>{ if(e.target===$('modal')) closeModal(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+$('fs').onclick=()=>{ const el=$('modalArt'); (el.requestFullscreen||el.webkitRequestFullscreen).call(el); };
+
+async function run(){
+  $('grid').innerHTML='';
+  let wallet;
+  try{ wallet=await resolveInput($('addr').value); }catch(e){ st(e.message); return; }
+  st('scanning the pack…');
+  try{
+    const ids=await ownedTokens(wallet);
+    if(!ids.length){ st('no FRONTRUN runners in that wallet.'); return; }
+    st('you hold <b>'+ids.length+'</b> runner'+(ids.length>1?'s':'')+'. loading…');
+    const metas=await Promise.all(ids.map(id=>tokenMeta(id).catch(()=>null)));
+    const good=metas.filter(Boolean);
+    good.forEach(m=>$('grid').appendChild(card(m)));
+    const grails=good.filter(m=>m.grail).length;
+    st('you hold <b>'+good.length+'</b> runner'+(good.length>1?'s':'')+(grails?'  ·  <b>'+grails+'</b> grail'+(grails>1?'s':'')+' 👑':'')+'. tap any to view fullscreen.');
+  }catch(e){ st('error: '+(e.message||e)); }
+}
+$('view').onclick=run;
+$('addr').addEventListener('keydown',e=>{ if(e.key==='Enter') run(); });
+$('connect').onclick=async()=>{
+  if(!window.ethereum){ st('no wallet found. paste your 0x address instead.'); return; }
+  try{ const a=await window.ethereum.request({method:'eth_requestAccounts'}); if(a&&a[0]){ $('addr').value=a[0]; run(); } }catch(e){ st('connect cancelled.'); }
+};
+const q=new URLSearchParams(location.search).get('addr');
+if(q){ $('addr').value=q; run(); }
+</script></body></html>

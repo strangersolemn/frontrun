@@ -43,6 +43,14 @@
     transform: scale(var(--fig-scale, 0.92));
     transform-origin: bottom center;
   }
+  /* Crown layer — sits above the figure's head; scales with the figure, not masked. */
+  #crownc {
+    z-index: 31; pointer-events: none; display: none;
+    image-rendering: auto;
+    transform: scale(var(--fig-scale, 0.92));
+    transform-origin: bottom center;
+  }
+  #crownc.on { display: block; }
 
   /* CONTROL PANEL */
   #panel {
@@ -142,6 +150,8 @@
   <canvas id="bg-gl"></canvas>
   <canvas id="bg2d"></canvas>
   <canvas id="fig"></canvas>
+  <canvas id="crownc"></canvas><!-- crown layer: worn by the race leader; above #fig, not masked -->
+
   <!-- Black flash overlay — covers everything when active -->
   <div id="flash-black"></div>
   <!-- Title fade (F key) — tunnel dissolves to black, FRONTRUN holds -->
@@ -367,6 +377,8 @@ const $ = id => document.getElementById(id);
 
 const fig = $('fig');
 const fCtx = fig.getContext('2d');
+const crownc = $('crownc');
+const crCtx = crownc.getContext('2d');
 const bgGl = $('bg-gl');
 const gl = bgGl.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: new URLSearchParams(location.search).has('cap') });
 if (!gl) console.warn('WebGL not available — tunnel will not render');
@@ -376,6 +388,7 @@ function resize() {
   W = Math.round(window.innerWidth);
   H = Math.round(window.innerHeight);
   fig.width = W; fig.height = H;
+  crownc.width = W; crownc.height = H;
   { var _b2=document.getElementById("bg2d"); if(_b2){_b2.width=W;_b2.height=H;} }
   if (gl) {
     bgGl.width = W; bgGl.height = H;
@@ -1858,6 +1871,65 @@ function populateDropdown(id, def) {
 // (animated pose), canvas destination-in clipping everywhere else (static
 // pose, glitch still animates). ?nomask=1 forces the fallback for testing.
 let maskFallback = false, figImg = null;
+
+// ---- CROWN (worn by the race leader) ----
+// The crown art (500x500) is mapped onto the same on-screen box the runner mask
+// occupies (contain, center-bottom). Because the crown was drawn over a runner in
+// its own frame, mapping frame->box lands it on the head. scale/dx/dy fine-tune it
+// for the engine's runner export; the layer shares the figure's --fig-scale transform.
+let crownImg = null, crownOn = false;
+const CROWN_TUNE = { scale: 1.0, dx: 0.0, dy: 0.0 }; // crown + runner share the same 500x500 frame -> exact 1:1
+async function loadCrown() {
+  try {
+    const res = await fetch('crown.b64');
+    const b64 = (await res.text()).trim();
+    crownImg = new Image();
+    await new Promise(r => { crownImg.onload = () => r(true); crownImg.onerror = () => r(false); crownImg.src = b64; });
+  } catch (e) { crownImg = null; }
+}
+function setCrown(on) {
+  crownOn = !!on;
+  crownc.classList.toggle('on', crownOn);
+  if (!crownOn) crCtx && crCtx.clearRect(0, 0, W, H);
+}
+function drawCrown() {
+  if (!crownOn || !crownImg || !crownImg.width || !figImg || !figImg.width) return;
+  const ms = Math.min(W / figImg.width, H / figImg.height);
+  let bw = figImg.width * ms, bh = figImg.height * ms;
+  let bx = (W - bw) / 2, by = H - bh;
+  bx += bw * CROWN_TUNE.dx; by += bh * CROWN_TUNE.dy;
+  if (CROWN_TUNE.scale !== 1) { const cx = bx + bw / 2; bw *= CROWN_TUNE.scale; bh *= CROWN_TUNE.scale; bx = cx - bw / 2; }
+  crCtx.clearRect(0, 0, W, H);
+  crCtx.drawImage(crownImg, bx, by, bw, bh);
+}
+
+// ---- 29-FRAME RUN CYCLE (runner + crown animate in lockstep) ----
+// runner + crown are the same 29-frame sequence, so frame N of each line up 1:1.
+let runnerFrames = [], crownFrames = [], animReady = false, ANIM_N = 29;
+const RUN_FPS = 30;                    // run-cycle cadence (frames/sec) — tune to taste
+function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+async function loadAnim() {
+  const rp = [], cp = [];
+  for (let f = 0; f < ANIM_N; f++) {
+    const nn = String(f).padStart(2,'0');
+    rp.push(_loadImg('anim/runner_' + nn + '.png'));
+    cp.push(_loadImg('anim/crown_'  + nn + '.png'));
+  }
+  const rf = await Promise.all(rp), cf = await Promise.all(cp);
+  if (rf.every(Boolean) && cf.every(Boolean)) {
+    runnerFrames = rf; crownFrames = cf; animReady = true;
+    // animate the SHAPE via canvas clipping -> turn the static CSS mask off
+    maskFallback = true;
+    fig.style.webkitMaskImage = 'none'; fig.style.maskImage = 'none';
+  }
+}
+// pick the current run-cycle frame for a given time (seconds); drives runner + crown together.
+function animApply(t) {
+  if (!animReady) return;
+  const idx = Math.floor(t * RUN_FPS) % ANIM_N;
+  figImg = runnerFrames[idx];   // the destination-in clip uses figImg -> runner runs
+  crownImg = crownFrames[idx];  // drawCrown uses crownImg -> crown bobs in sync
+}
 async function loadFigureMask() {
   const res = await fetch('figure.b64');
   const b64 = (await res.text()).trim();
@@ -1979,6 +2051,7 @@ function drawDreamweaver(t){
 
 function frame() {
   const t = (performance.now() - start) / 1000;
+  animApply(t);                         // advance the run cycle (runner mask + crown frame, in sync)
   const spd = $('spd').value / 100;
   const den = $('den').value / 100;
   $('v-spd').textContent = spd.toFixed(2);
@@ -1991,6 +2064,9 @@ function frame() {
   // 2. figure-clipped glitch on top
   const g = GLITCHES.find(gl => gl.id === activeGlitch);
   if (g && g.id !== 'none') {
+    // wipe the figure layer each frame — the mask shape now animates, so any
+    // glitch that doesn't fully repaint must not smear across the moving silhouette
+    if (animReady) fCtx.clearRect(0, 0, W, H);
     g.fn(fCtx, W, H, palette, t, spd, den, 1);
     if (maskFallback && figImg && figImg.width) {
       // canvas clipping replaces the CSS mask: contain, center bottom
@@ -2003,6 +2079,9 @@ function frame() {
   } else {
     fCtx.clearRect(0, 0, W, H);
   }
+
+  // 2b. crown — worn by the race leader, above the figure
+  drawCrown();
 
   // 3. flash overlay — cycle through (on + off) frames
   if (flashEnabled) {
@@ -2192,7 +2271,23 @@ function syncPreviewURL(v) {
   try { const u = new URL(location.href); if (v) u.searchParams.set('w', v); history.replaceState(null, '', u); } catch (e) {}
 }
 function applyPreview(v) { applyWallet(v); syncPreviewURL(v); const i = $('preview-addr'); if (i) i.value = (v || '').trim(); postParentState(); }
-function postParentState(){ try { if (window.parent && window.parent !== window) window.parent.postMessage({ type:'frontrun:state', wallet: WALLET }, '*'); } catch(e){} }
+const PAL_NAMES = ['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
+function reportTraits(){
+  try {
+    const shape = (document.getElementById('tunnel-shape')||{}).value || '';
+    const palIdx = +(((document.getElementById('palette-sel')||{}).value) || 0);
+    const hard = (typeof HARD_SHADER!=='undefined' && HARD_SHADER) || (typeof HARD_BG!=='undefined' && HARD_BG) || '';
+    return {
+      shape,
+      palette: palIdx,
+      paletteName: PAL_NAMES[palIdx] || ('palette '+palIdx),
+      hard: hard || null,                 // pinned rare tunnel (shader/bg) if this piece is rare, else null
+      speed: +(((document.getElementById('spd')||{}).value)||0),
+      density: +(((document.getElementById('den')||{}).value)||0),
+    };
+  } catch(e){ return {}; }
+}
+function postParentState(){ try { if (window.parent && window.parent !== window) window.parent.postMessage(Object.assign({ type:'frontrun:state', wallet: WALLET }, reportTraits()), '*'); } catch(e){} }
 function rollPreview() {
   rollSeed();   // new piece identity (palette + glitch)
   let a = '0x'; for (let i = 0; i < 40; i++) a += '0123456789abcdef'[(Math.random() * 16) | 0];
@@ -2380,6 +2475,8 @@ buildTunnelTexture();
 reseed();
 applyFigureSize();
 loadFigureMask();
+loadCrown();
+loadAnim();
 updateFigure();
 applyFlashOpacity();                   // sync overlay's bg color to slider value
 setFlashMode($('flash-mode').value);   // activate flash if dropdown defaults to a non-off option
@@ -2396,11 +2493,13 @@ frame();
   document.body.classList.add('preview');
   if (p.has('embed') || p.has('tap')) document.body.classList.add('embed');   // hide in-iframe bar; the landing page drives it
   if (p.has('tap')) document.body.classList.add('tap');        // ?tap=1 → click anywhere to roll a new piece, no UI
+  if (p.has('crown')) setCrown(true);                          // ?crown=1 → wear the leader's crown
   // let a parent site control the art via postMessage
   window.addEventListener('message', e => {
     const d = e.data || {};
     if (d.type === 'frontrun:wallet') applyPreview(d.value || '');
     else if (d.type === 'frontrun:roll') rollPreview();
+    else if (d.type === 'frontrun:crown') setCrown(d.value);   // race leader wears the crown
     else if (d.type === 'frontrun:ping') postParentState();
     else if (d.type === 'frontrun:piece') {            // full distinct piece from a wallet (palette + look)
       const v = d.value || '';
