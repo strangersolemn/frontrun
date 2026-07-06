@@ -7,8 +7,11 @@
 :root{--bg:#08080c;--fg:#eaeaf0;--mut:#7a7a88;--line:#1c1c24;--acc:#ED1E79;--ok:#2CE15F}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);
- font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+ font:15px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
  display:flex;flex-direction:column;align-items:center;padding:28px 16px}
+.nav{display:flex;gap:20px;margin:-10px 0 22px}
+.nav a{color:var(--mut);font-size:12px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+.nav a:hover,.nav a.on{color:var(--fg)}
 .brand{font-size:30px;letter-spacing:.32em;font-weight:700;margin:0;padding-left:.32em}
 .tag{color:var(--mut);letter-spacing:.22em;text-transform:uppercase;font-size:11px;margin:4px 0 22px}
 .card{width:100%;max-width:520px;border:1px solid var(--line);border-radius:14px;padding:18px;background:#0c0c12}
@@ -36,14 +39,18 @@ button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cur
 #cover{position:absolute;inset:0;z-index:3;background:#08080c;display:flex;align-items:center;justify-content:center;color:#55555f;font-size:12px;letter-spacing:.2em;transition:opacity .5s}
 </style></head><body>
 <h1 class="brand">FRONTRUN</h1><div class="tag">gif maker</div>
-<a class="homelink" href="/">↩ frontrun.strangersolemn.art</a>
+<nav class="nav"><a href="./index.html">home</a><a href="./race.html">the race</a><a href="./rarity.html">the rares</a><a href="./gif-maker.html" class="on">gif maker</a></nav>
 
 <div class="stage"><div id="frame720"><iframe id="art" src="./engine.html?preview=1&embed=1&cap=1" title="FRONTRUN"></iframe></div><div id="cover">loading…</div></div>
 
 <div class="card">
   <div class="row">
-    <input id="wallet" type="text" placeholder="paste any 0x wallet…" autocomplete="off" spellcheck="false">
-    <button id="connect">Connect</button>
+    <input id="token" type="text" inputmode="numeric" placeholder="your token number, e.g. 290" autocomplete="off">
+    <button id="loadtok">load my piece</button>
+  </div>
+  <div class="row">
+    <input id="wallet" type="text" placeholder="or paste any 0x wallet…" autocomplete="off" spellcheck="false">
+    <button id="connect">connect</button>
   </div>
   <button id="rand">🎲 random piece</button>
   <button id="make" disabled>Make GIF</button>
@@ -82,6 +89,30 @@ $("connect").onclick=async()=>{
   try{const p=new ethers.BrowserProvider(window.ethereum);await p.send("eth_requestAccounts",[]);
     const a=await(await p.getSigner()).getAddress(); $("wallet").value=a; setPiece(a);}catch(e){status("connection cancelled");}
 };
+// --- load YOUR OWN piece by token number: real holder + true tunnel tier ---
+let RARITY=null;
+const GTUN={'liquid metal':'liquidmetal','black water':'blackwater','towers':'towers','datastream':'datastream','datacity':'datacity','whirlwind':'whirlwind','barcode':'barcode','address rain':'rain','address ledger':'ticker','dreamweaver':'dreamweaver'};
+const RPCS=['https://ethereum-rpc.publicnode.com','https://eth.drpc.org'];
+const COL='0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0';
+fetch('frontrun-rarity.json').then(r=>r.json()).then(d=>RARITY=d).catch(()=>{});
+async function ownerOf(id){
+  const data='0x6352211e'+Number(id).toString(16).padStart(64,'0');
+  for(const r of RPCS){ try{ const x=await fetch(r,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:COL,data},'latest']})}); const j=await x.json(); if(j.result&&j.result!=='0x') return '0x'+j.result.slice(26); }catch(e){} }
+  return null;
+}
+async function loadToken(idRaw){
+  const id=parseInt(idRaw,10); if(!id){status('enter a token number');return;}
+  status('loading #'+id+'…');
+  const holder=await ownerOf(id);
+  if(!holder){status('#'+id+' not found (tokens 1–666)');return;}
+  $("wallet").value=holder; setPiece(holder);
+  const tier=RARITY&&RARITY.tokens&&RARITY.tokens[id]&&RARITY.tokens[id].tier;
+  const shape=tier&&GTUN[(tier||'').toLowerCase()];
+  if(shape){ setTimeout(()=>{ try{ art.contentWindow.setTunnelShape(shape); }catch(e){} }, 120); }  // force the fixed tunnel
+  status('#'+id+(tier?' · '+tier:'')+' — hit Make GIF');
+}
+$("loadtok").onclick=()=>{ if(ready) loadToken($("token").value.trim()); };
+$("token").addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); if(ready) loadToken(e.target.value.trim()); } });
 
 // grab the three engine canvases from the iframe and composite one frame
 function grab(cap){
