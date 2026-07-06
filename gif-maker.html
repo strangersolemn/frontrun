@@ -41,6 +41,10 @@ button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cur
 .sz{color:var(--mut);font-size:12px;margin-top:8px}
 #cover{position:absolute;inset:0;z-index:3;background:#08080c;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;color:#55555f;font-size:12px;letter-spacing:.16em;text-align:center;padding:20px;transition:opacity .4s}
 #cover .big{font-size:13px;letter-spacing:.24em;color:#8a8a96}
+#live{max-width:560px;width:100%;margin:-6px 0 14px;font-size:11px;line-height:1.6;color:var(--mut);text-align:center;display:none}
+#live.show{display:block}
+#live b{color:#b7b7c2;font-weight:600}
+#live .dot{color:var(--gold);margin-right:5px;font-size:9px;vertical-align:middle}
 </style></head><body>
 <h1 class="brand">FRONTRUN</h1><div class="tag">gif maker</div>
 <nav class="nav"><a href="./index.html">home</a><a href="./race.html">the race</a><a href="./rarity.html">the rares</a><a href="./gif-maker.html" class="on">gif maker</a></nav>
@@ -48,6 +52,7 @@ button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cur
 <div class="stage"><div id="frame720"><iframe id="art" title="FRONTRUN"></iframe></div>
   <div id="cover"><div class="big">your exact on-chain piece</div><div>enter a token number or connect your wallet</div></div>
 </div>
+<div id="live"><span class="dot">◉</span> showing the <b>live version</b> — palette &amp; glitch follow the current holder; the tunnel tier stays fixed</div>
 
 <div class="card">
   <div class="row">
@@ -130,6 +135,7 @@ async function loadToken(idRaw){
   if(!ok){ status('render timed out — hit load again'); return; }
   hideCover(); ready=true; $("make").disabled=false;
   $("token").value=id; status('#'+id+' loaded — hit Make GIF');
+  $("live").classList.add('show');
   markPicker(id);
 }
 
