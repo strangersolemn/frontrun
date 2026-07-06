@@ -92,7 +92,10 @@
   .card{border:1px solid var(--line);background:var(--paper);cursor:pointer;transition:border-color .18s,transform .18s;position:relative;overflow:hidden}
   .card:hover{border-color:var(--ink);transform:translateY(-2px)}
   .card .thumb{position:relative;width:100%;aspect-ratio:1;background:#0b0b0f;overflow:hidden}
-  .card .thumb svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* masked real-runner render (used in cards, leader hero, detail) */
+  .tun{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .rsil{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
+  .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2}
   .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   .card .meta{padding:11px 12px;border-top:1px solid var(--line)}
   .card .id{font-weight:700;font-size:12px;letter-spacing:.04em}
@@ -344,32 +347,22 @@ function driveFrame(iframe, p, crown){
   const boot=()=>{ push(); let n=0; const t=setInterval(()=>{ if(n++>5){clearInterval(t);return} push(); }, 300); };
   iframe.addEventListener('load',boot,{once:true});
 }
-// lightweight deterministic poster for grid thumbnails — receding tunnel + runner, per-piece palette/shape.
-// (the real animated engine renders in the detail/fullscreen view.)
-// a small gold crown sitting on the poster runner's head (head ellipse top ≈ y29.4)
-const CROWN_GFX =
-  '<g stroke="#7a5f22" stroke-width="0.3" stroke-linejoin="round">'+
-  '<path d="M43.8 30 L45.1 24.3 L47.4 27.7 L50 22.8 L52.6 27.7 L54.9 24.3 L56.2 30 Z" fill="#D8B24A"/>'+
-  '<rect x="43.6" y="29.2" width="12.8" height="2.9" rx="0.5" fill="#C9A24B"/>'+
-  '<circle cx="46.6" cy="30.6" r="0.45" fill="#7a5f22" stroke="none"/>'+
-  '<circle cx="50" cy="30.6" r="0.5" fill="#8a1f3d" stroke="none"/>'+
-  '<circle cx="53.4" cy="30.6" r="0.45" fill="#7a5f22" stroke="none"/></g>';
-function posterSVG(p, crowned){
-  const pal=palFor(p), sides=SHAPE_SIDES[shapeFor(p.id)]||6;
-  const bg=pal[0], prim=pal[1], sec=pal[2];
+// Inline render = the REAL runner silhouette (the actual runner frames, CSS-masked and
+// tinted per palette) over a receding tunnel, animated in lockstep by the frame loop below.
+// No WebGL inline -> shows the true runner shape AND visibly runs. (WebGL = fullscreen only.)
+function tunnelSVG(p){
+  const pal=palFor(p), bg=pal[0], sec=pal[2], sides=SHAPE_SIDES[shapeFor(p.id)]||6;
   const cx=50, cy=50, rot=(h32('r'+p.id)%360)*Math.PI/180;
   function poly(r,op){ let d=''; for(let i=0;i<sides;i++){ const a=rot+i*2*Math.PI/sides; const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a); d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); } return '<path d="'+d+'Z" fill="none" stroke="'+sec+'" stroke-width="'+(op*1.1).toFixed(2)+'" stroke-opacity="'+op.toFixed(2)+'"/>'; }
   let rings=''; for(let i=8;i>=1;i--){ rings+=poly(i*7, i/9); }
-  // runner silhouette (simple stylized figure), primary color
-  const fig='<g fill="'+prim+'" opacity="'+(p.dead?0.28:0.92)+'">'+
-    '<ellipse cx="50" cy="34" rx="4.2" ry="4.6"/>'+
-    '<path d="M46 39 Q50 37 54 39 L56 60 Q53 63 50 63 Q47 63 44 60 Z"/>'+
-    '<path d="M46 42 L40 52 M54 42 L60 50" stroke="'+prim+'" stroke-width="3" fill="none" stroke-linecap="round"/>'+
-    '<path d="M47 62 L43 76 M53 62 L57 74" stroke="'+prim+'" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>';
-  const grain=p.dead?'<rect width="100" height="100" fill="#000" opacity="0.45"/>':'';
-  return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'+
-    '<rect width="100" height="100" fill="'+bg+'"/>'+rings+fig+(crowned&&!p.dead?CROWN_GFX:'')+grain+
-    '<rect width="100" height="100" fill="none" stroke="'+sec+'" stroke-opacity="0.15" stroke-width="1"/></svg>';
+  return '<svg class="tun" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="'+bg+'"/>'+rings+'</svg>';
+}
+function posterSVG(p, crowned){
+  const prim=palFor(p)[1];
+  const m='url(anim/runner_00.png)';
+  return tunnelSVG(p)
+    + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
+    + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
 
 function renderSquad(list){
@@ -473,16 +466,14 @@ function renderLeader(L){
   document.getElementById('lGround').textContent=fmtG(groundOf(L));
   document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
   document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
-  document.getElementById('lPoster').innerHTML=posterSVG(L, true);
-  const f=document.getElementById('lRender'); f.classList.remove('live'); f.src=ENGINE+'?preview=1&embed=1';
-  leaderWin=null; f.addEventListener('load',()=>{ leaderWin=f.contentWindow; },{once:true});
-  driveFrame(f,L,true);                       // the leader wears the crown
+  document.getElementById('lPoster').innerHTML=posterSVG(L, true);   // real runner + crown, animated by runLoop
+  const f=document.getElementById('lRender'); if(f) f.style.display='none';  // no inline WebGL (heavy/unreliable)
   document.getElementById('lOpen').onclick=()=>openDetail(L);
 }
 async function refreshLeader(){ renderLeader(await fetchLeader()); }
 
 // ---- detail overlay ----
-let CUR=null, detailWin=null;
+let CUR=null, detailWin=null, CUR_LEADER=false;
 function openDetail(p){
   CUR=p;
   const g = groundOf(p);
@@ -500,12 +491,9 @@ function openDetail(p){
   // traits: show locally-derived ones immediately; the live engine refines them when it reports
   const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
   fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
-  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader);
-  const f=document.getElementById('dRender');
-  f.classList.remove('live'); f.src=ENGINE+'?preview=1&embed=1';
-  detailWin=null;
-  f.addEventListener('load',()=>{ detailWin=f.contentWindow; }, {once:true});
-  driveFrame(f,p,isLeader);   // the leader's runner wears the crown
+  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader);   // real runner + crown, animated by runLoop
+  CUR_LEADER = isLeader;
+  const f=document.getElementById('dRender'); if(f){ f.classList.remove('live'); f.src='about:blank'; }  // WebGL loads only on fullscreen
   document.getElementById('overlay').classList.add('open');
 }
 function fillTraits(s){
@@ -524,7 +512,14 @@ function chip(k,v){ return '<span class="chip"><b>'+k+'</b>'+v+'</span>'; }
 
 document.getElementById('close').addEventListener('click',()=>{document.getElementById('overlay').classList.remove('open');document.getElementById('dRender').src='about:blank';CUR=null;});
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay'){document.getElementById('close').click();}});
-document.getElementById('fs').addEventListener('click',()=>{const el=document.getElementById('dRender');const r=el.requestFullscreen||el.webkitRequestFullscreen;if(r)r.call(el);});
+// fullscreen loads the RICH WebGL engine (one focused context) and drives the current piece
+document.getElementById('fs').addEventListener('click',()=>{
+  const el=document.getElementById('dRender'); if(!el||!CUR) return;
+  el.style.display='block'; el.classList.add('live');
+  el.src=ENGINE+'?preview=1&embed=1';
+  el.addEventListener('load',()=>{ detailWin=el.contentWindow; driveFrame(el,CUR,CUR_LEADER); },{once:true});
+  const r=el.requestFullscreen||el.webkitRequestFullscreen; if(r)r.call(el);
+});
 
 // engine reports the piece currently in the detail iframe: reveal the live render + fill traits
 addEventListener('message',e=>{
@@ -580,6 +575,20 @@ document.getElementById('connect').addEventListener('click',async()=>{
 document.getElementById('foot').innerHTML =
   'the race is a burn-only satellite contract. it touches the collection zero — it only reads ownership and moves pieces you approve. ground accrues equally for every living piece from reveal; burning banks it into a survivor; the crown is contestable forever. '+
   (DEMO ? 'this page is showing <b>simulated</b> data — it flips to live reads the moment a race contract address is set for the chosen network.' : 'live on-chain.');
+
+// ---- run-cycle animator: swaps the mask/crown frame on every inline runner in lockstep ----
+(function runLoop(){
+  const RF=[], CF=[];
+  for(let i=0;i<29;i++){ const nn=String(i).padStart(2,'0');
+    const a=new Image(); a.src='anim/runner_'+nn+'.png'; RF.push('url(anim/runner_'+nn+'.png)');
+    const b=new Image(); b.src='anim/crown_'+nn+'.png';  CF.push('anim/crown_'+nn+'.png'); }
+  let i=0;
+  setInterval(()=>{
+    i=(i+1)%29; const m=RF[i], c=CF[i];
+    document.querySelectorAll('[data-run]').forEach(el=>{ el.style.webkitMaskImage=m; el.style.maskImage=m; });
+    document.querySelectorAll('[data-crown]').forEach(im=>{ im.src=c; });
+  }, 70); // ~14fps run cycle
+})();
 
 (function boot(){
   if(DEMO){
