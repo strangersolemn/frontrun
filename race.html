@@ -107,10 +107,15 @@
 
   /* leaderboard */
   /* race track leaderboard */
-  .board{border:1px solid var(--ink);background:var(--paper);position:relative}
-  .board::after{content:'THE FRONT';position:absolute;top:0;bottom:0;right:0;width:1px;background:var(--pink);
-    writing-mode:vertical-rl;font-size:8px;letter-spacing:.22em;color:var(--pink);padding:8px 0;text-align:center;box-shadow:0 0 0 0}
-  .lane{display:flex;align-items:center;gap:12px;height:52px;padding:0 46px 0 14px;border-bottom:1px solid var(--line);position:relative}
+  .board{border:1px solid var(--ink);background:var(--paper);position:relative;overflow:hidden}
+  /* THE FRONT — the leading edge, glowing gold */
+  .board::before{content:'';position:absolute;top:0;bottom:0;right:0;width:64px;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(230,190,82,.22));z-index:0}
+  .board::after{content:'THE FRONT';position:absolute;top:0;bottom:0;right:0;width:2px;z-index:1;
+    background:#E6BE52;box-shadow:0 0 18px 3px rgba(230,190,82,.75);
+    writing-mode:vertical-rl;font-size:8px;letter-spacing:.24em;color:#B8901F;padding:8px 0;text-align:center}
+  .lane{display:flex;align-items:center;gap:12px;height:52px;padding:0 46px 0 14px;border-bottom:1px solid var(--line);position:relative;z-index:1}
+  .lane .mark.king .mk-run{filter:drop-shadow(0 0 5px rgba(230,190,82,.95))}
   .lane:last-child{border-bottom:0}
   .lane.me{background:rgba(237,30,121,.05)}
   .lane.lead{background:rgba(216,178,74,.09)}
@@ -395,23 +400,25 @@ function renderSquad(list){
   tick();
 }
 
-// the pack as a race track: each runner sits along its lane by standing — the leader
-// (crown) breaks away out front, the pack strung out behind. runners animate via runLoop.
-function trackPos(rank, n){ if(rank===0) return 90; const hi=58, lo=9; return hi - (rank-1)/Math.max(1,n-2)*(hi-lo); }
+// the pack as a race track: runners positioned by REAL ground (bigger lead = bigger gap),
+// all one colour + same size so it reads by POSITION; leader is gold, out front, crowned.
 function renderBoard(list){
   const field = DEMO ? demoField() : [];
   const all = [...list.map(p=>({...p,me:true})), ...field]
     .sort((a,b)=> groundOf(b)-groundOf(a)).slice(0,8);
+  const max = all.length ? Math.max(1, groundOf(all[0])) : 1;
   const box=document.getElementById('board'); box.innerHTML='';
   all.forEach((p,i)=>{
-    const prim=palFor(p)[1], m='url(anim/runner_00.png)', x=trackPos(i, all.length);
+    const m='url(anim/runner_00.png)';
+    const x = 7 + (groundOf(p)/max) * 82;               // position by real ground → dynamic gaps
+    const col = i===0 ? '#E6BE52' : '#ED1E79';          // leader gold, pack all one colour
     const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(i===0?' lead':'');
     el.innerHTML=
       '<span class="rk">'+(i+1)+'</span>'+
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
-      '<div class="ln"><div class="mark" style="left:'+x.toFixed(1)+'%">'+
+      '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
         (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
-        '<div class="rsil mk-run" data-run style="background:'+prim+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
+        '<div class="rsil mk-run" data-run style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
     el.style.cursor='pointer';
