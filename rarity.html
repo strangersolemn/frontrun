@@ -37,7 +37,8 @@
   .result.show{display:grid;grid-template-columns:200px 1fr}
   @media(max-width:640px){.result.show{grid-template-columns:1fr}}
   .result .r-img{position:relative;aspect-ratio:1;background:#0b0b0f;border-right:1px solid var(--line)}
-  .result .r-img iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .result .r-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0}
+  .result .r-img .r-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:10px;letter-spacing:.22em;text-transform:uppercase}
   .result .r-info{padding:20px 22px}
   .result .r-name{font-family:var(--display);font-size:26px}
   .result .r-tier{margin-top:10px;font-size:15px;font-weight:700}.result .r-tier.grail{color:var(--gold)}
@@ -107,30 +108,40 @@ function renderLadder(){
 async function ethCall(data){ for(const r of RPCS){ try{ const x=await fetch(r,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:COL,data},'latest']})}); const j=await x.json(); if(j.result&&j.result!=='0x') return j.result; }catch(e){} } return null; }
 const pad=n=>Number(n).toString(16).padStart(64,'0');
 
+// decode an ABI-encoded string return (offset/length/data) into utf-8
+function hexToUtf8(res){
+  const hex=res.slice(2);
+  const len=parseInt(hex.slice(64,128),16);
+  const b=new Uint8Array(len);
+  for(let i=0;i<len;i++) b[i]=parseInt(hex.slice(128+i*2,130+i*2),16);
+  return new TextDecoder().decode(b);
+}
 async function check(idRaw){
   const id=parseInt(idRaw,10);
   const box=document.getElementById('result');
   if(!DATA||!DATA.tokens[id]){ box.className='result show'; box.innerHTML='<div class="r-info"><div class="r-name">FRONTRUN #'+id+'</div><div class="r-sub">not found. tokens are 1–'+DATA.total+'.</div></div>'; return; }
   const t=DATA.tokens[id];
-  // live holder (for the render) + build engine url with the true tunnel forced
-  let holder='';
-  try{ const o=await ethCall('0x6352211e'+pad(id)); if(o) holder='0x'+o.slice(26); }catch(e){}
-  const shape=TUNMAP[(t.tier||'').toLowerCase()]||'';
-  const eurl=ENGINE+'?preview=1&embed=1'+(holder?'&w='+holder:'')+(shape?'&shape='+shape:'')+'&token='+id;
   box.className='result show';
   box.innerHTML=
-    '<div class="r-img"><iframe src="'+eurl+'" title="#'+id+'"></iframe></div>'+
+    '<div class="r-img" id="rimg"><div class="r-load">loading art…</div></div>'+
     '<div class="r-info">'+
       '<div class="r-name">FRONTRUN #'+id+'</div>'+
       '<div class="r-tier'+(t.grail?' grail':'')+'">'+t.tier+(t.grail?' 👑 grail':'')+'</div>'+
       '<div class="r-sub">'+t.pct+'% of the collection carry this tunnel</div>'+
       '<div class="r-rank">true rarity rank <b>#'+t.rank+'</b> of '+DATA.total+'</div>'+
       '<div class="r-btns">'+
-        '<a href="'+ENGINE+'?preview=1'+(holder?'&w='+holder:'')+(shape?'&shape='+shape:'')+'&token='+id+'&fs=1" target="_blank">view fullscreen ⛶</a>'+
-        '<a class="ghost" href="gif-maker.html'+(holder?'?w='+holder:'')+'" target="_blank">make a gif</a>'+
         '<a class="ghost" href="https://opensea.io/item/ethereum/'+COL+'/'+id+'" target="_blank">opensea ↗</a>'+
       '</div>'+
     '</div>';
+  // render the REAL on-chain image (read straight from the tokenURI — matches marketplaces exactly)
+  try{
+    const raw=await ethCall('0xc87b56dd'+pad(id));   // tokenURI(id)
+    if(raw){
+      const j=JSON.parse(atob(hexToUtf8(raw).split(',')[1]));
+      const rimg=document.getElementById('rimg');
+      if(j.image&&rimg) rimg.innerHTML='<img src="'+j.image+'" alt="FRONTRUN #'+id+'">';
+    }
+  }catch(e){}
 }
 document.getElementById('go').addEventListener('click',()=>check(document.getElementById('q').value.trim()));
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();check(e.target.value.trim());}});

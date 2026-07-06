@@ -45,18 +45,14 @@ button:hover:not(:disabled){border-color:#55556a}button:disabled{opacity:.45;cur
 
 <div class="card">
   <div class="row">
-    <input id="token" type="text" inputmode="numeric" placeholder="your token number, e.g. 290" autocomplete="off">
-    <button id="loadtok">load my piece</button>
-  </div>
-  <div class="row">
-    <input id="wallet" type="text" placeholder="or paste any 0x wallet…" autocomplete="off" spellcheck="false">
+    <input id="wallet" type="text" placeholder="paste any 0x wallet…" autocomplete="off" spellcheck="false">
     <button id="connect">connect</button>
   </div>
   <button id="rand">🎲 random piece</button>
   <button id="make" disabled>Make GIF</button>
   <div id="prog"><div id="bar"></div></div>
   <div id="status"></div>
-  <div class="hint">enter a wallet to load its piece, then make a GIF. exports under 15&nbsp;MB for X.</div>
+  <div class="hint">connect or paste a wallet to spin up a runner in its colours, then make a gif. exports under 15&nbsp;MB for X.</div>
   <div id="out">
     <img id="result" alt="your FRONTRUN gif">
     <div><a id="dl" download="frontrun.gif">Download GIF</a></div>
@@ -89,30 +85,6 @@ $("connect").onclick=async()=>{
   try{const p=new ethers.BrowserProvider(window.ethereum);await p.send("eth_requestAccounts",[]);
     const a=await(await p.getSigner()).getAddress(); $("wallet").value=a; setPiece(a);}catch(e){status("connection cancelled");}
 };
-// --- load YOUR OWN piece by token number: real holder + true tunnel tier ---
-let RARITY=null;
-const GTUN={'liquid metal':'liquidmetal','black water':'blackwater','towers':'towers','datastream':'datastream','datacity':'datacity','whirlwind':'whirlwind','barcode':'barcode','address rain':'rain','address ledger':'ticker','dreamweaver':'dreamweaver'};
-const RPCS=['https://ethereum-rpc.publicnode.com','https://eth.drpc.org'];
-const COL='0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0';
-fetch('frontrun-rarity.json').then(r=>r.json()).then(d=>RARITY=d).catch(()=>{});
-async function ownerOf(id){
-  const data='0x6352211e'+Number(id).toString(16).padStart(64,'0');
-  for(const r of RPCS){ try{ const x=await fetch(r,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:COL,data},'latest']})}); const j=await x.json(); if(j.result&&j.result!=='0x') return '0x'+j.result.slice(26); }catch(e){} }
-  return null;
-}
-async function loadToken(idRaw){
-  const id=parseInt(idRaw,10); if(!id){status('enter a token number');return;}
-  status('loading #'+id+'…');
-  const holder=await ownerOf(id);
-  if(!holder){status('#'+id+' not found (tokens 1–666)');return;}
-  $("wallet").value=holder; setPiece(holder);
-  const tier=RARITY&&RARITY.tokens&&RARITY.tokens[id]&&RARITY.tokens[id].tier;
-  const shape=tier&&GTUN[(tier||'').toLowerCase()];
-  if(shape){ setTimeout(()=>{ try{ art.contentWindow.setTunnelShape(shape); }catch(e){} }, 120); }  // force the fixed tunnel
-  status('#'+id+(tier?' · '+tier:'')+' — hit Make GIF');
-}
-$("loadtok").onclick=()=>{ if(ready) loadToken($("token").value.trim()); };
-$("token").addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); if(ready) loadToken(e.target.value.trim()); } });
 
 // grab the three engine canvases from the iframe and composite one frame
 function grab(cap){
