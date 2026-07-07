@@ -692,7 +692,7 @@ document.getElementById('foot').innerHTML =
 const WSEL = { setApproval:'0xa22cb465', isApproved:'0xe985e9c5', burnInto:'0x1d1a4d5d' };
 const CHAINHEX = NET==='mainnet' ? '0x1' : (NET==='testnet' ? '0xaa36a7' : null);
 let ME=null;                       // connected account (lowercase) — the only wallet allowed to burn
-let SAC=null, SURV=null, APPROVED=false;
+let SAC=null, SURV=null, APPROVED=false, BURNOPEN=false;
 
 function bstatus(t,html){ const e=document.getElementById('bStatus'); if(!e)return; if(html) e.innerHTML=t; else e.textContent=t||''; }
 function myLiving(){ return LAST_SQUAD.filter(p=>!p.dead); }
@@ -703,11 +703,17 @@ async function checkApproval(){
   catch(e){ APPROVED=false; }
   return APPROVED;
 }
+async function checkBurnOpen(){
+  if(DEMO||!C.race){ BURNOPEN=false; return false; }
+  try{ const r=await ethCall(C.race, '0x477dfefb'); BURNOPEN=(r||'').slice(-1)==='1'; }  // burnOpen()
+  catch(e){ BURNOPEN=false; }
+  return BURNOPEN;
+}
 function maybeShowBurn(wallet){
   const panel=document.getElementById('burnPanel'); if(!panel) return;
   const on = !DEMO && ME && wallet && wallet.toLowerCase()===ME && myLiving().length>=2;
   panel.style.display = on ? 'block' : 'none';
-  if(on){ SAC=SURV=null; renderBurnTiles(); bstatus(''); checkApproval().then(updateBurnUI); }
+  if(on){ SAC=SURV=null; renderBurnTiles(); bstatus(''); Promise.all([checkApproval(),checkBurnOpen()]).then(updateBurnUI); }
 }
 function renderBurnTiles(){
   const living=myLiving();
@@ -735,8 +741,14 @@ function updateBurnUI(){
     prev.innerHTML='burn <b>#'+sac.id+'</b> ('+fmtG(gs)+' ground) into <b>#'+surv.id+'</b> — #'+surv.id+' goes '+fmtG(gv)+' → <span class="win">'+fmtG(gv+gs)+' ground</span>. #'+sac.id+' is destroyed.';
     document.getElementById('bcS').textContent='#'+sac.id;
     confWrap.style.display='flex';
-    burnBtn.textContent='burn #'+sac.id+' into #'+surv.id;
-    burnBtn.disabled = !(APPROVED && conf.checked);
+    if(!BURNOPEN){
+      burnBtn.textContent='burns open at launch';
+      burnBtn.disabled = true;
+      if(!document.getElementById('bStatus').textContent) bstatus('⏳ burns open at launch — live in the space. approve now so you’re ready the moment it opens.');
+    } else {
+      burnBtn.textContent='burn #'+sac.id+' into #'+surv.id;
+      burnBtn.disabled = !(APPROVED && conf.checked);
+    }
   } else {
     prev.innerHTML = SAC ? 'now pick a piece to <b>keep</b> — it absorbs #'+SAC+'’s ground.' : (SURV ? 'now pick a piece to <b>sacrifice</b> into #'+SURV+'.' : 'pick a piece to sacrifice, then a piece to keep.');
     confWrap.style.display='none'; conf.checked=false;
