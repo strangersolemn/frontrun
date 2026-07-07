@@ -54,6 +54,7 @@
   @media(max-width:680px){.leader .lrender{border-right:0;border-bottom:1px solid var(--line)}}
   .leader .lposter{position:absolute;inset:0}
   .leader .lposter svg{width:100%;height:100%;display:block}
+  .leader .lposter .rsil{filter:drop-shadow(0 0 2px rgba(245,205,90,1)) drop-shadow(0 0 13px rgba(230,190,82,.85)) drop-shadow(0 0 28px rgba(230,190,82,.55))}  /* leader brightest */
   .leader .lrender iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .5s}
   .leader .lrender iframe.live{opacity:1}
   .leader .lcrown{position:absolute;top:10px;left:12px;z-index:3;font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
@@ -94,8 +95,8 @@
   .card .thumb{position:relative;width:100%;aspect-ratio:1;background:#0b0b0f;overflow:hidden}
   /* masked real-runner render (used in cards, leader hero, detail) */
   .tun{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .rsil{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
-  .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2}
+  .rsil{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;filter:drop-shadow(0 0 1.5px rgba(240,200,80,.95)) drop-shadow(0 0 8px rgba(230,190,82,.65)) drop-shadow(0 0 17px rgba(230,190,82,.4))}
+  .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2;filter:drop-shadow(0 0 5px rgba(240,200,80,.75))}
   .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   .card .meta{padding:11px 12px;border-top:1px solid var(--line)}
   .card .id{font-weight:700;font-size:12px;letter-spacing:.04em}
@@ -115,7 +116,7 @@
     background:#E6BE52;box-shadow:0 0 18px 3px rgba(230,190,82,.75);
     writing-mode:vertical-rl;font-size:8px;letter-spacing:.24em;color:#B8901F;padding:8px 0;text-align:center}
   .lane{display:flex;align-items:center;gap:12px;height:52px;padding:0 46px 0 14px;border-bottom:1px solid var(--line);position:relative;z-index:1}
-  .lane .mark.king .mk-run{filter:drop-shadow(0 0 5px rgba(230,190,82,.95))}
+  .lane .mark.king .mk-run{filter:drop-shadow(0 0 7px rgba(230,190,82,1)) drop-shadow(0 0 13px rgba(230,190,82,.55))}
   .lane:last-child{border-bottom:0}
   .lane.me{background:rgba(237,30,121,.05)}
   .lane.lead{background:rgba(216,178,74,.09)}
@@ -125,7 +126,7 @@
   .lane .ln{position:relative;flex:1;height:100%}
   .lane .ln::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 12px)}
   .lane .mark{position:absolute;top:50%;transform:translate(-50%,-50%);width:26px;height:44px;transition:left .8s cubic-bezier(.4,0,.2,1)}
-  .lane .mk-run{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
+  .lane .mk-run{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;filter:drop-shadow(0 0 1.5px rgba(240,200,80,.9)) drop-shadow(0 0 4px rgba(230,190,82,.55))}
   .lane .mk-crown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:2}
   .lane .gr{width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;font-size:11px;flex:none}
 
@@ -189,7 +190,6 @@
     <div class="lrender">
       <div class="lposter" id="lPoster"></div>
       <iframe id="lRender" title="current leader"></iframe>
-      <span class="lcrown">👑</span>
     </div>
     <div class="linfo">
       <div class="llabel">the front</div>
@@ -284,7 +284,7 @@
     <div class="qa"><div class="q">can i flip my way to the top?</div><div class="a">no. ground comes from holding. sell and you lose it. the race rewards the ones who stay.</div></div>
     <div class="qa"><div class="q">is it safe? does it touch my art?</div><div class="a">the race is a separate contract. it never changes your art. it only reads who owns what, and only moves a piece when you choose to burn it and approve it.</div></div>
     <div class="qa"><div class="q">can it be stopped?</div><div class="a">no. once it opens, the contract runs itself forever. no admin, no off switch, not even for the artist.</div></div>
-    <div class="qa"><div class="q">when does it start?</div><div class="a">tomorrow, live in the space. the first burn opens it and the first king is crowned then and there.</div></div>
+    <div class="qa"><div class="q">when does it start?</div><div class="a">live in the space. the first burn opens it and the first king is crowned then and there.</div></div>
     <div class="qa"><div class="q">do i need to do anything?</div><div class="a">hold. that is it. when you want to climb, you burn. wallets ready for the space.</div></div>
   </section>
 
@@ -463,7 +463,7 @@ function renderSquad(list){
     const g = groundOf(p);
     const el=document.createElement('div'); el.className='card'; el.dataset.id=p.id;
     el.innerHTML =
-      '<div class="thumb">'+(p.id===kingId&&!p.dead?'<span class="crown">👑</span>':'')+posterSVG(p, p.id===kingId&&!p.dead)+'</div>'+
+      '<div class="thumb">'+posterSVG(p, p.id===kingId&&!p.dead)+'</div>'+
       '<div class="meta"><div class="id">FRONTRUN #'+p.id+(p.dead?'<span class="burned">burned</span>':'')+'</div>'+
       '<div class="g">ground <b data-g="'+p.id+'">'+fmtG(g)+'</b></div></div>';
     el.addEventListener('click',()=>openDetail(p));
