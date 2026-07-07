@@ -332,7 +332,7 @@ const NET = P.has('testnet') ? 'testnet' : (P.has('mainnet') ? 'mainnet' : 'demo
 const CFG = {
   dem:     { rpcs:[], collection:'', race:'', reveal: 1751500000, supply: 666 }, // demo reveal ~2025-07-03
   testnet: { rpcs:['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia'],
-             collection:'0xa803f060afd257b2a0a8ffc15c6b1a9fdc333e9c', race:'0xc262f48e6beb1c011d42600d418864e09fd6a110', reveal:1780705908, supply:420 }, // live Sepolia rehearsal 2026-07-05
+             collection:'0xa803f060afd257b2a0a8ffc15c6b1a9fdc333e9c', race:'0x3073501b96d8308b42bda1ec877dc2afbc769fc9', reveal:1780705908, supply:420 }, // Sepolia rehearsal of the AUDIT-FIXED race (2026-07-07); prev buggy build was 0xc262…a110
   mainnet: { rpcs:['https://ethereum-rpc.publicnode.com','https://eth.drpc.org','https://1rpc.io/eth'],
              collection:'0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0', race:'', reveal:1783083827, supply:666 }, // real FRONTRUN collection; reveal = block 25452163 (2026-07-03 13:03:47 UTC); race:'' until deployed
 };
