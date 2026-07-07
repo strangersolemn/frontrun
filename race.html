@@ -217,6 +217,56 @@
     <div class="empty" id="squadEmpty">connect a wallet or search an address to load a squad.</div>
   </section>
 
+  <style>
+    #burnPanel{margin-top:44px;display:none}
+    .burnbox{border:1px solid var(--ink);background:var(--paper)}
+    .bwarn{background:var(--ink);color:var(--paper);font-size:12px;line-height:1.6;padding:13px 16px;letter-spacing:.01em}
+    .bwarn b{color:#ff5fa2}
+    .bpick{display:grid;grid-template-columns:1fr 34px 1fr;align-items:start;gap:8px;padding:18px 16px 6px}
+    @media(max-width:620px){.bpick{grid-template-columns:1fr;gap:14px}.barrow{display:none}}
+    .bcol .blabel{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:600;margin-bottom:9px}
+    .barrow{align-self:center;text-align:center;color:var(--faint);font-size:20px;padding-top:22px}
+    .btiles{display:flex;flex-wrap:wrap;gap:7px}
+    .btile{border:1px solid var(--line);background:var(--paper-2);padding:8px 11px;cursor:pointer;font-size:12px;line-height:1.3;min-width:78px;transition:border-color .12s,background .12s}
+    .btile .bt-id{font-weight:700}
+    .btile .bt-g{color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums}
+    .btile:hover{border-color:var(--dim)}
+    .btile.sac{border-color:var(--pink);background:rgba(237,30,121,.08);color:var(--pink)}
+    .btile.sac .bt-g{color:var(--pink)}
+    .btile.surv{border-color:#A9822B;background:rgba(169,130,43,.1)}
+    .btile.dim{opacity:.32;pointer-events:none}
+    .bpreview{padding:12px 16px;font-size:13px;color:var(--dim);border-top:1px solid var(--line);margin-top:10px}
+    .bpreview b{color:var(--ink)}.bpreview .win{color:#A9822B;font-weight:700}
+    .bconfirm{display:flex;align-items:center;gap:9px;padding:2px 16px 14px;font-size:12px;color:var(--ink);cursor:pointer}
+    .bconfirm input{width:16px;height:16px;accent-color:var(--pink)}
+    .bactions{display:flex;gap:8px;padding:0 16px 16px;flex-wrap:wrap}
+    .bactions button{font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:12px 18px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);cursor:pointer}
+    .bactions button:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+    .bactions button.danger{background:var(--pink);border-color:var(--pink);color:#fff}
+    .bactions button.danger:hover:not(:disabled){background:#c60f61}
+    .bactions button:disabled{opacity:.4;cursor:not-allowed}
+    .bstatus{padding:0 16px 16px;font-size:12px;color:var(--dim);min-height:16px}
+    .bstatus a{color:var(--pink)}
+  </style>
+  <section id="burnPanel">
+    <div class="sec-h"><span class="t">make your move · burn</span><span class="c">the only way to climb</span></div>
+    <div class="burnbox">
+      <div class="bwarn">burning is <b>permanent</b>. the sacrifice is sent to a dead address — gone from the supply forever. the survivor absorbs all of the ground it carried. this cannot be undone.</div>
+      <div class="bpick">
+        <div class="bcol"><div class="blabel">① sacrifice — destroyed</div><div class="btiles" id="sacTiles"></div></div>
+        <div class="barrow">→</div>
+        <div class="bcol"><div class="blabel">② survivor — absorbs its ground</div><div class="btiles" id="survTiles"></div></div>
+      </div>
+      <div class="bpreview" id="bPreview">pick a piece to sacrifice, then a piece to keep.</div>
+      <label class="bconfirm" id="bConfirmWrap" style="display:none"><input type="checkbox" id="bConfirm"> <span>i understand <b id="bcS">#—</b> will be destroyed forever.</span></label>
+      <div class="bactions">
+        <button id="bApprove" style="display:none">approve the race · one-time</button>
+        <button id="bBurn" class="danger" disabled>burn</button>
+      </div>
+      <div class="bstatus" id="bStatus"></div>
+    </div>
+  </section>
+
   <section style="margin-top:44px">
     <div class="sec-h"><span class="t">front of the pack</span><span class="c">the race, live</span></div>
     <div class="board" id="board"></div>
@@ -284,7 +334,7 @@ const CFG = {
   testnet: { rpcs:['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia'],
              collection:'0xa803f060afd257b2a0a8ffc15c6b1a9fdc333e9c', race:'0xc262f48e6beb1c011d42600d418864e09fd6a110', reveal:1780705908, supply:420 }, // live Sepolia rehearsal 2026-07-05
   mainnet: { rpcs:['https://ethereum-rpc.publicnode.com','https://eth.drpc.org','https://1rpc.io/eth'],
-             collection:'0x08d08D7f8CEF8EBb56D788a6c0C85cee313A1e17', race:'', reveal:0, supply:666 },
+             collection:'0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0', race:'', reveal:1783083827, supply:666 }, // real FRONTRUN collection; reveal = block 25452163 (2026-07-03 13:03:47 UTC); race:'' until deployed
 };
 const C = NET==='demo' ? CFG.dem : CFG[NET];
 const DEMO = NET==='demo' || !C.race; // fall back to simulated squad until a race contract exists
@@ -593,6 +643,7 @@ async function loadWallet(w){
   catch(e){ document.getElementById('squadEmpty').textContent='could not read chain: '+e.message; return; }
   if(!list.length) document.getElementById('squadEmpty').textContent='no FRONTRUN pieces in this wallet.';
   renderSquad(list); renderBoard(list);
+  if(typeof maybeShowBurn==='function') maybeShowBurn(w);
 }
 function openToken(id){
   // synthesize a piece so search-a-number always works, even outside a squad
@@ -614,7 +665,7 @@ document.getElementById('connect').addEventListener('click',async()=>{
   if(!window.ethereum){ document.getElementById('hint').textContent='no wallet detected — paste an address or a piece number instead.'; return; }
   try{
     const acc = await window.ethereum.request({method:'eth_requestAccounts'});
-    if(acc&&acc[0]){ document.getElementById('q').value=acc[0]; document.getElementById('connect').textContent=shorten(acc[0]); loadWallet(acc[0]); }
+    if(acc&&acc[0]){ ME=acc[0].toLowerCase(); document.getElementById('q').value=acc[0]; document.getElementById('connect').textContent=shorten(acc[0]); loadWallet(acc[0]); }
   }catch(e){ document.getElementById('hint').textContent='wallet connection cancelled.'; }
 });
 
@@ -636,6 +687,113 @@ document.getElementById('foot').innerHTML =
     document.querySelectorAll('[data-crown]').forEach(im=>{ im.src=c; });
   }, 70); // ~14fps run cycle
 })();
+
+// ================= THE MOVE: burn flow (approve + burnInto) — live mode only =================
+const WSEL = { setApproval:'0xa22cb465', isApproved:'0xe985e9c5', burnInto:'0x1d1a4d5d' };
+const CHAINHEX = NET==='mainnet' ? '0x1' : (NET==='testnet' ? '0xaa36a7' : null);
+let ME=null;                       // connected account (lowercase) — the only wallet allowed to burn
+let SAC=null, SURV=null, APPROVED=false;
+
+function bstatus(t,html){ const e=document.getElementById('bStatus'); if(!e)return; if(html) e.innerHTML=t; else e.textContent=t||''; }
+function myLiving(){ return LAST_SQUAD.filter(p=>!p.dead); }
+
+async function checkApproval(){
+  if(DEMO||!ME||!C.race) { APPROVED=false; return false; }
+  try{ const r=await ethCall(C.collection, WSEL.isApproved+pad(ME)+pad(C.race)); APPROVED = (r||'').slice(-1)==='1'; }
+  catch(e){ APPROVED=false; }
+  return APPROVED;
+}
+function maybeShowBurn(wallet){
+  const panel=document.getElementById('burnPanel'); if(!panel) return;
+  const on = !DEMO && ME && wallet && wallet.toLowerCase()===ME && myLiving().length>=2;
+  panel.style.display = on ? 'block' : 'none';
+  if(on){ SAC=SURV=null; renderBurnTiles(); bstatus(''); checkApproval().then(updateBurnUI); }
+}
+function renderBurnTiles(){
+  const living=myLiving();
+  const cell=(p,role)=>{
+    const sel=(role==='sac'&&SAC===p.id)?' sac':((role==='surv'&&SURV===p.id)?' surv':'');
+    const dim=((role==='sac'&&SURV===p.id)||(role==='surv'&&SAC===p.id))?' dim':'';
+    return '<div class="btile'+sel+dim+'" data-role="'+role+'" data-id="'+p.id+'"><div class="bt-id">#'+p.id+'</div><div class="bt-g">'+fmtG(groundOf(p))+' ground</div></div>';
+  };
+  document.getElementById('sacTiles').innerHTML=living.map(p=>cell(p,'sac')).join('');
+  document.getElementById('survTiles').innerHTML=living.map(p=>cell(p,'surv')).join('');
+  document.querySelectorAll('#burnPanel .btile').forEach(t=>t.addEventListener('click',()=>{
+    const id=+t.dataset.id, role=t.dataset.role;
+    if(role==='sac'){ SAC = SAC===id?null:id; if(SURV===SAC) SURV=null; }
+    else { SURV = SURV===id?null:id; if(SAC===SURV) SAC=null; }
+    renderBurnTiles(); updateBurnUI();
+  }));
+}
+function updateBurnUI(){
+  const sac=LAST_SQUAD.find(p=>p.id===SAC), surv=LAST_SQUAD.find(p=>p.id===SURV);
+  const prev=document.getElementById('bPreview'), confWrap=document.getElementById('bConfirmWrap'), conf=document.getElementById('bConfirm');
+  const approveBtn=document.getElementById('bApprove'), burnBtn=document.getElementById('bBurn');
+  approveBtn.style.display = APPROVED ? 'none' : '';
+  if(sac&&surv){
+    const gs=groundOf(sac), gv=groundOf(surv);
+    prev.innerHTML='burn <b>#'+sac.id+'</b> ('+fmtG(gs)+' ground) into <b>#'+surv.id+'</b> — #'+surv.id+' goes '+fmtG(gv)+' → <span class="win">'+fmtG(gv+gs)+' ground</span>. #'+sac.id+' is destroyed.';
+    document.getElementById('bcS').textContent='#'+sac.id;
+    confWrap.style.display='flex';
+    burnBtn.textContent='burn #'+sac.id+' into #'+surv.id;
+    burnBtn.disabled = !(APPROVED && conf.checked);
+  } else {
+    prev.innerHTML = SAC ? 'now pick a piece to <b>keep</b> — it absorbs #'+SAC+'’s ground.' : (SURV ? 'now pick a piece to <b>sacrifice</b> into #'+SURV+'.' : 'pick a piece to sacrifice, then a piece to keep.');
+    confWrap.style.display='none'; conf.checked=false;
+    burnBtn.textContent='burn'; burnBtn.disabled=true;
+  }
+}
+
+async function ensureChain(){
+  if(!CHAINHEX||!window.ethereum) return false;
+  try{
+    let c=await window.ethereum.request({method:'eth_chainId'});
+    if(c===CHAINHEX) return true;
+    await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:CHAINHEX}]});
+    c=await window.ethereum.request({method:'eth_chainId'});
+    return c===CHAINHEX;
+  }catch(e){ bstatus('switch your wallet to '+(NET==='mainnet'?'Ethereum mainnet':'Sepolia')+' to continue.'); return false; }
+}
+async function sendTx(to,data){ return await window.ethereum.request({method:'eth_sendTransaction',params:[{from:ME,to,data}]}); }
+async function waitReceipt(hash){
+  for(let i=0;i<150;i++){ try{ const r=await window.ethereum.request({method:'eth_getTransactionReceipt',params:[hash]}); if(r) return r; }catch(e){} await new Promise(s=>setTimeout(s,2500)); }
+  return null;
+}
+function txLink(h){ const base=NET==='mainnet'?'https://etherscan.io/tx/':'https://sepolia.etherscan.io/tx/'; return '<a href="'+base+h+'" target="_blank">view tx ↗</a>'; }
+
+document.getElementById('bConfirm').addEventListener('change',updateBurnUI);
+document.getElementById('bApprove').addEventListener('click',async()=>{
+  if(!ME||DEMO) return;
+  if(!await ensureChain()) return;
+  const btn=document.getElementById('bApprove');
+  try{
+    btn.disabled=true; bstatus('confirm the approval in your wallet…');
+    const h=await sendTx(C.collection, WSEL.setApproval+pad(C.race)+pad('0x1'));
+    bstatus('approving the race — waiting for confirmation… '+txLink(h), true);
+    const r=await waitReceipt(h);
+    if(r&&r.status==='0x1'){ APPROVED=true; bstatus('approved ✓ you can burn now. '+txLink(h), true); updateBurnUI(); }
+    else bstatus('approval failed or reverted. '+txLink(h), true);
+  }catch(e){ bstatus('approval cancelled.'); }
+  finally{ btn.disabled=false; }
+});
+document.getElementById('bBurn').addEventListener('click',async()=>{
+  if(!ME||DEMO||SAC==null||SURV==null) return;
+  if(!document.getElementById('bConfirm').checked){ bstatus('tick the box to confirm.'); return; }
+  if(!await ensureChain()) return;
+  const btn=document.getElementById('bBurn');
+  try{
+    btn.disabled=true; bstatus('confirm the burn in your wallet…');
+    const h=await sendTx(C.race, WSEL.burnInto+pad('0x'+SAC.toString(16))+pad('0x'+SURV.toString(16)));
+    bstatus('burning #'+SAC+' into #'+SURV+' — waiting for confirmation… '+txLink(h), true);
+    const r=await waitReceipt(h);
+    if(r&&r.status==='0x1'){
+      const s=SAC, v=SURV;
+      bstatus('done ✓ #'+s+' is gone; #'+v+' absorbed its ground. '+txLink(h), true);
+      SAC=SURV=null; document.getElementById('bConfirm').checked=false;
+      await loadWallet(ME); refreshLeader();
+    } else { bstatus('burn failed or reverted. '+txLink(h), true); btn.disabled=false; }
+  }catch(e){ bstatus('burn cancelled.'); btn.disabled=false; }
+});
 
 (function boot(){
   if(DEMO){
