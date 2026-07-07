@@ -54,7 +54,7 @@
   @media(max-width:680px){.leader .lrender{border-right:0;border-bottom:1px solid var(--line)}}
   .leader .lposter{position:absolute;inset:0}
   .leader .lposter svg{width:100%;height:100%;display:block}
-  .leader .lposter .rglow{filter:blur(20px);opacity:1;transform:scale(1.08)}   /* leader brightest */
+  .leader .lposter .rglow{filter:blur(15px);opacity:1}   /* leader brightest */
   .leader .lposter .rsil{filter:drop-shadow(0 0 3px rgba(245,205,90,1))}
   .leader .lrender iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .5s}
   .leader .lrender iframe.live{opacity:1}
@@ -97,7 +97,7 @@
   /* masked real-runner render (used in cards, leader hero, detail) */
   .tun{position:absolute;inset:0;width:100%;height:100%;display:block}
   /* gold aura: a blurred gold copy of the runner, sitting behind it → a real, visible glow */
-  .rglow{position:absolute;inset:0;z-index:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;background:#F5CD5A;opacity:.95;filter:blur(11px);transform:scale(1.06);transform-origin:center bottom;pointer-events:none}
+  .rglow{position:absolute;inset:0;z-index:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;background:#F5CD5A;opacity:.9;filter:blur(9px);pointer-events:none}
   .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;filter:drop-shadow(0 0 2px rgba(245,205,90,.95))}
   .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2;filter:drop-shadow(0 0 6px rgba(245,205,90,.9))}
   .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
