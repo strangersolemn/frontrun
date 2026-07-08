@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · glow lab (private)</title>
+<style>
+  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font:14px/1.5 ui-monospace,Menlo,monospace;display:flex;flex-direction:column;align-items:center;padding:22px 16px}
+  h1{font-size:15px;letter-spacing:.2em;text-transform:uppercase;margin:0}
+  .tag{color:var(--mut);font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin:4px 0 18px}
+  .stage{width:100%;max-width:560px;aspect-ratio:1;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#000;position:relative}
+  #art{width:100%;height:100%;border:0;display:block}
+  .traits{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 4px;max-width:560px}
+  .chip{border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12px}
+  .chip b{color:var(--mut);font-weight:400;margin-right:6px;text-transform:uppercase;font-size:10px;letter-spacing:.1em}
+  .ctrls{width:100%;max-width:560px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;gap:8px;align-items:center}
+  button{font:inherit;border-radius:10px;padding:13px 16px;cursor:pointer;border:1px solid #33333f;background:#15151d;color:var(--fg)}
+  button:hover{border-color:#55556a}
+  #roll{flex:1;background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600;letter-spacing:.05em}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{padding:8px 11px;font-size:12px}
+  .seg button.on{border-color:var(--acc);color:#fff}
+  label.lab{color:var(--mut);font-size:11px;letter-spacing:.1em;text-transform:uppercase;min-width:74px}
+  input[type=range]{flex:1;accent-color:var(--acc)}
+  .val{width:44px;text-align:right;color:var(--fg);font-size:12px}
+  .note{color:var(--mut);font-size:11px;max-width:560px;margin-top:14px;text-align:center;line-height:1.6}
+</style></head><body>
+<h1>Glow Lab</h1><div class="tag">private · glow × glitch QA</div>
+
+<div class="stage"><iframe id="art" src="./sketch-v4-glitch-lab.html?embed=1&preview=1" title="runner"></iframe></div>
+
+<div class="traits" id="traits"></div>
+
+<div class="ctrls">
+  <div class="row"><button id="roll">🎲 randomize (new palette + glitch)</button></div>
+  <div class="row"><label class="lab">glow</label>
+    <div class="seg" id="glowMode">
+      <button data-m="bright" class="on">brighter tint</button>
+      <button data-m="own">own colour</button>
+      <button data-m="off">off</button>
+    </div>
+  </div>
+  <div class="row"><label class="lab">intensity</label><input id="amt" type="range" min="2" max="26" value="12"><span class="val" id="amtV">12</span></div>
+  <div class="row"><label class="lab">step glitch</label>
+    <div class="seg"><button id="prevG">‹ prev</button><button id="nextG">next ›</button><span class="val" id="gIdx" style="width:auto;color:var(--mut)"></span></div>
+  </div>
+</div>
+
+<div class="note">private tool — not linked anywhere public. randomize rolls a fresh holder (new palette + glitch); "step glitch" walks every glitch on the current palette so you can check each one pops. glow sits on the runner (fig) layer over the glitch backdrop.</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const art=$("art");
+// palette primaries, index-matched to the engine's PAL_NAMES
+const PAL=[['frontrunner','#ED1E79'],['crimson','#FF003C'],['emerald','#00FF95'],['amber','#FFAE00'],
+  ['cyan','#00F0FF'],['sulphur','#FFE600'],['magenta','#FF00FF'],['violet','#9D00FF'],
+  ['royal blue','#3A7BFF'],['dark red','#D5142A'],['terminal green','#00FF41'],['black & white','#FFFFFF']];
+function lighten(hex,t){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r+(255-r)*t);g=Math.round(g+(255-g)*t);b=Math.round(b+(255-b)*t);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+let MODE='bright', AMT=12, PAL_IDX=0;
+
+function idoc(){ try{return art.contentDocument;}catch(e){return null;} }
+function iwin(){ try{return art.contentWindow;}catch(e){return null;} }
+
+function applyGlow(){
+  const d=idoc(); if(!d) return;
+  const fig=d.getElementById('fig'); if(!fig) return;
+  if(MODE==='off'){ fig.style.filter='none'; return; }
+  const base=(PAL[PAL_IDX]||PAL[0])[1];
+  const col = MODE==='bright' ? lighten(base,0.5) : base;
+  fig.style.filter='drop-shadow(0 0 '+AMT+'px '+col+') drop-shadow(0 0 '+(AMT*2)+'px '+col+') drop-shadow(0 0 2px '+col+')';
+}
+function glitchNames(){ const d=idoc(); if(!d) return []; const sel=d.getElementById('fig-glitch'); return sel?[...sel.options].map(o=>o.value):[]; }
+function currentGlitch(){ const d=idoc(); const sel=d&&d.getElementById('fig-glitch'); return sel?sel.value:''; }
+function setGlitch(name){ const d=idoc(); const sel=d&&d.getElementById('fig-glitch'); if(sel){ sel.value=name; sel.dispatchEvent(new Event('change',{bubbles:true})); } }
+
+function paint(){
+  const gl=currentGlitch(); const g=glitchNames(); const gi=g.indexOf(gl);
+  $("gIdx").textContent = g.length?((gi+1)+'/'+g.length):'';
+  $("traits").innerHTML =
+    '<span class="chip"><b>palette</b>'+((PAL[PAL_IDX]||[])[0]||PAL_IDX)+'</span>'+
+    '<span class="chip"><b>glitch</b>'+(gl||'—')+'</span>';
+  applyGlow();
+}
+
+// engine reports its palette on load/roll/change
+addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='frontrun:state'){ if(typeof d.palette==='number') PAL_IDX=d.palette; paint(); } });
+
+art.addEventListener('load',()=>{ setTimeout(()=>{ try{iwin().postMessage({type:'frontrun:ping'},'*');}catch(e){} paint(); },800); });
+
+$("roll").onclick=()=>{ try{iwin().postMessage({type:'frontrun:roll'},'*');}catch(e){} setTimeout(paint,500); };
+$("glowMode").querySelectorAll('button').forEach(b=>b.onclick=()=>{ MODE=b.dataset.m; $("glowMode").querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); applyGlow(); });
+$("amt").oninput=e=>{ AMT=+e.target.value; $("amtV").textContent=AMT; applyGlow(); };
+function stepG(dir){ const g=glitchNames(); if(!g.length) return; let i=g.indexOf(currentGlitch()); i=(i+dir+g.length)%g.length; setGlitch(g[i]); setTimeout(paint,150); }
+$("prevG").onclick=()=>stepG(-1);
+$("nextG").onclick=()=>stepG(1);
+// keep the glow re-applied (engine redraws fig each frame; the CSS filter persists, but re-assert after rolls)
+setInterval(applyGlow, 1000);
+</script></body></html>
