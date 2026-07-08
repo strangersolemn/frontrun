@@ -40,7 +40,7 @@
       <button data-m="off">off</button>
     </div>
   </div>
-  <div class="row"><label class="lab">intensity</label><input id="amt" type="range" min="2" max="26" value="12"><span class="val" id="amtV">12</span></div>
+  <div class="row"><label class="lab">intensity</label><input id="amt" type="range" min="1" max="26" value="6"><span class="val" id="amtV">6</span></div>
   <div class="row"><label class="lab">step glitch</label>
     <div class="seg"><button id="prevG">‹ prev</button><button id="nextG">next ›</button><span class="val" id="gIdx" style="width:auto;color:var(--mut)"></span></div>
   </div>
@@ -58,7 +58,7 @@ const PAL=[['frontrunner','#ED1E79'],['crimson','#FF003C'],['emerald','#00FF95']
 function lighten(hex,t){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
   r=Math.round(r+(255-r)*t);g=Math.round(g+(255-g)*t);b=Math.round(b+(255-b)*t);
   return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
-let MODE='bright', AMT=12, PAL_IDX=0;
+let MODE='bright', AMT=6, PAL_IDX=0;
 
 function idoc(){ try{return art.contentDocument;}catch(e){return null;} }
 function iwin(){ try{return art.contentWindow;}catch(e){return null;} }
