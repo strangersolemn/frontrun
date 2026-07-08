@@ -121,7 +121,6 @@
     background:#E6BE52;box-shadow:0 0 18px 3px rgba(230,190,82,.75);
     writing-mode:vertical-rl;font-size:8px;letter-spacing:.24em;color:#B8901F;padding:8px 0;text-align:center}
   .lane{display:flex;align-items:center;gap:12px;height:52px;padding:0 46px 0 14px;border-bottom:1px solid var(--line);position:relative;z-index:1}
-  .lane .mark.king .mk-run{filter:drop-shadow(0 0 7px rgba(230,190,82,1)) drop-shadow(0 0 13px rgba(230,190,82,.55))}
   .lane:last-child{border-bottom:0}
   .lane.me{background:rgba(237,30,121,.05)}
   .lane.lead{background:rgba(216,178,74,.09)}
@@ -131,7 +130,7 @@
   .lane .ln{position:relative;flex:1;height:100%}
   .lane .ln::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 12px)}
   .lane .mark{position:absolute;top:50%;transform:translate(-50%,-50%);width:26px;height:44px;transition:left .8s cubic-bezier(.4,0,.2,1)}
-  .lane .mk-run{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;filter:drop-shadow(0 0 1.5px rgba(240,200,80,.9)) drop-shadow(0 0 4px rgba(230,190,82,.55))}
+  .lane .mk-run{position:absolute;inset:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
   .lane .mk-crown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:2}
   .lane .gr{width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;font-size:11px;flex:none}
 
@@ -184,23 +183,6 @@
 </header>
 
 <main class="wrap">
-  <!-- gold-rim glow filters (SVG dilate → even outline that hugs the runner; renders on iOS Safari) -->
-  <svg width="0" height="0" aria-hidden="true" style="position:absolute;pointer-events:none">
-    <defs>
-      <filter id="goldout" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
-        <feMorphology in="SourceAlpha" operator="dilate" radius="1.3" result="d"/>
-        <feFlood flood-color="#FFCE3A" flood-opacity="1" result="g"/>
-        <feComposite in="g" in2="d" operator="in" result="ring"/>
-        <feGaussianBlur in="ring" stdDeviation="0.5"/>
-      </filter>
-      <filter id="goldout-lead" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
-        <feMorphology in="SourceAlpha" operator="dilate" radius="1.9" result="d"/>
-        <feFlood flood-color="#FFD84A" flood-opacity="1" result="g"/>
-        <feComposite in="g" in2="d" operator="in" result="ring"/>
-        <feGaussianBlur in="ring" stdDeviation="1.2"/>
-      </filter>
-    </defs>
-  </svg>
   <div class="kicker"><span class="bar"></span><span class="label">a living race · fully on-chain</span></div>
   <h1>THE <span class="pk">RACE</span></h1>
   <p class="lede">every living piece covers <b>ground</b> passively, at the same rate, from reveal. the only move is to <b>burn</b> one of your pieces into another — the survivor absorbs everything the sacrifice carried, and the crown goes to the runner out front. connect your wallet to see your squad, or search a piece by number.</p>
@@ -395,7 +377,7 @@ function demoSquad(wallet){
   const out = [];
   for(let i=0;i<n;i++){
     const id = (h32(wallet+':'+i) % C.supply);
-    const absorbed = (i===0) ? (seed % 900000) : ((h32(wallet+'a'+i) % 300000)); // one bigger runner
+    const absorbed = (i===0) ? (1050000 + seed % 450000) : ((h32(wallet+'a'+i) % 300000)); // one genuine front-runner + the rest mid-pack
     out.push({ id, wallet, absorbed, dead:false, base: nowSec()-C.reveal });
   }
   // a couple of "field" leaders for the board (other holders)
@@ -403,7 +385,7 @@ function demoSquad(wallet){
 }
 function demoField(){
   const field=[];
-  for(let i=0;i<6;i++){ const w='0x'+(h32('field'+i)).toString(16).padStart(40,'0').slice(0,40);
+  for(let i=0;i<16;i++){ const w='0x'+(h32('field'+i)).toString(16).padStart(40,'0').slice(0,40);
     field.push({ id: h32('f'+i)%C.supply, wallet:w, absorbed: h32('fa'+i)%1500000, dead:false, base: nowSec()-C.reveal }); }
   return field;
 }
@@ -464,12 +446,29 @@ function tunnelSVG(p){
   let rings=''; for(let i=8;i>=1;i--){ rings+=poly(i*7, i/9); }
   return '<svg class="tun" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="'+bg+'"/>'+rings+'</svg>';
 }
-function posterSVG(p, crowned, big){
+// per-runner colour glow: an even rim in the piece's OWN palette colour, via an SVG dilate
+// filter (renders on iOS Safari, unlike CSS filters on masked divs). Only the top ten glow.
+let GUID=0;
+function glowSVG(hex, r, sd){
+  const id='g'+(GUID++);
+  return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
+    + '<filter id="'+id+'" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">'
+    + '<feMorphology in="SourceAlpha" operator="dilate" radius="'+r+'" result="d"/>'
+    + '<feFlood flood-color="'+hex+'" flood-opacity="1" result="c"/>'
+    + '<feComposite in="c" in2="d" operator="in" result="ring"/>'
+    + '<feGaussianBlur in="ring" stdDeviation="'+sd+'"/></filter>'
+    + '<image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+id+')"/></svg>';
+}
+// ids of the top-ten pieces by ground (squad + demo field). Only these glow.
+function topTenIds(list){
+  const field = DEMO ? demoField() : [];
+  return new Set([...list, ...field].filter(p=>!p.dead).sort((a,b)=>groundOf(b)-groundOf(a)).slice(0,10).map(p=>p.id));
+}
+function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
   const m='url(anim/runner_00.png)';
-  const fid = big ? 'goldout-lead' : 'goldout';
   return tunnelSVG(p)
-    + (p.dead ? '' : '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="none"><image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+fid+')"/></svg>')
+    + (glow && !p.dead ? glowSVG(prim, big?1.9:1.4, big?1.2:0.6) : '')
     + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
     + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
@@ -483,11 +482,12 @@ function renderSquad(list){
   empty.style.display='none';
   // crown = biggest ground in this view (real crown comes from contract in live mode)
   const kingId = list.reduce((a,b)=>groundOf(b)>groundOf(a)?b:a, list[0]).id;
+  const TT = topTenIds(list);      // only top-ten pieces glow, in their own colour
   list.forEach(p=>{
     const g = groundOf(p);
     const el=document.createElement('div'); el.className='card'; el.dataset.id=p.id;
     el.innerHTML =
-      '<div class="thumb">'+posterSVG(p, p.id===kingId&&!p.dead)+'</div>'+
+      '<div class="thumb">'+posterSVG(p, p.id===kingId&&!p.dead, false, TT.has(p.id))+'</div>'+
       '<div class="meta"><div class="id">FRONTRUN #'+p.id+(p.dead?'<span class="burned">burned</span>':'')+'</div>'+
       '<div class="g">ground <b data-g="'+p.id+'">'+fmtG(g)+'</b></div></div>';
     el.addEventListener('click',()=>openDetail(p));
@@ -507,13 +507,14 @@ function renderBoard(list){
   all.forEach((p,i)=>{
     const m='url(anim/runner_00.png)';
     const x = 7 + (groundOf(p)/max) * 82;               // position by real ground → dynamic gaps
-    const col = i===0 ? '#E6BE52' : '#ED1E79';          // leader gold, pack all one colour
+    const col = palFor(p)[1];                            // the front ten → each its OWN palette colour
     const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(i===0?' lead':'');
     el.innerHTML=
       '<span class="rk">'+(i+1)+'</span>'+
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
       '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
         (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
+        glowSVG(col, 7, 2)+
         '<div class="rsil mk-run" data-run style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
@@ -587,7 +588,7 @@ function renderLeader(L){
   document.getElementById('lGround').textContent=fmtG(groundOf(L));
   document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
   document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
-  document.getElementById('lPoster').innerHTML=posterSVG(L, true, true);   // real runner + crown, animated by runLoop
+  document.getElementById('lPoster').innerHTML=posterSVG(L, true, true, true);   // the front #1 → glows its own colour + crown
   const f=document.getElementById('lRender'); if(f) f.style.display='none';  // no inline WebGL (heavy/unreliable)
   document.getElementById('lOpen').onclick=()=>openDetail(L);
 }
@@ -612,7 +613,7 @@ function openDetail(p){
   // traits: show locally-derived ones immediately; the live engine refines them when it reports
   const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
   fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
-  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true);   // real runner + crown, animated by runLoop
+  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true, rank>=0 && rank<10);   // glow only if this piece is in the front ten
   CUR_LEADER = isLeader;
   const f=document.getElementById('dRender'); if(f){ f.classList.remove('live'); f.src='about:blank'; }  // WebGL loads only on fullscreen
   document.getElementById('overlay').classList.add('open');
