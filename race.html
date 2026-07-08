@@ -54,8 +54,7 @@
   @media(max-width:680px){.leader .lrender{border-right:0;border-bottom:1px solid var(--line)}}
   .leader .lposter{position:absolute;inset:0}
   .leader .lposter svg{width:100%;height:100%;display:block}
-  .leader .lposter .rglow{filter:blur(13px) drop-shadow(0 0 12px #FFC61F);opacity:1}   /* leader brightest */
-  .leader .lposter .rsil{filter:drop-shadow(0 0 4px #FFCE3A) drop-shadow(0 0 9px #FFCE3A)}
+  .leader .lposter .rglow{transform:scale(1.05);transform-origin:center 58%;filter:blur(11px);opacity:1}   /* leader brightest */
   .leader .lrender iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .5s}
   .leader .lrender iframe.live{opacity:1}
   .leader .lcrown{position:absolute;top:10px;left:12px;z-index:3;font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
@@ -97,8 +96,11 @@
   /* masked real-runner render (used in cards, leader hero, detail) */
   .tun{position:absolute;inset:0;width:100%;height:100%;display:block}
   /* gold aura: a blurred gold copy of the runner, sitting behind it → a real, visible glow */
-  .rglow{position:absolute;inset:0;z-index:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;background:#FFCE3A;opacity:1;filter:blur(8px) drop-shadow(0 0 7px #FFC61F);pointer-events:none}
-  .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;filter:drop-shadow(0 0 3px #FFCE3A) drop-shadow(0 0 6px #FFCE3A)}
+  /* glow = a gold copy of the runner, scaled a touch LARGER so it peeks out as a gold rim in
+     every browser (does not rely on CSS filters, which Safari/iOS drop on masked elements).
+     Blur just softens it where supported. */
+  .rglow{position:absolute;inset:0;z-index:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;background:#FFCE3A;opacity:.92;transform:scale(1.06);transform-origin:center 58%;filter:blur(6px);pointer-events:none}
+  .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
   .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2;filter:drop-shadow(0 0 6px rgba(245,205,90,.9))}
   .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   .card .meta{padding:11px 12px;border-top:1px solid var(--line)}
