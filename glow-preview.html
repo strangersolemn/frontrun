@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · glow preview — all palettes</title>
+<style>
+  :root{--bg:#0a0a0e;--fg:#eaeaf0;--mut:#8a8a96}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 ui-monospace,Menlo,monospace;padding:26px 18px 60px}
+  h1{font-size:16px;letter-spacing:.22em;text-transform:uppercase;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:12px;margin:0 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;max-width:1200px}
+  .card{border:1px solid #1c1c24;border-radius:12px;overflow:hidden;background:#000}
+  .thumb{position:relative;width:100%;aspect-ratio:1;background:#000;overflow:hidden}
+  .rglowsvg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:visible}
+  .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
+  .meta{padding:11px 13px;border-top:1px solid #1c1c24}
+  .nm{font-weight:600}.hex{color:var(--mut);font-size:11px}
+  .toggle{margin:0 0 22px;display:flex;gap:8px}
+  .toggle button{font:inherit;font-size:12px;padding:8px 14px;border:1px solid #33333f;background:#15151d;color:var(--fg);border-radius:8px;cursor:pointer}
+  .toggle button.on{border-color:#ED1E79;color:#fff}
+</style></head><body>
+<h1>Glow preview — every palette</h1>
+<p class="sub">how a front-ten runner glows in each of the 12 palette colours (own-colour glow, animated). the pink card border is just the active toggle.</p>
+<div class="toggle">
+  <button id="bOwn" class="on">own colour</button>
+  <button id="bBright">brighter tint</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+// the 12 palette primaries + names, mirrored from race.html
+const PAL=[
+ {n:'frontrunner',c:'#ED1E79'},{n:'crimson',c:'#FF003C'},{n:'emerald',c:'#00FF95'},
+ {n:'amber',c:'#FFAE00'},{n:'cyan',c:'#00F0FF'},{n:'sulphur',c:'#FFE600'},
+ {n:'magenta',c:'#FF00FF'},{n:'violet',c:'#9D00FF'},{n:'royal blue',c:'#3A7BFF'},
+ {n:'dark red',c:'#D5142A'},{n:'terminal green',c:'#00FF41'},{n:'black & white',c:'#FFFFFF'}];
+let GUID=0;
+// lighten a hex toward white by t (0..1) — for the "brighter tint" option
+function lighten(hex,t){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r+(255-r)*t); g=Math.round(g+(255-g)*t); b=Math.round(b+(255-b)*t);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
+function glowSVG(hex){ const id='g'+(GUID++);
+  return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
+   +'<filter id="'+id+'" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">'
+   +'<feMorphology in="SourceAlpha" operator="dilate" radius="1.6" result="d"/>'
+   +'<feFlood flood-color="'+hex+'" flood-opacity="1" result="c"/>'
+   +'<feComposite in="c" in2="d" operator="in" result="ring"/>'
+   +'<feGaussianBlur in="ring" stdDeviation="0.7"/></filter>'
+   +'<image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+id+')"/></svg>'; }
+function render(bright){
+  GUID=0;
+  document.getElementById('grid').innerHTML=PAL.map(p=>{
+    const glow = bright ? lighten(p.c,0.45) : p.c;
+    const m='url(anim/runner_00.png)';
+    return '<div class="card"><div class="thumb">'+glowSVG(glow)
+      +'<div class="rsil" data-run style="background:'+p.c+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div></div>'
+      +'<div class="meta"><div class="nm">'+p.n+'</div><div class="hex">'+p.c+(bright?' · glow '+glow:'')+'</div></div></div>';
+  }).join('');
+}
+render(false);
+document.getElementById('bOwn').onclick=()=>{render(false);document.getElementById('bOwn').classList.add('on');document.getElementById('bBright').classList.remove('on');};
+document.getElementById('bBright').onclick=()=>{render(true);document.getElementById('bBright').classList.add('on');document.getElementById('bOwn').classList.remove('on');};
+// animate all runners + glows in lockstep
+(function loop(){ const RF=[]; for(let i=0;i<29;i++){const nn=String(i).padStart(2,'0');const a=new Image();a.src='anim/runner_'+nn+'.png';RF.push(nn);}
+  let i=0; const XL='http://www.w3.org/1999/xlink';
+  setInterval(()=>{ i=(i+1)%29; const nn=RF[i], mu='url(anim/runner_'+nn+'.png)', rp='anim/runner_'+nn+'.png';
+    document.querySelectorAll('[data-run]').forEach(el=>{el.style.webkitMaskImage=mu;el.style.maskImage=mu;});
+    document.querySelectorAll('[data-runimg]').forEach(im=>{im.setAttribute('href',rp);im.setAttributeNS(XL,'href',rp);});
+  },70);
+})();
+</script></body></html>
