@@ -54,7 +54,7 @@
   @media(max-width:680px){.leader .lrender{border-right:0;border-bottom:1px solid var(--line)}}
   .leader .lposter{position:absolute;inset:0}
   .leader .lposter svg{width:100%;height:100%;display:block}
-  .leader .lposter .rglow{transform:scale(1.05);transform-origin:center 58%;filter:blur(11px);opacity:1}   /* leader brightest */
+  /* leader glow uses the bigger #goldout-lead filter (set in posterSVG) */
   .leader .lrender iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .5s}
   .leader .lrender iframe.live{opacity:1}
   .leader .lcrown{position:absolute;top:10px;left:12px;z-index:3;font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
@@ -96,10 +96,10 @@
   /* masked real-runner render (used in cards, leader hero, detail) */
   .tun{position:absolute;inset:0;width:100%;height:100%;display:block}
   /* gold aura: a blurred gold copy of the runner, sitting behind it → a real, visible glow */
-  /* glow = a gold copy of the runner, scaled a touch LARGER so it peeks out as a gold rim in
-     every browser (does not rely on CSS filters, which Safari/iOS drop on masked elements).
-     Blur just softens it where supported. */
-  .rglow{position:absolute;inset:0;z-index:0;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;background:#FFCE3A;opacity:.92;transform:scale(1.06);transform-origin:center 58%;filter:blur(6px);pointer-events:none}
+  /* glow = the runner frame drawn through an SVG dilate+flood filter → an EVEN gold rim that
+     hugs the exact silhouette. SVG filters render on iOS Safari (unlike CSS filters on masked
+     divs), so this shows everywhere. */
+  .rglowsvg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:visible}
   .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
   .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2;filter:drop-shadow(0 0 6px rgba(245,205,90,.9))}
   .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
@@ -184,6 +184,23 @@
 </header>
 
 <main class="wrap">
+  <!-- gold-rim glow filters (SVG dilate → even outline that hugs the runner; renders on iOS Safari) -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute;pointer-events:none">
+    <defs>
+      <filter id="goldout" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+        <feMorphology in="SourceAlpha" operator="dilate" radius="1.3" result="d"/>
+        <feFlood flood-color="#FFCE3A" flood-opacity="1" result="g"/>
+        <feComposite in="g" in2="d" operator="in" result="ring"/>
+        <feGaussianBlur in="ring" stdDeviation="0.5"/>
+      </filter>
+      <filter id="goldout-lead" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+        <feMorphology in="SourceAlpha" operator="dilate" radius="1.9" result="d"/>
+        <feFlood flood-color="#FFD84A" flood-opacity="1" result="g"/>
+        <feComposite in="g" in2="d" operator="in" result="ring"/>
+        <feGaussianBlur in="ring" stdDeviation="1.2"/>
+      </filter>
+    </defs>
+  </svg>
   <div class="kicker"><span class="bar"></span><span class="label">a living race · fully on-chain</span></div>
   <h1>THE <span class="pk">RACE</span></h1>
   <p class="lede">every living piece covers <b>ground</b> passively, at the same rate, from reveal. the only move is to <b>burn</b> one of your pieces into another — the survivor absorbs everything the sacrifice carried, and the crown goes to the runner out front. connect your wallet to see your squad, or search a piece by number.</p>
@@ -447,11 +464,12 @@ function tunnelSVG(p){
   let rings=''; for(let i=8;i>=1;i--){ rings+=poly(i*7, i/9); }
   return '<svg class="tun" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="'+bg+'"/>'+rings+'</svg>';
 }
-function posterSVG(p, crowned){
+function posterSVG(p, crowned, big){
   const prim=palFor(p)[1];
   const m='url(anim/runner_00.png)';
+  const fid = big ? 'goldout-lead' : 'goldout';
   return tunnelSVG(p)
-    + (p.dead ? '' : '<div class="rglow" data-run style="-webkit-mask-image:'+m+';mask-image:'+m+'"></div>')
+    + (p.dead ? '' : '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="none"><image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+fid+')"/></svg>')
     + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
     + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
@@ -569,7 +587,7 @@ function renderLeader(L){
   document.getElementById('lGround').textContent=fmtG(groundOf(L));
   document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
   document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
-  document.getElementById('lPoster').innerHTML=posterSVG(L, true);   // real runner + crown, animated by runLoop
+  document.getElementById('lPoster').innerHTML=posterSVG(L, true, true);   // real runner + crown, animated by runLoop
   const f=document.getElementById('lRender'); if(f) f.style.display='none';  // no inline WebGL (heavy/unreliable)
   document.getElementById('lOpen').onclick=()=>openDetail(L);
 }
@@ -594,7 +612,7 @@ function openDetail(p){
   // traits: show locally-derived ones immediately; the live engine refines them when it reports
   const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
   fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
-  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader);   // real runner + crown, animated by runLoop
+  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true);   // real runner + crown, animated by runLoop
   CUR_LEADER = isLeader;
   const f=document.getElementById('dRender'); if(f){ f.classList.remove('live'); f.src='about:blank'; }  // WebGL loads only on fullscreen
   document.getElementById('overlay').classList.add('open');
@@ -687,9 +705,11 @@ document.getElementById('foot').innerHTML =
     const a=new Image(); a.src='anim/runner_'+nn+'.png'; RF.push('url(anim/runner_'+nn+'.png)');
     const b=new Image(); b.src='anim/crown_'+nn+'.png';  CF.push('anim/crown_'+nn+'.png'); }
   let i=0;
+  const XLINK='http://www.w3.org/1999/xlink';
   setInterval(()=>{
-    i=(i+1)%29; const m=RF[i], c=CF[i];
+    i=(i+1)%29; const nn=String(i).padStart(2,'0'); const m=RF[i], c=CF[i], rp='anim/runner_'+nn+'.png';
     document.querySelectorAll('[data-run]').forEach(el=>{ el.style.webkitMaskImage=m; el.style.maskImage=m; });
+    document.querySelectorAll('[data-runimg]').forEach(im=>{ im.setAttribute('href',rp); im.setAttributeNS(XLINK,'href',rp); });
     document.querySelectorAll('[data-crown]').forEach(im=>{ im.src=c; });
   }, 70); // ~14fps run cycle
 })();
