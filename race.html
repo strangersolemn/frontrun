@@ -453,9 +453,14 @@ let GUID=0;
 function lighten(hex,t){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
   r=Math.round(r+(255-r)*t); g=Math.round(g+(255-g)*t); b=Math.round(b+(255-b)*t);
   return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
-function glowSVG(hex, r, sd){
+// ONE knob for every glow. 4 = the level dialed in on the glow-lab. Board runners are tiny,
+// so their dilate radius is scaled up to read the same thickness; everything scales off GLOW.
+const GLOW=4;
+function gParams(cls){ const k=GLOW/4; return cls==='board' ? [3.4*k,1.2*k] : [0.7*k,0.5*k]; }
+function glowSVG(hex, cls){
   const id='g'+(GUID++);
   const c=lighten(hex,0.5);   // brighter tint (chosen look)
+  const p=gParams(cls), r=p[0], sd=p[1];
   return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
     + '<filter id="'+id+'" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">'
     + '<feMorphology in="SourceAlpha" operator="dilate" radius="'+r+'" result="d"/>'
@@ -466,9 +471,10 @@ function glowSVG(hex, r, sd){
 }
 // KING glow: dilate the runner + crown TOGETHER, so the halo wraps them as one shape
 // (crown stops reading as a separate perched piece). Only used on the crowned king.
-function glowKingSVG(hex, r, sd){
+function glowKingSVG(hex, cls){
   const id='kg'+(GUID++);
   const c=lighten(hex,0.5);
+  const p=gParams(cls), r=p[0], sd=p[1];
   return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
     + '<filter id="'+id+'" x="-45%" y="-45%" width="190%" height="190%" color-interpolation-filters="sRGB">'
     + '<feMorphology in="SourceAlpha" operator="dilate" radius="'+r+'" result="d"/>'
@@ -489,7 +495,7 @@ function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
   const m='url(anim/runner_00.png)';
   return tunnelSVG(p)
-    + (p.dead ? '' : (crowned ? glowKingSVG(prim, big?1.0:0.9, big?0.6:0.5) : (glow ? glowSVG(prim, big?1.0:0.9, big?0.6:0.5) : '')))
+    + (p.dead ? '' : (crowned ? glowKingSVG(prim, big?'lead':'card') : (glow ? glowSVG(prim, big?'lead':'card') : '')))
     + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
     + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
@@ -535,7 +541,7 @@ function renderBoard(list){
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
       '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
         (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
-        (i===0?glowKingSVG(col,5,1.5):glowSVG(col,5,1.5))+
+        (i===0?glowKingSVG(col,'board'):glowSVG(col,'board'))+
         '<div class="rsil mk-run" data-run style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
