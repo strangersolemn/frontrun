@@ -101,7 +101,7 @@
      divs), so this shows everywhere. */
   .rglowsvg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:visible}
   .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
-  .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2;filter:drop-shadow(0 0 6px rgba(245,205,90,.9))}
+  .rcrown{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:2;filter:drop-shadow(0 0 1.5px rgba(0,0,0,.85)) drop-shadow(0 0 2px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(245,205,90,.85))}
   .card .crown{position:absolute;top:8px;left:8px;z-index:3;font-size:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   .card .meta{padding:11px 12px;border-top:1px solid var(--line)}
   .card .id{font-weight:700;font-size:12px;letter-spacing:.04em}
@@ -473,7 +473,7 @@ function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
   const m='url(anim/runner_00.png)';
   return tunnelSVG(p)
-    + (glow && !p.dead ? glowSVG(prim, big?1.4:1.0, big?0.8:0.5) : '')
+    + (glow && !p.dead ? glowSVG(prim, big?1.0:0.9, big?0.6:0.5) : '')
     + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
     + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
