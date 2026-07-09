@@ -464,6 +464,22 @@ function glowSVG(hex, r, sd){
     + '<feGaussianBlur in="ring" stdDeviation="'+sd+'"/></filter>'
     + '<image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+id+')"/></svg>';
 }
+// KING glow: dilate the runner + crown TOGETHER, so the halo wraps them as one shape
+// (crown stops reading as a separate perched piece). Only used on the crowned king.
+function glowKingSVG(hex, r, sd){
+  const id='kg'+(GUID++);
+  const c=lighten(hex,0.5);
+  return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
+    + '<filter id="'+id+'" x="-45%" y="-45%" width="190%" height="190%" color-interpolation-filters="sRGB">'
+    + '<feMorphology in="SourceAlpha" operator="dilate" radius="'+r+'" result="d"/>'
+    + '<feFlood flood-color="'+c+'" flood-opacity="1" result="f"/>'
+    + '<feComposite in="f" in2="d" operator="in" result="ring"/>'
+    + '<feGaussianBlur in="ring" stdDeviation="'+sd+'"/></filter>'
+    + '<g filter="url(#'+id+')">'
+    +   '<image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png"/>'
+    +   '<image data-crownimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/crown_00.png"/>'
+    + '</g></svg>';
+}
 // ids of the top-ten pieces by ground (squad + demo field). Only these glow.
 function topTenIds(list){
   const field = DEMO ? demoField() : [];
@@ -473,7 +489,7 @@ function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
   const m='url(anim/runner_00.png)';
   return tunnelSVG(p)
-    + (glow && !p.dead ? glowSVG(prim, big?1.0:0.9, big?0.6:0.5) : '')
+    + (p.dead ? '' : (crowned ? glowKingSVG(prim, big?1.0:0.9, big?0.6:0.5) : (glow ? glowSVG(prim, big?1.0:0.9, big?0.6:0.5) : '')))
     + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
     + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
@@ -519,7 +535,7 @@ function renderBoard(list){
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
       '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
         (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
-        glowSVG(col, 5, 1.5)+
+        (i===0?glowKingSVG(col,5,1.5):glowSVG(col,5,1.5))+
         '<div class="rsil mk-run" data-run style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
@@ -716,6 +732,8 @@ document.getElementById('foot').innerHTML =
     i=(i+1)%29; const nn=String(i).padStart(2,'0'); const m=RF[i], c=CF[i], rp='anim/runner_'+nn+'.png';
     document.querySelectorAll('[data-run]').forEach(el=>{ el.style.webkitMaskImage=m; el.style.maskImage=m; });
     document.querySelectorAll('[data-runimg]').forEach(im=>{ im.setAttribute('href',rp); im.setAttributeNS(XLINK,'href',rp); });
+    const cp='anim/crown_'+nn+'.png';
+    document.querySelectorAll('[data-crownimg]').forEach(im=>{ im.setAttribute('href',cp); im.setAttributeNS(XLINK,'href',cp); });
     document.querySelectorAll('[data-crown]').forEach(im=>{ im.src=c; });
   }, 70); // ~14fps run cycle
 })();
