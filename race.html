@@ -449,12 +449,17 @@ function tunnelSVG(p){
 // per-runner colour glow: an even rim in the piece's OWN palette colour, via an SVG dilate
 // filter (renders on iOS Safari, unlike CSS filters on masked divs). Only the top ten glow.
 let GUID=0;
+// brighter tint: lighten the palette colour toward white so the rim pops off the body
+function lighten(hex,t){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r+(255-r)*t); g=Math.round(g+(255-g)*t); b=Math.round(b+(255-b)*t);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
 function glowSVG(hex, r, sd){
   const id='g'+(GUID++);
+  const c=lighten(hex,0.5);   // brighter tint (chosen look)
   return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
     + '<filter id="'+id+'" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">'
     + '<feMorphology in="SourceAlpha" operator="dilate" radius="'+r+'" result="d"/>'
-    + '<feFlood flood-color="'+hex+'" flood-opacity="1" result="c"/>'
+    + '<feFlood flood-color="'+c+'" flood-opacity="1" result="c"/>'
     + '<feComposite in="c" in2="d" operator="in" result="ring"/>'
     + '<feGaussianBlur in="ring" stdDeviation="'+sd+'"/></filter>'
     + '<image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+id+')"/></svg>';
@@ -468,7 +473,7 @@ function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
   const m='url(anim/runner_00.png)';
   return tunnelSVG(p)
-    + (glow && !p.dead ? glowSVG(prim, big?1.9:1.4, big?1.2:0.6) : '')
+    + (glow && !p.dead ? glowSVG(prim, big?1.4:1.0, big?0.8:0.5) : '')
     + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
     + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
 }
@@ -514,7 +519,7 @@ function renderBoard(list){
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
       '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
         (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
-        glowSVG(col, 7, 2)+
+        glowSVG(col, 5, 1.5)+
         '<div class="rsil mk-run" data-run style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
