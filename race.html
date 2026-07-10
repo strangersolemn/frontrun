@@ -457,7 +457,8 @@ function lighten(hex,t){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=
 // so their dilate radius is scaled up to read the same thickness; everything scales off GLOW.
 const GLOW=4;
 function gParams(cls){ const k=GLOW/4; return cls==='board' ? [3.4*k,1.2*k] : [0.7*k,0.5*k]; }
-function glowSVG(hex, cls){
+function glowSVG(hex, cls, set){
+  set=set||'runner';
   const id='g'+(GUID++);
   const c=lighten(hex,0.5);   // brighter tint (chosen look)
   const p=gParams(cls), r=p[0], sd=p[1];
@@ -467,7 +468,7 @@ function glowSVG(hex, cls){
     + '<feFlood flood-color="'+c+'" flood-opacity="1" result="c"/>'
     + '<feComposite in="c" in2="d" operator="in" result="ring"/>'
     + '<feGaussianBlur in="ring" stdDeviation="'+sd+'"/></filter>'
-    + '<image data-runimg width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/runner_00.png" filter="url(#'+id+')"/></svg>';
+    + '<image data-img="'+set+'" width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/'+set+'_00.png" filter="url(#'+id+')"/></svg>';
 }
 // KING glow: dilate the runner + crown TOGETHER, so the halo wraps them as one shape
 // (crown stops reading as a separate perched piece). Only used on the crowned king.
@@ -493,11 +494,12 @@ function topTenIds(list){
 }
 function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
-  const m='url(anim/runner_00.png)';
+  const set = crowned ? 'king' : 'runner';   // king = its own silhouette, crown built in
+  const m='url(anim/'+set+'_00.png)';
+  const showGlow = (crowned || glow) && !p.dead;   // king always glows; others only if top-ten
   return tunnelSVG(p)
-    + (p.dead ? '' : (crowned ? glowKingSVG(prim, big?'lead':'card') : (glow ? glowSVG(prim, big?'lead':'card') : '')))
-    + '<div class="rsil" data-run style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'
-    + (crowned && !p.dead ? '<img class="rcrown" data-crown src="anim/crown_00.png" alt="">' : '');
+    + (showGlow ? glowSVG(prim, big?'lead':'card', set) : '')
+    + '<div class="rsil" data-mask="'+set+'" style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>';
 }
 
 function renderSquad(list){
@@ -532,7 +534,8 @@ function renderBoard(list){
   const max = all.length ? Math.max(1, groundOf(all[0])) : 1;
   const box=document.getElementById('board'); box.innerHTML='';
   all.forEach((p,i)=>{
-    const m='url(anim/runner_00.png)';
+    const set = i===0 ? 'king' : 'runner';              // #1 = king silhouette (crown built in)
+    const m='url(anim/'+set+'_00.png)';
     const x = 7 + (groundOf(p)/max) * 82;               // position by real ground → dynamic gaps
     const col = palFor(p)[1];                            // the front ten → each its OWN palette colour
     const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(i===0?' lead':'');
@@ -540,9 +543,8 @@ function renderBoard(list){
       '<span class="rk">'+(i+1)+'</span>'+
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
       '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
-        (i===0?'<img class="rcrown mk-crown" data-crown src="anim/crown_00.png" alt="">':'')+
-        (i===0?glowKingSVG(col,'board'):glowSVG(col,'board'))+
-        '<div class="rsil mk-run" data-run style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
+        glowSVG(col,'board',set)+
+        '<div class="rsil mk-run" data-mask="'+set+'" style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
     el.style.cursor='pointer';
@@ -728,19 +730,13 @@ document.getElementById('foot').innerHTML =
 
 // ---- run-cycle animator: swaps the mask/crown frame on every inline runner in lockstep ----
 (function runLoop(){
-  const RF=[], CF=[];
-  for(let i=0;i<29;i++){ const nn=String(i).padStart(2,'0');
-    const a=new Image(); a.src='anim/runner_'+nn+'.png'; RF.push('url(anim/runner_'+nn+'.png)');
-    const b=new Image(); b.src='anim/crown_'+nn+'.png';  CF.push('anim/crown_'+nn+'.png'); }
+  ['runner','king'].forEach(set=>{ for(let i=0;i<29;i++){ const a=new Image(); a.src='anim/'+set+'_'+String(i).padStart(2,'0')+'.png'; } });
   let i=0;
   const XLINK='http://www.w3.org/1999/xlink';
   setInterval(()=>{
-    i=(i+1)%29; const nn=String(i).padStart(2,'0'); const m=RF[i], c=CF[i], rp='anim/runner_'+nn+'.png';
-    document.querySelectorAll('[data-run]').forEach(el=>{ el.style.webkitMaskImage=m; el.style.maskImage=m; });
-    document.querySelectorAll('[data-runimg]').forEach(im=>{ im.setAttribute('href',rp); im.setAttributeNS(XLINK,'href',rp); });
-    const cp='anim/crown_'+nn+'.png';
-    document.querySelectorAll('[data-crownimg]').forEach(im=>{ im.setAttribute('href',cp); im.setAttributeNS(XLINK,'href',cp); });
-    document.querySelectorAll('[data-crown]').forEach(im=>{ im.src=c; });
+    i=(i+1)%29; const nn=String(i).padStart(2,'0');
+    document.querySelectorAll('[data-mask]').forEach(el=>{ const u='url(anim/'+el.dataset.mask+'_'+nn+'.png)'; el.style.webkitMaskImage=u; el.style.maskImage=u; });
+    document.querySelectorAll('[data-img]').forEach(im=>{ const pp='anim/'+im.dataset.img+'_'+nn+'.png'; im.setAttribute('href',pp); im.setAttributeNS(XLINK,'href',pp); });
   }, 70); // ~14fps run cycle
 })();
 
