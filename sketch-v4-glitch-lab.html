@@ -1906,7 +1906,7 @@ function drawCrown() {
 // ---- 29-FRAME RUN CYCLE (runner + crown animate in lockstep) ----
 // runner + crown are the same 29-frame sequence, so frame N of each line up 1:1.
 let runnerFrames = [], crownFrames = [], animReady = false, ANIM_N = 29;
-const RUN_FPS = 30;                    // run-cycle cadence (frames/sec) — tune to taste
+let RUN_FPS = 30;                      // run-cycle cadence — scaled per set so every tier cycles in the SAME time as the 29-frame pack
 function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
 async function loadAnim(figSet) {
   // which figure to render the glitch into: pack runner (default), king, or front.
@@ -1923,6 +1923,7 @@ async function loadAnim(figSet) {
   const cf = cp.length ? await Promise.all(cp) : [];
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
+    RUN_FPS = ANIM_N / (29 / 30);   // keep the stride DURATION constant (29 frames @30fps ≈ 0.97s) for every tier
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
     maskFallback = true;
     fig.style.webkitMaskImage = 'none'; fig.style.maskImage = 'none';
