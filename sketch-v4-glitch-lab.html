@@ -1907,6 +1907,27 @@ function drawCrown() {
 // runner + crown are the same 29-frame sequence, so frame N of each line up 1:1.
 let runnerFrames = [], crownFrames = [], animReady = false, ANIM_N = 29;
 let RUN_FPS = 30;                      // run-cycle cadence — scaled per set so every tier cycles in the SAME time as the 29-frame pack
+
+// ---- CENTRE-LOCK: keep the runner's BODY AXIS on the canvas centre every frame ----
+// The tunnel's vanishing point is dead-centre; a running figure's bbox drifts side-to-side per pose,
+// so the runner used to sit off-centre on some frames. We measure each frame's torso axis (midpoint of
+// the shoulder band — stable vs swinging arms/legs/cape) once at load, then shift the draw so that axis
+// lands on centre. Result: the body stays locked to the middle of the tunnel; limbs/cape swing around it.
+let runnerAxis = [], figAxis = 250;
+const _axC = document.createElement('canvas');
+function computeFigAxis(img) {
+  if (!img || !img.width) return 250;
+  _axC.width = img.width; _axC.height = img.height;
+  const c = _axC.getContext('2d'); c.clearRect(0, 0, img.width, img.height); c.drawImage(img, 0, 0);
+  const d = c.getImageData(0, 0, img.width, img.height).data, W = img.width, H = img.height;
+  let y0 = H, y1 = 0;
+  for (let y = 0; y < H; y++) { for (let x = 0; x < W; x++) { if (d[(y*W+x)*4+3] > 40) { if (y<y0) y0=y; if (y>y1) y1=y; break; } } }
+  if (y1 < y0) return W / 2;
+  const bh = y1 - y0; let l = W, r = 0;                     // shoulder/torso band = 12%–40% down from the head
+  for (let y = y0 + Math.round(bh*0.12); y < y0 + Math.round(bh*0.40); y++)
+    for (let x = 0; x < W; x++) if (d[(y*W+x)*4+3] > 40) { if (x<l) l=x; if (x>r) r=x; }
+  return (r > l) ? (l + r) / 2 : W / 2;
+}
 function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
 let figStroke = false;                 // THE CHASE (26-100): pack silhouette with a thin outline stroke
 let figGlow = false;                   // THE CLUB (ranks 1-100): king/front/surge/chase glow in their own palette colour
@@ -1928,6 +1949,7 @@ async function loadAnim(figSet) {
   const cf = cp.length ? await Promise.all(cp) : [];
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
+    runnerAxis = rf.map(computeFigAxis);   // per-frame torso axis for centre-lock
     const DUR = { runner:29/30, king:47/24, front:48/24, surge:41/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
     RUN_FPS = ANIM_N / (DUR[realSet] || (ANIM_N / 24));       // forcing all into 0.97s ran the long clips ~2x too fast
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
@@ -1941,6 +1963,7 @@ function animApply(t) {
   const idx = Math.floor(t * RUN_FPS) % ANIM_N;
   figImg = runnerFrames[idx];   // the destination-in clip uses figImg -> runner runs
   crownImg = crownFrames[idx];  // drawCrown uses crownImg -> crown bobs in sync
+  figAxis = (runnerAxis[idx] != null) ? runnerAxis[idx] : (figImg ? figImg.width/2 : 250);  // centre-lock axis
 }
 async function loadFigureMask() {
   const res = await fetch('figure.b64');
@@ -2075,7 +2098,7 @@ function drawFigGlow() {
   if (_gc.width !== W || _gc.height !== H) { _gc.width = W; _gc.height = H; }
   const cx = _gcx; cx.clearRect(0, 0, W, H);
   const ms = Math.min(W / figImg.width, H / figImg.height);
-  const mw = figImg.width * ms, mh = figImg.height * ms, ox = (W - mw) / 2, oy = H - mh;
+  const mw = figImg.width * ms, mh = figImg.height * ms, ox = (W - mw) / 2 + (figImg.width/2 - figAxis) * ms, oy = H - mh;
   cx.drawImage(figImg, ox, oy, mw, mh);
   cx.globalCompositeOperation = 'source-in'; cx.fillStyle = (palette && palette[1]) || '#fff'; cx.fillRect(0, 0, W, H);
   cx.globalCompositeOperation = 'source-over';
@@ -2098,7 +2121,7 @@ function drawFigStroke() {
   const cx = _scx; cx.clearRect(0, 0, W, H);
   const ms = Math.min(W / figImg.width, H / figImg.height);
   const mw = figImg.width * ms, mh = figImg.height * ms;
-  const ox = (W - mw) / 2, oy = H - mh;
+  const ox = (W - mw) / 2 + (figImg.width/2 - figAxis) * ms, oy = H - mh;
   const d = Math.max(2, Math.round(Math.min(W, H) * 0.0055));   // stroke thickness
   for (let a = 0; a < 20; a++) { const ang = a / 20 * Math.PI * 2; cx.drawImage(figImg, ox + Math.cos(ang) * d, oy + Math.sin(ang) * d, mw, mh); }
   cx.globalCompositeOperation = 'destination-out'; cx.drawImage(figImg, ox, oy, mw, mh);   // punch out the body -> ring only
@@ -2131,7 +2154,8 @@ function frame() {
       fCtx.globalCompositeOperation = 'destination-in';
       const ms = Math.min(W / figImg.width, H / figImg.height);
       const mw = figImg.width * ms, mh = figImg.height * ms;
-      fCtx.drawImage(figImg, (W - mw) / 2, H - mh, mw, mh);
+      const axOff = (figImg.width/2 - figAxis) * ms;   // shift so the torso axis lands on centre
+      fCtx.drawImage(figImg, (W - mw) / 2 + axOff, H - mh, mw, mh);
       fCtx.globalCompositeOperation = 'source-over';
     }
   } else {
