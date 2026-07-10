@@ -496,7 +496,7 @@ function posterSVG(p, crowned, big, glow){
   const prim=palFor(p)[1];
   const set = crowned ? 'king' : 'runner';   // king = its own silhouette, crown built in
   const m='url(anim/'+set+'_00.png)';
-  const showGlow = (crowned || glow) && !p.dead;   // king always glows; others only if top-ten
+  const showGlow = glow && !crowned && !p.dead;   // glow off for the king (crisp) for now
   return tunnelSVG(p)
     + (showGlow ? glowSVG(prim, big?'lead':'card', set) : '')
     + '<div class="rsil" data-mask="'+set+'" style="background:'+(p.dead?'#6a6a6a':prim)+';opacity:'+(p.dead?0.4:1)+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>';
@@ -543,7 +543,7 @@ function renderBoard(list){
       '<span class="rk">'+(i+1)+'</span>'+
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
       '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
-        glowSVG(col,'board',set)+
+        (i===0?'':glowSVG(col,'board',set))+
         '<div class="rsil mk-run" data-mask="'+set+'" style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
