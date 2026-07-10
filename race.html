@@ -730,13 +730,14 @@ document.getElementById('foot').innerHTML =
 
 // ---- run-cycle animator: swaps the mask/crown frame on every inline runner in lockstep ----
 (function runLoop(){
-  ['runner','king'].forEach(set=>{ for(let i=0;i<29;i++){ const a=new Image(); a.src='anim/'+set+'_'+String(i).padStart(2,'0')+'.png'; } });
+  const CNT={runner:29,king:19,front:19};   // per-tier native frame counts (king/front run their own cadence)
+  ['runner','king','front'].forEach(set=>{ for(let i=0;i<CNT[set];i++){ const a=new Image(); a.src='anim/'+set+'_'+String(i).padStart(2,'0')+'.png'; } });
   let i=0;
   const XLINK='http://www.w3.org/1999/xlink';
   setInterval(()=>{
-    i=(i+1)%29; const nn=String(i).padStart(2,'0');
-    document.querySelectorAll('[data-mask]').forEach(el=>{ const u='url(anim/'+el.dataset.mask+'_'+nn+'.png)'; el.style.webkitMaskImage=u; el.style.maskImage=u; });
-    document.querySelectorAll('[data-img]').forEach(im=>{ const pp='anim/'+im.dataset.img+'_'+nn+'.png'; im.setAttribute('href',pp); im.setAttributeNS(XLINK,'href',pp); });
+    i++;
+    document.querySelectorAll('[data-mask]').forEach(el=>{ const s=el.dataset.mask; const nn=String(i%(CNT[s]||29)).padStart(2,'0'); const u='url(anim/'+s+'_'+nn+'.png)'; el.style.webkitMaskImage=u; el.style.maskImage=u; });
+    document.querySelectorAll('[data-img]').forEach(im=>{ const s=im.dataset.img; const nn=String(i%(CNT[s]||29)).padStart(2,'0'); const pp='anim/'+s+'_'+nn+'.png'; im.setAttribute('href',pp); im.setAttributeNS(XLINK,'href',pp); });
   }, 70); // ~14fps run cycle
 })();
 

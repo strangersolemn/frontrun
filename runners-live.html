@@ -51,11 +51,12 @@ const rc=$("rover"), rx=rc.getContext('2d');
 const idoc=()=>{try{return art.contentDocument;}catch(e){return null;}};
 const iwin=()=>{try{return art.contentWindow;}catch(e){return null;}};
 function hideEngineFig(){ const d=idoc(); if(d){ const fig=d.getElementById('fig'); if(fig) fig.style.opacity='0'; } }
-// preloaded silhouette frames per tier
+// preloaded silhouette frames per tier — native counts (king/front run their own faster cadence)
+const CNT={king:19,front:19,runner:29};
 const FR={king:[],front:[],runner:[]};
-['king','front','runner'].forEach(s=>{ for(let i=0;i<29;i++){ const im=new Image(); im.src='anim/'+s+'_'+String(i).padStart(2,'0')+'.png'; FR[s].push(im); } });
+Object.keys(CNT).forEach(s=>{ for(let i=0;i<CNT[s];i++){ const im=new Image(); im.src='anim/'+s+'_'+String(i).padStart(2,'0')+'.png'; FR[s].push(im); } });
 // draw current tier frame tinted to the palette colour, onto the canvas (composites over the iframe)
-function draw(){ const im=FR[TIER][f]; if(!im||!im.complete||!im.naturalWidth){ return; }
+function draw(){ const arr=FR[TIER]; const im=arr[f%arr.length]; if(!im||!im.complete||!im.naturalWidth){ return; }
   rx.clearRect(0,0,500,500);
   rx.globalCompositeOperation='source-over'; rx.drawImage(im,0,0,500,500);  // silhouette alpha = shape
   rx.globalCompositeOperation='source-in'; rx.fillStyle=PAL[PIDX]||'#ED1E79'; rx.fillRect(0,0,500,500);
@@ -63,8 +64,8 @@ function draw(){ const im=FR[TIER][f]; if(!im||!im.complete||!im.naturalWidth){ 
 }
 function curGlitch(){ const d=idoc(); const s=d&&d.getElementById('fig-glitch'); return s?s.value:''; }
 function paint(){ $("traits").innerHTML='<span class="chip"><b>palette</b>'+(PN[PIDX]||PIDX)+'</span><span class="chip"><b>glitch</b>'+(curGlitch()||'—')+'</span>'; draw(); }
-// run cycle
-setInterval(()=>{ f=(f+1)%29; draw(); }, 70);
+// run cycle (single tick; each tier wraps at its own frame count)
+setInterval(()=>{ f=(f+1)%9999; draw(); }, 70);
 setInterval(hideEngineFig, 700);
 addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='frontrun:state'){ if(typeof d.palette==='number') PIDX=d.palette; paint(); } });
 art.addEventListener('load',()=>{ setTimeout(()=>{ hideEngineFig(); try{iwin().postMessage({type:'frontrun:ping'},'*');}catch(e){} paint(); },700); });
