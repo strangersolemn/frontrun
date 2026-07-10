@@ -1909,18 +1909,20 @@ let runnerFrames = [], crownFrames = [], animReady = false, ANIM_N = 29;
 let RUN_FPS = 30;                      // run-cycle cadence — scaled per set so every tier cycles in the SAME time as the 29-frame pack
 function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
 let figStroke = false;                 // THE CHASE (26-100): pack silhouette with a thin outline stroke
+let figGlow = false;                   // THE CLUB (ranks 1-100): king/front/surge/chase glow in their own palette colour
 async function loadAnim(figSet) {
-  // which figure to render the glitch into: pack runner (default), king, front, or chase (pack + stroke).
+  // which figure to render the glitch into: pack runner (field), king, front, surge (pack+glow), chase (pack+stroke+glow).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
   figStroke = (figSet === 'chase');
-  const realSet = figStroke ? 'runner' : figSet;   // chase reuses the pack silhouette, adds an outline
+  figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // FIELD (runner) never glows
+  const realSet = (figSet === 'chase' || figSet === 'surge') ? 'runner' : figSet;  // chase/surge reuse the pack silhouette
   const COUNTS = { runner:29, king:47, front:48 };
   const n = COUNTS[realSet] || 29;
   const rp = [], cp = [];
   for (let f = 0; f < n; f++) {
     const nn = String(f).padStart(2,'0');
     rp.push(_loadImg('anim/' + realSet + '_' + nn + '.png'));
-    if (realSet === 'runner' && !figStroke) cp.push(_loadImg('anim/crown_' + nn + '.png'));  // crown only for the plain pack preview
+    if (figSet === 'runner') cp.push(_loadImg('anim/crown_' + nn + '.png'));  // crown only for the plain pack preview (not surge/chase)
   }
   const rf = await Promise.all(rp);
   const cf = cp.length ? await Promise.all(cp) : [];
@@ -2063,6 +2065,28 @@ function drawDreamweaver(t){
   x.restore();
 }
 
+// THE CLUB (ranks 1-100): a soft glow around the silhouette in the runner's own palette colour.
+// Tint the mask to palette[1], then draw it blurred BEHIND the figure (destination-over) so a halo
+// spills onto the tunnel. Repeated draws set the intensity (~4). FIELD (100+) passes figGlow=false.
+let _gc = null, _gcx = null;
+function drawFigGlow() {
+  if (!figGlow || !figImg || !figImg.width) return;
+  if (!_gc) { _gc = document.createElement('canvas'); _gcx = _gc.getContext('2d'); }
+  if (_gc.width !== W || _gc.height !== H) { _gc.width = W; _gc.height = H; }
+  const cx = _gcx; cx.clearRect(0, 0, W, H);
+  const ms = Math.min(W / figImg.width, H / figImg.height);
+  const mw = figImg.width * ms, mh = figImg.height * ms, ox = (W - mw) / 2, oy = H - mh;
+  cx.drawImage(figImg, ox, oy, mw, mh);
+  cx.globalCompositeOperation = 'source-in'; cx.fillStyle = (palette && palette[1]) || '#fff'; cx.fillRect(0, 0, W, H);
+  cx.globalCompositeOperation = 'source-over';
+  const r = Math.round(Math.min(W, H) * 0.022);   // glow radius
+  fCtx.save();
+  fCtx.globalCompositeOperation = 'destination-over';
+  fCtx.filter = 'blur(' + r + 'px)';
+  for (let i = 0; i < 4; i++) fCtx.drawImage(_gc, 0, 0);   // intensity ~4
+  fCtx.restore();
+}
+
 // THE CHASE (26-100): draw a thin coloured outline that hugs the silhouette edge.
 // Dilate the mask in a ring of offsets, subtract the original shape -> outline ring, tint it.
 let _sc = null, _scx = null;
@@ -2113,6 +2137,7 @@ function frame() {
     fCtx.clearRect(0, 0, W, H);
   }
   drawFigStroke();                     // THE CHASE: thin outline around the silhouette
+  drawFigGlow();                       // THE CLUB: own-colour glow behind the figure (king/front/surge/chase)
 
   // 2b. crown — worn by the race leader, above the figure
   drawCrown();
