@@ -2047,8 +2047,12 @@ function dwInit(){
 function dwMoon(x,w,h){
   const cx=w*0.5, cy=h*0.26, r=Math.min(w,h)*0.169;
   const lp=2551442877; const ref=new Date("2026-01-18T19:51:00Z"); let phase=(((new Date()).getTime()-ref.getTime())%lp)/lp; if(phase<0)phase+=1;
-  x.save(); x.globalCompositeOperation='screen';
+  x.save();
   if(dwSouthern){ x.translate(cx,cy); x.rotate(Math.PI); x.translate(-cx,-cy); }
+  // 1. opaque moon body — occludes the stars/nebula behind the disc (fixes the bleed-through)
+  x.globalCompositeOperation='source-over'; x.shadowBlur=0;
+  x.fillStyle='#0c1018'; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
+  // 2. lit portion (current lunar phase), glowing, on top
   x.fillStyle='#E6F7FF'; x.shadowColor='rgba(180,230,255,0.5)'; x.shadowBlur=r*1.1;
   x.beginPath(); const sweep=Math.cos(2*Math.PI*phase);
   if(phase<=0.5){ x.arc(cx,cy,r,-Math.PI/2,Math.PI/2,false); x.ellipse(cx,cy,r*Math.abs(sweep),r,0,Math.PI/2,-Math.PI/2,sweep>0); }
@@ -2082,7 +2086,7 @@ function drawDreamweaver(t){
       g.addColorStop(0,'rgba('+cr[0]+','+cr[1]+','+cr[2]+','+dwShoot.opacity+')'); g.addColorStop(1,'rgba('+cr[0]+','+cr[1]+','+cr[2]+',0)');
       x.strokeStyle=g; x.lineWidth=2.2; x.lineCap='round'; x.beginPath(); x.moveTo(dwShoot.x,dwShoot.y); x.lineTo(dwShoot.x-dwShoot.dx*7,dwShoot.y-dwShoot.dy*7); x.stroke(); x.restore(); }
   }
-  /* dwMoon(x,w,h); moon disabled — occlusion TODO */
+  dwMoon(x,w,h);                       // real current lunar phase, with star occlusion
   x.save(); x.globalAlpha=0.1;
   for(let i=0;i<1500;i++){ const px=Math.random()*w,py=Math.random()*h,sz=Math.random()*1.4,rr=Math.random(); x.fillStyle= rr<0.2?'#ff3ca0':(rr<0.4?'#0082ff':'#ffffff'); x.fillRect(px,py,sz,sz); }
   x.restore();
