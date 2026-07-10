@@ -65,7 +65,7 @@ function draw(){ const arr=FR[TIER]; const im=arr[f%arr.length]; if(!im||!im.com
 function curGlitch(){ const d=idoc(); const s=d&&d.getElementById('fig-glitch'); return s?s.value:''; }
 function paint(){ $("traits").innerHTML='<span class="chip"><b>palette</b>'+(PN[PIDX]||PIDX)+'</span><span class="chip"><b>glitch</b>'+(curGlitch()||'—')+'</span>'; draw(); }
 // run cycle (single tick; each tier wraps at its own frame count)
-setInterval(()=>{ f=(f+1)%9999; draw(); }, 70);
+setInterval(()=>{ f=(f+1)%9999; draw(); }, 50);
 setInterval(hideEngineFig, 700);
 addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='frontrun:state'){ if(typeof d.palette==='number') PIDX=d.palette; paint(); } });
 art.addEventListener('load',()=>{ setTimeout(()=>{ hideEngineFig(); try{iwin().postMessage({type:'frontrun:ping'},'*');}catch(e){} paint(); },700); });
