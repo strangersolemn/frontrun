@@ -1913,10 +1913,10 @@ let figGlow = false;                   // THE CLUB (ranks 1-100): king/front/sur
 async function loadAnim(figSet) {
   // which figure to render the glitch into: pack runner (field), king, front, surge (pack+glow), chase (pack+stroke+glow).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
-  figStroke = false;                                        // no chase tier
-  figGlow = (figSet === 'king' || figSet === 'front');      // only KING + FRONT glow; the field is just numbers
-  const realSet = figSet;                                   // king / front / runner(field)
-  const COUNTS = { runner:29, king:47, front:48 };
+  figStroke = false;
+  figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // the club (each its own body) glows; FIELD dark
+  const realSet = figSet;                                   // every tier has its own distinct silhouette now
+  const COUNTS = { runner:29, king:47, front:48, surge:41 };
   const n = COUNTS[realSet] || 29;
   const rp = [], cp = [];
   for (let f = 0; f < n; f++) {
@@ -1928,7 +1928,7 @@ async function loadAnim(figSet) {
   const cf = cp.length ? await Promise.all(cp) : [];
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
-    const DUR = { runner:29/30, king:47/24, front:48/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
+    const DUR = { runner:29/30, king:47/24, front:48/24, surge:41/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
     RUN_FPS = ANIM_N / (DUR[realSet] || (ANIM_N / 24));       // forcing all into 0.97s ran the long clips ~2x too fast
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
     maskFallback = true;
