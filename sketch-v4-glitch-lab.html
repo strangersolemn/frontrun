@@ -1914,8 +1914,8 @@ async function loadAnim(figSet) {
   // which figure to render the glitch into: pack runner (field), king, front, surge (pack+glow), chase (pack+stroke+glow).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
   figStroke = false;
-  figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // the club (each its own body) glows; FIELD dark
-  const realSet = figSet;                                   // every tier has its own distinct silhouette now
+  figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // the club glows; FIELD dark
+  const realSet = (figSet === 'chase') ? 'runner' : figSet;  // chase = base pack body + glow (glow is the only badge)
   const COUNTS = { runner:29, king:47, front:48, surge:41 };
   const n = COUNTS[realSet] || 29;
   const rp = [], cp = [];
