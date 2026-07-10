@@ -1913,9 +1913,9 @@ let figGlow = false;                   // THE CLUB (ranks 1-100): king/front/sur
 async function loadAnim(figSet) {
   // which figure to render the glitch into: pack runner (field), king, front, surge (pack+glow), chase (pack+stroke+glow).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
-  figStroke = (figSet === 'chase');
-  figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // FIELD (runner) never glows
-  const realSet = (figSet === 'chase' || figSet === 'surge') ? 'runner' : figSet;  // chase/surge reuse the pack silhouette
+  figStroke = false;                                        // no chase tier
+  figGlow = (figSet === 'king' || figSet === 'front');      // only KING + FRONT glow; the field is just numbers
+  const realSet = figSet;                                   // king / front / runner(field)
   const COUNTS = { runner:29, king:47, front:48 };
   const n = COUNTS[realSet] || 29;
   const rp = [], cp = [];
