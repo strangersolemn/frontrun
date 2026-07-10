@@ -730,7 +730,7 @@ document.getElementById('foot').innerHTML =
 
 // ---- run-cycle animator: swaps the mask/crown frame on every inline runner in lockstep ----
 (function runLoop(){
-  const CNT={runner:29,king:19,front:19};   // per-tier native frame counts
+  const CNT={runner:29,king:47,front:48};   // per-tier native frame counts
   ['runner','king','front'].forEach(set=>{ for(let i=0;i<CNT[set];i++){ const a=new Image(); a.src='anim/'+set+'_'+String(i).padStart(2,'0')+'.png'; } });
   const CYCLE=29/30;                          // seconds/stride — every tier cycles in the SAME time as the 29-frame pack
   const XLINK='http://www.w3.org/1999/xlink';

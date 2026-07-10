@@ -1914,7 +1914,7 @@ async function loadAnim(figSet) {
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
   figStroke = (figSet === 'chase');
   const realSet = figStroke ? 'runner' : figSet;   // chase reuses the pack silhouette, adds an outline
-  const COUNTS = { runner:29, king:19, front:19 };
+  const COUNTS = { runner:29, king:47, front:48 };
   const n = COUNTS[realSet] || 29;
   const rp = [], cp = [];
   for (let f = 0; f < n; f++) {
