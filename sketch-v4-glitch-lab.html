@@ -2033,6 +2033,7 @@ function applyFlashOpacity() {
 }
 
 let activeBg = null;
+let bloodMoon = new URLSearchParams(location.search).has('blood');   // Dreamweaver variant: total-eclipse red moon
 let dwImg=null, dwCtx=null, dwStars=[], dwNeb=[], dwShoot=null, dwLastShoot=0, dwAddr=null;
 const DW_SPACE='#030508', DW_NEB=['rgb(255,60,160)','rgb(0,130,255)','rgb(140,40,255)'];
 const dwSouthern=(()=>{try{const tz=Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();return ['australia','auckland','sydney','melbourne','brisbane','perth','adelaide','hobart','darwin','sao_paulo','buenos_aires','santiago','johannesburg','cape_town'].some(z=>tz.includes(z));}catch(e){return false;}})();
@@ -2049,6 +2050,15 @@ function dwMoon(x,w,h){
   const lp=2551442877; const ref=new Date("2026-01-18T19:51:00Z"); let phase=(((new Date()).getTime()-ref.getTime())%lp)/lp; if(phase<0)phase+=1;
   x.save();
   if(dwSouthern){ x.translate(cx,cy); x.rotate(Math.PI); x.translate(-cx,-cy); }
+  // BLOOD MOON variant: total eclipse — a full coppery-red disc, dark rim, red glow. No phase crescent.
+  if(bloodMoon){
+    x.globalCompositeOperation='source-over';
+    x.shadowColor='rgba(190,45,20,0.6)'; x.shadowBlur=r*1.7;
+    const g=x.createRadialGradient(cx-r*0.22,cy-r*0.22,r*0.08,cx,cy,r);
+    g.addColorStop(0,'#d65a34'); g.addColorStop(0.55,'#8f2415'); g.addColorStop(1,'#360a06');
+    x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
+    x.restore(); return;
+  }
   // 1. opaque moon body — occludes the stars/nebula behind the disc (fixes the bleed-through)
   x.globalCompositeOperation='source-over'; x.shadowBlur=0;
   x.fillStyle='#0c1018'; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
@@ -2086,7 +2096,13 @@ function drawDreamweaver(t){
       g.addColorStop(0,'rgba('+cr[0]+','+cr[1]+','+cr[2]+','+dwShoot.opacity+')'); g.addColorStop(1,'rgba('+cr[0]+','+cr[1]+','+cr[2]+',0)');
       x.strokeStyle=g; x.lineWidth=2.2; x.lineCap='round'; x.beginPath(); x.moveTo(dwShoot.x,dwShoot.y); x.lineTo(dwShoot.x-dwShoot.dx*7,dwShoot.y-dwShoot.dy*7); x.stroke(); x.restore(); }
   }
-  dwMoon(x,w,h);                       // real current lunar phase, with star occlusion
+  if(bloodMoon){                       // ominous red atmospheric cast over the whole sky
+    x.save(); x.globalCompositeOperation='screen';
+    const mg=x.createRadialGradient(w*0.5,h*0.26,0,w*0.5,h*0.26,Math.max(w,h)*0.7);
+    mg.addColorStop(0,'rgba(150,30,15,0.28)'); mg.addColorStop(0.5,'rgba(90,18,10,0.12)'); mg.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=mg; x.fillRect(0,0,w,h); x.restore();
+  }
+  dwMoon(x,w,h);                       // real current lunar phase (or blood-moon eclipse), with star occlusion
   x.save(); x.globalAlpha=0.1;
   for(let i=0;i<1500;i++){ const px=Math.random()*w,py=Math.random()*h,sz=Math.random()*1.4,rr=Math.random(); x.fillStyle= rr<0.2?'#ff3ca0':(rr<0.4?'#0082ff':'#ffffff'); x.fillRect(px,py,sz,sz); }
   x.restore();
