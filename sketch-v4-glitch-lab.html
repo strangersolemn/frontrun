@@ -1908,16 +1908,21 @@ function drawCrown() {
 let runnerFrames = [], crownFrames = [], animReady = false, ANIM_N = 29;
 const RUN_FPS = 30;                    // run-cycle cadence (frames/sec) — tune to taste
 function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
-async function loadAnim() {
+async function loadAnim(figSet) {
+  // which figure to render the glitch into: pack runner (default), king, or front.
+  figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
+  const COUNTS = { runner:29, king:19, front:19 };
+  const n = COUNTS[figSet] || 29;
   const rp = [], cp = [];
-  for (let f = 0; f < ANIM_N; f++) {
+  for (let f = 0; f < n; f++) {
     const nn = String(f).padStart(2,'0');
-    rp.push(_loadImg('anim/runner_' + nn + '.png'));
-    cp.push(_loadImg('anim/crown_'  + nn + '.png'));
+    rp.push(_loadImg('anim/' + figSet + '_' + nn + '.png'));
+    if (figSet === 'runner') cp.push(_loadImg('anim/crown_' + nn + '.png'));  // crown only for the pack; king carries it in-shape
   }
-  const rf = await Promise.all(rp), cf = await Promise.all(cp);
-  if (rf.every(Boolean) && cf.every(Boolean)) {
-    runnerFrames = rf; crownFrames = cf; animReady = true;
+  const rf = await Promise.all(rp);
+  const cf = cp.length ? await Promise.all(cp) : [];
+  if (rf.every(Boolean)) {
+    runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
     maskFallback = true;
     fig.style.webkitMaskImage = 'none'; fig.style.maskImage = 'none';
@@ -2504,6 +2509,7 @@ frame();
     if (d.type === 'frontrun:wallet') applyPreview(d.value || '');
     else if (d.type === 'frontrun:roll') rollPreview();
     else if (d.type === 'frontrun:crown') setCrown(d.value);   // race leader wears the crown
+    else if (d.type === 'frontrun:figset') loadAnim(d.value);  // swap the figure shape (runner/king/front) at runtime
     else if (d.type === 'frontrun:ping') postParentState();
     else if (d.type === 'frontrun:piece') {            // full distinct piece from a wallet (palette + look)
       const v = d.value || '';
