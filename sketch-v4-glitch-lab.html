@@ -2033,7 +2033,22 @@ function applyFlashOpacity() {
 }
 
 let activeBg = null;
-let bloodMoon = new URLSearchParams(location.search).has('blood');   // Dreamweaver variant: total-eclipse red moon
+// BLOOD MOON is not a trait — it's a live date effect (like the moon phase already is). On the real nights
+// Earth throws a TOTAL lunar eclipse, every Dreamweaver's moon glows red; otherwise it's the normal phase.
+// Total-lunar-eclipse windows, UTC (source: timeanddate / nationaleclipse). No total eclipses 2027/2030/2031.
+const BLOOD_MOONS = [
+  ['2026-03-03T06:00:00Z','2026-03-03T15:00:00Z'],   // totality ~11:33 UTC
+  ['2028-12-31T12:00:00Z','2029-01-01T12:00:00Z'],
+  ['2029-06-25T12:00:00Z','2029-06-26T12:00:00Z'],
+  ['2029-12-20T12:00:00Z','2029-12-21T12:00:00Z'],
+  ['2032-04-25T12:00:00Z','2032-04-26T12:00:00Z'],
+  ['2032-10-18T12:00:00Z','2032-10-19T12:00:00Z'],
+  ['2033-04-14T12:00:00Z','2033-04-15T12:00:00Z'],
+  ['2033-10-08T00:00:00Z','2033-10-09T06:00:00Z'],
+];
+function isBloodMoonNow(){ const t = (new Date()).getTime(); return BLOOD_MOONS.some(w => t >= Date.parse(w[0]) && t <= Date.parse(w[1])); }
+// ?blood=1 forces it on for preview; otherwise it's purely date-driven.
+let bloodMoon = new URLSearchParams(location.search).has('blood') || isBloodMoonNow();
 let dwImg=null, dwCtx=null, dwStars=[], dwNeb=[], dwShoot=null, dwLastShoot=0, dwAddr=null;
 const DW_SPACE='#030508', DW_NEB=['rgb(255,60,160)','rgb(0,130,255)','rgb(140,40,255)'];
 const dwSouthern=(()=>{try{const tz=Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();return ['australia','auckland','sydney','melbourne','brisbane','perth','adelaide','hobart','darwin','sao_paulo','buenos_aires','santiago','johannesburg','cape_town'].some(z=>tz.includes(z));}catch(e){return false;}})();
