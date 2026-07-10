@@ -47,8 +47,11 @@ const idoc=()=>{try{return art.contentDocument;}catch(e){return null;}};
 function curGlitch(){ const d=idoc(); const s=d&&d.getElementById('fig-glitch'); return s?s.value:''; }
 function paint(pi){ $("traits").innerHTML='<span class="chip"><b>palette</b>'+(PN[pi]!==undefined?PN[pi]:'—')+'</span><span class="chip"><b>glitch</b>'+(curGlitch()||'—')+'</span>'; }
 let PIDX=0;
-addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='frontrun:state'){ if(typeof d.palette==='number') PIDX=d.palette; paint(PIDX); } });
-art.addEventListener('load',()=>{ setTimeout(()=>{ try{iwin().postMessage({type:'frontrun:ping'},'*');}catch(e){} paint(PIDX); },700); });
+// pin the engine figure to full size (it defaults to 92% and resets on every roll) so the +10% zoom / leg-crop reads like the race page
+function setZoom(){ try{ const d=idoc(); if(d) d.documentElement.style.setProperty('--fig-scale','1.0'); }catch(e){} }
+setInterval(setZoom, 500);
+addEventListener('message',e=>{ const d=e.data||{}; if(d.type==='frontrun:state'){ if(typeof d.palette==='number') PIDX=d.palette; paint(PIDX); setZoom(); } });
+art.addEventListener('load',()=>{ setTimeout(()=>{ try{iwin().postMessage({type:'frontrun:ping'},'*');}catch(e){} paint(PIDX); setZoom(); },700); });
 $("roll").onclick=()=>{ try{iwin().postMessage({type:'frontrun:roll'},'*');}catch(e){} setTimeout(()=>paint(PIDX),500); };
 $("tier").querySelectorAll('button').forEach(b=>b.onclick=()=>{
   try{iwin().postMessage({type:'frontrun:figset',value:b.dataset.t},'*');}catch(e){}
