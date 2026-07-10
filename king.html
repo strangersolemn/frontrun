@@ -2,50 +2,22 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FRONTRUN · the king</title>
 <style>
-  :root{--bg:#000}
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:var(--bg);color:#eaeaf0;font:14px/1.5 ui-monospace,Menlo,monospace;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px}
-  .stage{position:relative;width:min(90vw,560px);aspect-ratio:1;background:#000;border-radius:16px;overflow:hidden}
-  .rglowsvg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:visible}
-  .rsil{position:absolute;inset:0;z-index:1;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom}
+  body{margin:0;min-height:100vh;background:#000;color:#eaeaf0;font:14px/1.5 ui-monospace,Menlo,monospace;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px}
   .cap{letter-spacing:.24em;text-transform:uppercase;font-size:12px;color:#8a8a96}
   .cap b{color:#eaeaf0}
+  #king{width:min(88vw,460px);height:auto;display:block;image-rendering:auto}
 </style></head><body>
 <div class="cap">FRONTRUN · <b>the king</b></div>
-<div class="stage" id="stage"></div>
-<div class="cap" id="palName"></div>
+<img id="king" alt="the king running">
+<div class="cap" id="col"></div>
 <script>
-// palette primaries
-const PAL=[['frontrunner','#ED1E79'],['crimson','#FF003C'],['emerald','#00FF95'],['amber','#FFAE00'],
- ['cyan','#00F0FF'],['sulphur','#FFE600'],['magenta','#FF00FF'],['violet','#9D00FF'],
- ['royal blue','#3A7BFF'],['dark red','#D5142A'],['terminal green','#00FF41'],['black & white','#FFFFFF']];
-let GUID=0;
-function lighten(hex,t){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
- r=Math.round(r+(255-r)*t);g=Math.round(g+(255-g)*t);b=Math.round(b+(255-b)*t);
- return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
-function glowSVG(hex){const id='g'+(GUID++);const c=lighten(hex,0.5);
- return '<svg class="rglowsvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax meet">'
-  +'<filter id="'+id+'" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">'
-  +'<feMorphology in="SourceAlpha" operator="dilate" radius="1.0" result="d"/>'
-  +'<feFlood flood-color="'+c+'" flood-opacity="1" result="c"/>'
-  +'<feComposite in="c" in2="d" operator="in" result="ring"/>'
-  +'<feGaussianBlur in="ring" stdDeviation="0.6"/></filter>'
-  +'<image data-img width="100" height="100" preserveAspectRatio="xMidYMax meet" href="anim/king_00.png" filter="url(#'+id+')"/></svg>';}
-function render(hex){
-  const m='url(anim/king_00.png)';
-  // glow removed for now — crisp silhouette only
-  document.getElementById('stage').innerHTML =
-   '<div class="rsil" data-mask style="background:'+hex+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>';
-}
+const COLS=[['magenta','king-gifs/king_magenta.gif'],['cyan','king-gifs/king_cyan.gif'],
+            ['gold','king-gifs/king_gold.gif'],['emerald','king-gifs/king_green.gif']];
 // preload
-for(let i=0;i<29;i++){const a=new Image();a.src='anim/king_'+String(i).padStart(2,'0')+'.png';}
-let pi=0; function setPal(){ const p=PAL[pi%PAL.length]; render(p[1]); document.getElementById('palName').textContent='palette · '+p[0]; pi++; }
-setPal(); setInterval(setPal, 3000);   // cycle colours so you see him in every palette
-// run-cycle animation
-let f=0; const XL='http://www.w3.org/1999/xlink';
-setInterval(()=>{ f=(f+1)%29; const nn=String(f).padStart(2,'0'), u='url(anim/king_'+nn+'.png)', p='anim/king_'+nn+'.png';
-  document.querySelectorAll('[data-mask]').forEach(el=>{el.style.webkitMaskImage=u;el.style.maskImage=u;});
-  document.querySelectorAll('[data-img]').forEach(im=>{im.setAttribute('href',p);im.setAttributeNS(XL,'href',p);});
-},70);
+COLS.forEach(c=>{const i=new Image();i.src=c[1];});
+let k=0; function show(){ const c=COLS[k%COLS.length]; document.getElementById('king').src=c[1]+'?'+k;
+  document.getElementById('col').textContent='colour · '+c[0]; k++; }
+show(); setInterval(show, 3500);
 </script></body></html>
