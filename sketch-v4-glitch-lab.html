@@ -2655,6 +2655,11 @@ frame();
   // ?shape=liquidmetal|blackwater|towers|canary — force a tunnel (showcase / shareable links)
   const _shp = p.get('shape');
   if (_shp) { setTunnelShape(_shp); const _ss=$('tunnel-shape'); if(_ss) _ss.value=_shp; }
+  // ?palette=0-13 and ?glitch=<id> — pin the look (showcase pages like levels.html). Preview-only; no effect on real render.
+  const _pal = p.get('palette');
+  if (_pal !== null && PALETTES[+_pal]) { const pi=+_pal; const _ps=$('palette-sel'); if(_ps) _ps.value=pi; palette = PALETTES[pi]; if (tunnelTex==='noise') buildTunnelTexture(); updateFigure(); }
+  const _g = p.get('glitch');
+  if (_g) { const _gs=$('fig-glitch'); if(_gs) _gs.value=_g; activeGlitch=_g; }
 })();
 </script>
 </body>
