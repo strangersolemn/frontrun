@@ -1913,8 +1913,8 @@ let figGlow = false;                   // THE CLUB (ranks 1-100): king/front/sur
 async function loadAnim(figSet) {
   // which figure to render the glitch into: pack runner (field), king, front, surge (pack+glow), chase (pack+stroke+glow).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
-  figStroke = false;
   figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // the club glows; FIELD dark
+  figStroke = figGlow;                                       // the club also gets a subtle edge outline (glow + outline)
   const realSet = (figSet === 'chase') ? 'runner' : figSet;  // chase = base pack body + glow (glow is the only badge)
   const COUNTS = { runner:29, king:47, front:48, surge:41 };
   const n = COUNTS[realSet] || 29;
@@ -2083,7 +2083,7 @@ function drawFigGlow() {
   fCtx.save();
   fCtx.globalCompositeOperation = 'destination-over';
   fCtx.filter = 'blur(' + r + 'px)';
-  fCtx.globalAlpha = 0.25;                          // turned down 75% (was 4 full passes)
+  fCtx.globalAlpha = 0.31;                          // glow strength (0.25 base, +25%)
   fCtx.drawImage(_gc, 0, 0);
   fCtx.restore();
 }
@@ -2104,7 +2104,7 @@ function drawFigStroke() {
   cx.globalCompositeOperation = 'destination-out'; cx.drawImage(figImg, ox, oy, mw, mh);   // punch out the body -> ring only
   cx.globalCompositeOperation = 'source-in'; cx.fillStyle = (palette && palette[1]) || '#fff'; cx.fillRect(0, 0, W, H);  // tint
   cx.globalCompositeOperation = 'source-over';
-  fCtx.save(); fCtx.globalAlpha = 0.25; fCtx.drawImage(_sc, 0, 0); fCtx.restore();   // outline turned down 75%
+  fCtx.save(); fCtx.globalAlpha = 0.38; fCtx.drawImage(_sc, 0, 0); fCtx.restore();   // outline strength (0.25 base, +50%)
 }
 
 function frame() {
