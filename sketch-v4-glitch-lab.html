@@ -1926,7 +1926,8 @@ async function loadAnim(figSet) {
   const cf = cp.length ? await Promise.all(cp) : [];
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
-    RUN_FPS = ANIM_N / (29 / 30);   // keep the stride DURATION constant (29 frames @30fps ≈ 0.97s) for every tier
+    const DUR = { runner:29/30, king:47/24, front:48/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
+    RUN_FPS = ANIM_N / (DUR[realSet] || (ANIM_N / 24));       // forcing all into 0.97s ran the long clips ~2x too fast
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
     maskFallback = true;
     fig.style.webkitMaskImage = 'none'; fig.style.maskImage = 'none';

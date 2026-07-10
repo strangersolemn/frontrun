@@ -732,12 +732,14 @@ document.getElementById('foot').innerHTML =
 (function runLoop(){
   const CNT={runner:29,king:47,front:48};   // per-tier native frame counts
   ['runner','king','front'].forEach(set=>{ for(let i=0;i<CNT[set];i++){ const a=new Image(); a.src='anim/'+set+'_'+String(i).padStart(2,'0')+'.png'; } });
-  const CYCLE=29/30;                          // seconds/stride — every tier cycles in the SAME time as the 29-frame pack
+  // seconds per full loop, per tier — play each clip at its AUTHORED speed (source is 24fps; pack authored at 30fps).
+  // forcing every tier into the pack's 0.97s ran the 47/48-frame clips ~2x too fast. tweak these to retime a tier.
+  const DUR={runner:29/30, king:47/24, front:48/24};
   const XLINK='http://www.w3.org/1999/xlink';
   setInterval(()=>{
     const t=performance.now()/1000;
-    document.querySelectorAll('[data-mask]').forEach(el=>{ const s=el.dataset.mask; const N=CNT[s]||29; const nn=String(Math.floor(t/CYCLE*N)%N).padStart(2,'0'); const u='url(anim/'+s+'_'+nn+'.png)'; el.style.webkitMaskImage=u; el.style.maskImage=u; });
-    document.querySelectorAll('[data-img]').forEach(im=>{ const s=im.dataset.img; const N=CNT[s]||29; const nn=String(Math.floor(t/CYCLE*N)%N).padStart(2,'0'); const pp='anim/'+s+'_'+nn+'.png'; im.setAttribute('href',pp); im.setAttributeNS(XLINK,'href',pp); });
+    document.querySelectorAll('[data-mask]').forEach(el=>{ const s=el.dataset.mask; const N=CNT[s]||29; const nn=String(Math.floor(t/(DUR[s]||29/30)*N)%N).padStart(2,'0'); const u='url(anim/'+s+'_'+nn+'.png)'; el.style.webkitMaskImage=u; el.style.maskImage=u; });
+    document.querySelectorAll('[data-img]').forEach(im=>{ const s=im.dataset.img; const N=CNT[s]||29; const nn=String(Math.floor(t/(DUR[s]||29/30)*N)%N).padStart(2,'0'); const pp='anim/'+s+'_'+nn+'.png'; im.setAttribute('href',pp); im.setAttributeNS(XLINK,'href',pp); });
   }, 45);
 })();
 
