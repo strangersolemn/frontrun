@@ -2083,7 +2083,7 @@ function drawFigGlow() {
   fCtx.save();
   fCtx.globalCompositeOperation = 'destination-over';
   fCtx.filter = 'blur(' + r + 'px)';
-  fCtx.globalAlpha = 0.31;                          // glow strength (0.25 base, +25%)
+  fCtx.globalAlpha = 0.39;                          // glow strength
   fCtx.drawImage(_gc, 0, 0);
   fCtx.restore();
 }
@@ -2104,7 +2104,7 @@ function drawFigStroke() {
   cx.globalCompositeOperation = 'destination-out'; cx.drawImage(figImg, ox, oy, mw, mh);   // punch out the body -> ring only
   cx.globalCompositeOperation = 'source-in'; cx.fillStyle = (palette && palette[1]) || '#fff'; cx.fillRect(0, 0, W, H);  // tint
   cx.globalCompositeOperation = 'source-over';
-  fCtx.save(); fCtx.globalAlpha = 0.38; fCtx.drawImage(_sc, 0, 0); fCtx.restore();   // outline strength (0.25 base, +50%)
+  fCtx.save(); fCtx.globalAlpha = 0.29; fCtx.drawImage(_sc, 0, 0); fCtx.restore();   // outline strength
 }
 
 function frame() {
