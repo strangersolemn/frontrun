@@ -1908,16 +1908,19 @@ function drawCrown() {
 let runnerFrames = [], crownFrames = [], animReady = false, ANIM_N = 29;
 let RUN_FPS = 30;                      // run-cycle cadence — scaled per set so every tier cycles in the SAME time as the 29-frame pack
 function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+let figStroke = false;                 // THE CHASE (26-100): pack silhouette with a thin outline stroke
 async function loadAnim(figSet) {
-  // which figure to render the glitch into: pack runner (default), king, or front.
+  // which figure to render the glitch into: pack runner (default), king, front, or chase (pack + stroke).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
+  figStroke = (figSet === 'chase');
+  const realSet = figStroke ? 'runner' : figSet;   // chase reuses the pack silhouette, adds an outline
   const COUNTS = { runner:29, king:19, front:19 };
-  const n = COUNTS[figSet] || 29;
+  const n = COUNTS[realSet] || 29;
   const rp = [], cp = [];
   for (let f = 0; f < n; f++) {
     const nn = String(f).padStart(2,'0');
-    rp.push(_loadImg('anim/' + figSet + '_' + nn + '.png'));
-    if (figSet === 'runner') cp.push(_loadImg('anim/crown_' + nn + '.png'));  // crown only for the pack; king carries it in-shape
+    rp.push(_loadImg('anim/' + realSet + '_' + nn + '.png'));
+    if (realSet === 'runner' && !figStroke) cp.push(_loadImg('anim/crown_' + nn + '.png'));  // crown only for the plain pack preview
   }
   const rf = await Promise.all(rp);
   const cf = cp.length ? await Promise.all(cp) : [];
@@ -2059,6 +2062,25 @@ function drawDreamweaver(t){
   x.restore();
 }
 
+// THE CHASE (26-100): draw a thin coloured outline that hugs the silhouette edge.
+// Dilate the mask in a ring of offsets, subtract the original shape -> outline ring, tint it.
+let _sc = null, _scx = null;
+function drawFigStroke() {
+  if (!figStroke || !figImg || !figImg.width) return;
+  if (!_sc) { _sc = document.createElement('canvas'); _scx = _sc.getContext('2d'); }
+  if (_sc.width !== W || _sc.height !== H) { _sc.width = W; _sc.height = H; }
+  const cx = _scx; cx.clearRect(0, 0, W, H);
+  const ms = Math.min(W / figImg.width, H / figImg.height);
+  const mw = figImg.width * ms, mh = figImg.height * ms;
+  const ox = (W - mw) / 2, oy = H - mh;
+  const d = Math.max(2, Math.round(Math.min(W, H) * 0.0055));   // stroke thickness
+  for (let a = 0; a < 20; a++) { const ang = a / 20 * Math.PI * 2; cx.drawImage(figImg, ox + Math.cos(ang) * d, oy + Math.sin(ang) * d, mw, mh); }
+  cx.globalCompositeOperation = 'destination-out'; cx.drawImage(figImg, ox, oy, mw, mh);   // punch out the body -> ring only
+  cx.globalCompositeOperation = 'source-in'; cx.fillStyle = (palette && palette[1]) || '#fff'; cx.fillRect(0, 0, W, H);  // tint
+  cx.globalCompositeOperation = 'source-over';
+  fCtx.drawImage(_sc, 0, 0);
+}
+
 function frame() {
   const t = (performance.now() - start) / 1000;
   animApply(t);                         // advance the run cycle (runner mask + crown frame, in sync)
@@ -2089,6 +2111,7 @@ function frame() {
   } else {
     fCtx.clearRect(0, 0, W, H);
   }
+  drawFigStroke();                     // THE CHASE: thin outline around the silhouette
 
   // 2b. crown — worn by the race leader, above the figure
   drawCrown();
