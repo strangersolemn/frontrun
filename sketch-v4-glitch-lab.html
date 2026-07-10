@@ -2074,11 +2074,11 @@ function dwMoon(x,w,h){
     x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
     x.restore(); return;
   }
-  // 1. opaque moon body — occludes the stars/nebula behind the disc (fixes the bleed-through)
+  // 1. opaque moon body — SAME colour as the sky so it stays invisible but still occludes the stars behind it
   x.globalCompositeOperation='source-over'; x.shadowBlur=0;
-  x.fillStyle='#0c1018'; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
-  // 2. lit portion (current lunar phase), glowing, on top
-  x.fillStyle='#E6F7FF'; x.shadowColor='rgba(180,230,255,0.5)'; x.shadowBlur=r*1.1;
+  x.fillStyle=DW_SPACE; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fill();
+  // 2. lit portion (current lunar phase) on top — tight glow only (no big lighter halo over the sky)
+  x.fillStyle='#E6F7FF'; x.shadowColor='rgba(180,230,255,0.45)'; x.shadowBlur=r*0.28;
   x.beginPath(); const sweep=Math.cos(2*Math.PI*phase);
   if(phase<=0.5){ x.arc(cx,cy,r,-Math.PI/2,Math.PI/2,false); x.ellipse(cx,cy,r*Math.abs(sweep),r,0,Math.PI/2,-Math.PI/2,sweep>0); }
   else { x.arc(cx,cy,r,Math.PI/2,-Math.PI/2,false); x.ellipse(cx,cy,r*Math.abs(sweep),r,0,-Math.PI/2,Math.PI/2,sweep>0); }
