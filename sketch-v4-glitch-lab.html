@@ -1949,10 +1949,6 @@ async function loadAnim(figSet) {
   const cf = cp.length ? await Promise.all(cp) : [];
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
-    runnerAxis = rf.map(computeFigAxis);
-    // ONE constant axis = the AVERAGE across all frames. A single shift centres the figure without
-    // adding a per-frame wobble — the runner keeps its natural side-to-side sway around a centred spine.
-    figAxis = runnerAxis.length ? runnerAxis.reduce((a,b)=>a+b,0)/runnerAxis.length : 250;
     const DUR = { runner:29/30, king:47/24, front:48/24, surge:41/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
     RUN_FPS = ANIM_N / (DUR[realSet] || (ANIM_N / 24));       // forcing all into 0.97s ran the long clips ~2x too fast
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
@@ -2136,7 +2132,7 @@ function drawFigGlow() {
   if (_gc.width !== W || _gc.height !== H) { _gc.width = W; _gc.height = H; }
   const cx = _gcx; cx.clearRect(0, 0, W, H);
   const ms = Math.min(W / figImg.width, H / figImg.height);
-  const mw = figImg.width * ms, mh = figImg.height * ms, ox = (W - mw) / 2 + (figImg.width/2 - figAxis) * ms, oy = H - mh;
+  const mw = figImg.width * ms, mh = figImg.height * ms, ox = (W - mw) / 2, oy = H - mh;
   cx.drawImage(figImg, ox, oy, mw, mh);
   cx.globalCompositeOperation = 'source-in'; cx.fillStyle = (palette && palette[1]) || '#fff'; cx.fillRect(0, 0, W, H);
   cx.globalCompositeOperation = 'source-over';
@@ -2159,7 +2155,7 @@ function drawFigStroke() {
   const cx = _scx; cx.clearRect(0, 0, W, H);
   const ms = Math.min(W / figImg.width, H / figImg.height);
   const mw = figImg.width * ms, mh = figImg.height * ms;
-  const ox = (W - mw) / 2 + (figImg.width/2 - figAxis) * ms, oy = H - mh;
+  const ox = (W - mw) / 2, oy = H - mh;
   const d = Math.max(2, Math.round(Math.min(W, H) * 0.0055));   // stroke thickness
   for (let a = 0; a < 20; a++) { const ang = a / 20 * Math.PI * 2; cx.drawImage(figImg, ox + Math.cos(ang) * d, oy + Math.sin(ang) * d, mw, mh); }
   cx.globalCompositeOperation = 'destination-out'; cx.drawImage(figImg, ox, oy, mw, mh);   // punch out the body -> ring only
@@ -2192,8 +2188,7 @@ function frame() {
       fCtx.globalCompositeOperation = 'destination-in';
       const ms = Math.min(W / figImg.width, H / figImg.height);
       const mw = figImg.width * ms, mh = figImg.height * ms;
-      const axOff = (figImg.width/2 - figAxis) * ms;   // shift so the torso axis lands on centre
-      fCtx.drawImage(figImg, (W - mw) / 2 + axOff, H - mh, mw, mh);
+      fCtx.drawImage(figImg, (W - mw) / 2, H - mh, mw, mh);
       fCtx.globalCompositeOperation = 'source-over';
     }
   } else {
