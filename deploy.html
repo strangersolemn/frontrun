@@ -1,0 +1,150 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · The Race · Deploy</title>
+<style>
+  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79;--card:#0d0d13;--ok:#35c46b;--warn:#ffae00;--danger:#ff3b4e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:13.5px/1.6 ui-monospace,Menlo,monospace}
+  .wrap{max-width:640px;margin:0 auto;padding:34px 16px 90px}
+  h1{font-size:15px;letter-spacing:.22em;text-transform:uppercase;margin:0 0 4px;text-align:center}
+  .sub{color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-bottom:22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .card h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #14141b}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--mut)} .row .v{text-align:right;word-break:break-all}
+  .v.ok{color:var(--ok)} .v.bad{color:var(--danger)}
+  button{font:inherit;border:1px solid #33333f;background:#15151d;color:var(--fg);border-radius:10px;padding:13px 16px;cursor:pointer;width:100%}
+  button:hover:not(:disabled){border-color:#55556a}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  button.danger{background:#2a0c10;border-color:#5a1a22;color:#ff8a95}
+  button.danger:hover:not(:disabled){border-color:var(--danger)}
+  .banner{border:1px solid #3a2f12;background:#14100a;border-radius:10px;padding:11px 14px;color:var(--warn);font-size:12px;margin-bottom:16px;text-align:center}
+  .locked{opacity:.45;pointer-events:none}
+  #log{font-size:11.5px;color:var(--mut);white-space:pre-wrap;word-break:break-all;margin-top:8px;min-height:20px}
+  a{color:var(--acc)}
+  .pill{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:3px 10px;color:var(--mut)}
+  .pill.on{border-color:var(--ok);color:var(--ok)}
+  .space{height:8px}
+</style></head><body>
+<div class="wrap">
+  <h1>FRONTRUN · The Race</h1>
+  <div class="sub">Mainnet deploy · you sign every transaction</div>
+
+  <div class="banner">⚠ Live Ethereum mainnet. Every action here is signed in <b>your</b> wallet. This tool never holds your key.</div>
+
+  <div class="card">
+    <h2>1 · Wallet</h2>
+    <div class="row"><span class="k">account</span><span class="v" id="acc">not connected</span></div>
+    <div class="row"><span class="k">network</span><span class="v" id="net"><span class="pill" id="netpill">—</span></span></div>
+    <div class="space"></div>
+    <button class="primary" id="connectBtn" onclick="connect()">Connect wallet</button>
+  </div>
+
+  <div class="card">
+    <h2>2 · Deploy FrontrunRace (dormant)</h2>
+    <div class="row"><span class="k">collection</span><span class="v">0xf8c2…efb0 · FRONTRUN</span></div>
+    <div class="row"><span class="k">reveal t0</span><span class="v">1783083827 · 3 Jul 2026 13:03 UTC</span></div>
+    <div class="row"><span class="k">burns</span><span class="v">closed at deploy</span></div>
+    <div class="row"><span class="k">size</span><span class="v">~2.7 KB · ~0.00006 ETH gas</span></div>
+    <div class="space"></div>
+    <button class="primary" id="deployBtn" onclick="deploy()" disabled>Deploy — sign in wallet</button>
+    <div id="log"></div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <h2>3 · Deployed — sanity check</h2>
+    <div class="row"><span class="k">RACE address</span><span class="v" id="raceAddr">—</span></div>
+    <div class="row"><span class="k">frontrun()</span><span class="v" id="ck-fr">—</span></div>
+    <div class="row"><span class="k">startTime()</span><span class="v" id="ck-st">—</span></div>
+    <div class="row"><span class="k">burnOpen()</span><span class="v" id="ck-bo">—</span></div>
+    <div class="row"><span class="k">owner()</span><span class="v" id="ck-ow">—</span></div>
+    <div class="space"></div>
+    <div id="ckverdict" style="text-align:center;font-size:12px"></div>
+    <div class="space"></div>
+    <div style="font-size:11.5px;color:var(--mut);text-align:center">Copy the RACE address and paste it back to me — I wire the site to it.</div>
+  </div>
+
+  <div class="card locked" id="launchCard">
+    <h2>4 · Launch (only after deploy)</h2>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:12px">Do these live, when you're ready. <b style="color:var(--danger)">openBurn is one-way — it can never be closed.</b></div>
+    <button class="danger" id="openBtn" onclick="doAction('openBurn')" disabled>🔥 openBurn() — arm the burn (ONE-WAY)</button>
+    <div class="space"></div>
+    <button class="danger" id="renBtn" onclick="doAction('renounce')" disabled>renounce() — hand off admin forever (optional)</button>
+    <div id="log2" style="font-size:11.5px;color:var(--mut);white-space:pre-wrap;margin-top:8px"></div>
+  </div>
+</div>
+<script>
+const DEPLOY_DATA = "0x60c060405234801561000f575f80fd5b50604051610ad9380380610ad983398101604081905261002e91610055565b6001600160a01b0390911660805260a0525f80546001600160a01b0319163317905561008c565b5f8060408385031215610066575f80fd5b82516001600160a01b038116811461007c575f80fd5b6020939093015192949293505050565b60805160a051610a096100d05f395f81816101b3015281816108bf01526108ef01525f8181610135015281816103ca0152818161049e01526106ea0152610a095ff3fe608060405234801561000f575f80fd5b5060043610610106575f3560e01c80638fac96221161009e578063b98215741161006e578063b98215741461022a578063b9f0e10e14610249578063cc181ca814610268578063e77f7b4b14610271578063f47f131b14610293575f80fd5b80638fac9622146101e7578063a6696f8b1461020c578063a9fd382214610215578063b15be2f514610222575f80fd5b8063477dfefb116100d9578063477dfefb14610174578063524773ce1461019757806378e97925146101ae5780638da5cb5b146101d5575f80fd5b806303fd2a451461010a5780630c60e091146101305780631d1a4d5d1461015757806329cbec1a1461016c575b5f80fd5b61011361dead81565b6040516001600160a01b0390911681526020015b60405180910390f35b6101137f000000000000000000000000000000000000000000000000000000000000000081565b61016a610165366004610936565b6102a6565b005b61016a610750565b5f5461018790600160a01b900460ff1681565b6040519015158152602001610127565b6101a060045481565b604051908152602001610127565b6101a07f000000000000000000000000000000000000000000000000000000000000000081565b5f54610113906001600160a01b031681565b6101ef610818565b604080519315158452602084019290925290820152606001610127565b6101a060075481565b6005546101879060ff1681565b61016a610849565b6101a0610238366004610956565b60016020525f908152604090205481565b6101a0610257366004610956565b60036020525f908152604090205481565b6101a060065481565b61018761027f366004610956565b60026020525f908152604090205460ff1681565b6101a06102a1366004610956565b61089f565b5f54600160a01b900460ff166102f35760405162461bcd60e51b815260206004820152600d60248201526c313ab937103737ba1037b832b760991b60448201526064015b60405180910390fd5b8082036103425760405162461bcd60e51b815260206004820152601760248201527f63616e6e6f74206275726e20696e746f20697473656c6600000000000000000060448201526064016102ea565b5f8281526002602052604090205460ff1615801561036e57505f8181526002602052604090205460ff16155b6103aa5760405162461bcd60e51b815260206004820152600d60248201526c1c1a5958d9481a5cc819195859609a1b60448201526064016102ea565b6040516331a9108f60e11b81526004810183905233906001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690636352211e90602401602060405180830381865afa15801561040f573d5f803e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610433919061096d565b6001600160a01b03161461047e5760405162461bcd60e51b81526020600482015260126024820152716e6f7420796f75722073616372696669636560701b60448201526064016102ea565b6040516331a9108f60e11b81526004810182905233906001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690636352211e90602401602060405180830381865afa1580156104e3573d5f803e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610507919061096d565b6001600160a01b0316146105515760405162461bcd60e51b81526020600482015260116024820152703737ba103cb7bab91039bab93b34bb37b960791b60448201526064016102ea565b5f61055b8361089f565b5f848152600260209081526040808320805460ff19166001908117909155600383528184208590558684529091528120805492935083929091906105a09084906109a7565b92505081905550600160045f8282546105b991906109a7565b909155505f90506105c98361089f565b60408051848152602081018390529192508491869133917ff1b8071d85a68dbc6b0a9b8ff17e44602315ec457cdf743f3eee37cf4a6dd38e910160405180910390a46005545f9060ff1661061f57506001610640565b846006540361063057506001610640565b61063b60065461089f565b821190505b80156106c6576005545f9060ff16610659575f1961065d565b6006545b6005805460ff19811660011790915560068790556007859055604080518681526020810184905260ff9092168015158383015290519293509187917f9b0d7535c2826ea0fa2a7dd4530ff1f87c841d40a02f15c54a2858597f853703919081900360600190a250505b6040516323b872dd60e01b815233600482015261dead6024820152604481018690527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316906323b872dd906064015f604051808303815f87803b158015610733575f80fd5b505af1158015610745573d5f803e3d5ffd5b505050505050505050565b5f546001600160a01b031633146107955760405162461bcd60e51b81526020600482015260096024820152683737ba1037bbb732b960b91b60448201526064016102ea565b5f54600160a01b900460ff16156107dd5760405162461bcd60e51b815260206004820152600c60248201526b30b63932b0b23c9037b832b760a11b60448201526064016102ea565b5f805460ff60a01b1916600160a01b1781556040517f7c3e94d7273b4221b66706c0012f02adf26a83e00796da8192ae721d4ee697549190a1565b6005546006545f918291829160ff169081610833575f61083e565b61083e60065461089f565b925092509250909192565b5f546001600160a01b0316331461088e5760405162461bcd60e51b81526020600482015260096024820152683737ba1037bbb732b960b91b60448201526064016102ea565b5f80546001600160a01b0319169055565b5f8181526002602052604081205460ff16156108bc57505f919050565b5f7f000000000000000000000000000000000000000000000000000000000000000042116108ea575f610914565b6109147f0000000000000000000000000000000000000000000000000000000000000000426109c0565b5f8481526001602052604090205490915061092f90826109a7565b9392505050565b5f8060408385031215610947575f80fd5b50508035926020909101359150565b5f60208284031215610966575f80fd5b5035919050565b5f6020828403121561097d575f80fd5b81516001600160a01b038116811461092f575f80fd5b634e487b7160e01b5f52601160045260245ffd5b808201808211156109ba576109ba610993565b92915050565b818103818111156109ba576109ba61099356fea2646970667358221220de3820d9e8e46ef552e9e5edd1a78711c89574f1b5fd8d6f40ee980ee42cd59864736f6c63430008180033000000000000000000000000f8c20abd9c233a9de999c2ac6f1628df3f64efb0000000000000000000000000000000000000000000000000000000006a47b333";
+const COLLECTION = "0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0";
+const REVEAL = 1783083827;
+const SEL = { frontrun:'0x0c60e091', owner:'0x8da5cb5b', startTime:'0x78e97925', burnOpen:'0x477dfefb', openBurn:'0x29cbec1a', renounce:'0xb15be2f5' };
+let ACC=null, CHAIN=null, RACE=null;
+const $=id=>document.getElementById(id);
+const log=(m,el='log')=>{ $(el).textContent=m; };
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rq=(method,params)=>window.ethereum.request({method,params});
+
+function paintNet(){
+  const ok = CHAIN==='0x1';
+  $('netpill').textContent = CHAIN? (ok?'Ethereum mainnet':'wrong network ('+CHAIN+')') : '—';
+  $('netpill').className = 'pill'+(ok?' on':'');
+  $('deployBtn').disabled = !(ACC && ok);
+}
+async function connect(){
+  if(!window.ethereum){ log('No wallet found. Open this page in your wallet browser or install MetaMask.'); return; }
+  try{
+    const a=await rq('eth_requestAccounts'); ACC=a[0];
+    CHAIN=await rq('eth_chainId');
+    $('acc').textContent = ACC;
+    if(CHAIN!=='0x1'){ try{ await rq('wallet_switchEthereumChain',[{chainId:'0x1'}]); CHAIN='0x1'; }catch(e){} }
+    paintNet();
+    window.ethereum.on&&window.ethereum.on('chainChanged',c=>{CHAIN=c;paintNet();});
+    window.ethereum.on&&window.ethereum.on('accountsChanged',x=>{ACC=x[0]||null;$('acc').textContent=ACC||'not connected';paintNet();});
+  }catch(e){ log('Connect failed: '+(e.message||e)); }
+}
+async function waitReceipt(hash){
+  log('Deploy tx sent: '+hash+'\nWaiting for confirmation…');
+  for(let i=0;i<200;i++){ const r=await rq('eth_getTransactionReceipt',[hash]); if(r) return r; await sleep(3000); }
+  throw new Error('timed out waiting for receipt');
+}
+async function deploy(){
+  if(!ACC||CHAIN!=='0x1'){ log('Connect to Ethereum mainnet first.'); return; }
+  $('deployBtn').disabled=true;
+  try{
+    const hash=await rq('eth_sendTransaction',[{from:ACC, data:DEPLOY_DATA}]);
+    const rc=await waitReceipt(hash);
+    if(rc.status && rc.status!=='0x1'){ log('Deploy reverted. Nothing was created.'); $('deployBtn').disabled=false; return; }
+    RACE=rc.contractAddress;
+    log('✅ Deployed to '+RACE);
+    $('raceAddr').textContent=RACE; $('resultCard').style.display='';
+    await sanity();
+  }catch(e){ log('Deploy cancelled/failed: '+(e.message||e)); $('deployBtn').disabled=false; }
+}
+async function ethCall(to,data){ return rq('eth_call',[{to,data},'latest']); }
+async function sanity(){
+  try{
+    const fr=await ethCall(RACE,SEL.frontrun), st=await ethCall(RACE,SEL.startTime), bo=await ethCall(RACE,SEL.burnOpen), ow=await ethCall(RACE,SEL.owner);
+    const frAddr='0x'+fr.slice(-40), owAddr='0x'+ow.slice(-40);
+    const stN=parseInt(st,16), boB=BigInt(bo)!==0n;
+    const okFr=frAddr.toLowerCase()===COLLECTION, okSt=stN===REVEAL, okBo=boB===false, okOw=owAddr.toLowerCase()===ACC.toLowerCase();
+    set('ck-fr',frAddr,okFr); set('ck-st',stN+'',okSt); set('ck-bo',boB?'true':'false',okBo); set('ck-ow',owAddr,okOw);
+    const all=okFr&&okSt&&okBo&&okOw;
+    $('ckverdict').innerHTML = all? '<span style="color:var(--ok)">✅ All checks pass — safe to launch.</span>' : '<span style="color:var(--danger)">✗ A check failed — do NOT open the burn. Re-deploy (it is dormant, free to fix).</span>';
+    if(all){ $('launchCard').classList.remove('locked'); $('openBtn').disabled=false; $('renBtn').disabled=false; }
+  }catch(e){ $('ckverdict').textContent='Could not read back: '+(e.message||e); }
+}
+function set(id,v,ok){ const e=$(id); e.textContent=v; e.className='v '+(ok?'ok':'bad'); }
+async function doAction(which){
+  const one = which==='openBurn';
+  const msg = one? 'openBurn() is ONE-WAY. Burns arm for every holder the instant this confirms and can NEVER be closed. Proceed?'
+                 : 'renounce() removes all admin forever. The game becomes fully autonomous. Proceed?';
+  if(!confirm(msg)) return;
+  try{
+    const hash=await rq('eth_sendTransaction',[{from:ACC, to:RACE, data:SEL[which]}]);
+    log(which+'() sent: '+hash+' — waiting…','log2');
+    for(let i=0;i<200;i++){ const r=await rq('eth_getTransactionReceipt',[hash]); if(r){ log('✅ '+which+'() confirmed.','log2'); return; } await sleep(3000); }
+  }catch(e){ log(which+'() cancelled/failed: '+(e.message||e),'log2'); }
+}
+</script></body></html>
