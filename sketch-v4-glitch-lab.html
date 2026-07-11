@@ -1931,7 +1931,9 @@ function computeFigAxis(img) {
 function _loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
 let figStroke = false;                 // THE CHASE (26-100): pack silhouette with a thin outline stroke
 let figGlow = false;                   // THE CLUB (ranks 1-100): king/front/surge/chase glow in their own palette colour
+let _loadSeq = 0;
 async function loadAnim(figSet) {
+  const seq = ++_loadSeq;   // guard: on fast tier switches two loads race; only the LATEST one may apply
   // which figure to render the glitch into: pack runner (field), king, front, surge (pack+glow), chase (pack+stroke+glow).
   figSet = figSet || new URLSearchParams(location.search).get('fig') || 'runner';
   figGlow = (figSet === 'king' || figSet === 'front' || figSet === 'surge' || figSet === 'chase');  // the club glows; FIELD dark
@@ -1947,6 +1949,7 @@ async function loadAnim(figSet) {
   }
   const rf = await Promise.all(rp);
   const cf = cp.length ? await Promise.all(cp) : [];
+  if (seq !== _loadSeq) return;   // a newer loadAnim started while this was loading — drop this stale result
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
     const DUR = { runner:29/30, king:47/24, front:48/24, surge:41/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
