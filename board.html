@@ -1,0 +1,213 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · The Race · Leaderboard</title>
+<style>
+  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79;--card:#0d0d13;
+    --king:#ffcf4a;--front:#3a7bff;--surge:#00f0ff;--chase:#ffae00;--field:#6a6a78}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,Menlo,monospace}
+  .wrap{max-width:760px;margin:0 auto;padding:34px 16px 90px}
+  header{text-align:center;margin-bottom:20px}
+  h1{font-size:15px;letter-spacing:.26em;text-transform:uppercase;margin:0 0 5px}
+  .sub{color:var(--mut);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  /* crown banner */
+  .crown{margin:16px 0 18px;border:1px solid #3a2f12;border-radius:14px;padding:16px 18px;
+    background:linear-gradient(180deg,#151007,#0d0d13);display:flex;align-items:center;gap:16px}
+  .crown .ico{font-size:30px;filter:drop-shadow(0 0 10px rgba(255,207,74,.5))}
+  .crown .l{flex:1}
+  .crown .k{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--king)}
+  .crown .v{font-size:20px;font-weight:600;margin-top:2px}
+  .crown .g{color:var(--mut);font-size:11px;margin-top:2px}
+  .crown.empty .v{color:var(--mut);font-weight:400;font-size:15px}
+  /* controls */
+  .ctrls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .ctrls input{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:10px;
+    color:var(--fg);font:inherit;padding:11px 13px;outline:none}
+  .ctrls input:focus{border-color:#3a3a48}
+  .ctrls button{background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--fg);
+    font:inherit;padding:11px 14px;cursor:pointer;white-space:nowrap}
+  .ctrls button.on{border-color:var(--acc);background:#2a0f1c;color:#fff}
+  .ctrls button:hover{border-color:#3a3a48}
+  .burn{border:1px dashed #33333f;border-radius:10px;color:var(--mut);padding:11px 14px;white-space:nowrap;
+    display:flex;align-items:center;gap:7px;font-size:12px}
+  .burn .dot{width:7px;height:7px;border-radius:50%;background:#555}
+  /* table */
+  .meta{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;padding:0 4px 8px}
+  .rows{display:flex;flex-direction:column;gap:3px}
+  .row{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .row.me{border-color:var(--acc)}
+  .row.t-king{border-color:#4a3a12;background:linear-gradient(90deg,#161007,var(--card) 60%)}
+  .rank{font-size:15px;font-weight:600;color:var(--mut);text-align:center}
+  .row.t-king .rank,.row.t-front .rank{color:var(--fg)}
+  .who{display:flex;align-items:center;gap:9px;min-width:0}
+  .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:20px;
+    border:1px solid currentColor;white-space:nowrap}
+  .b-king{color:var(--king)} .b-front{color:var(--front)} .b-surge{color:var(--surge)}
+  .b-chase{color:var(--chase)} .b-field{color:var(--field)}
+  .pid{font-weight:600} .pid .hz{color:var(--mut);font-weight:400}
+  .metoo{color:var(--acc);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-left:2px}
+  .ground{text-align:right} .ground .n{font-weight:600} .ground .u{color:var(--mut);font-size:10px;letter-spacing:.1em}
+  .empty-msg{text-align:center;color:var(--mut);padding:40px}
+  .foot{margin-top:26px;text-align:center;color:var(--mut);font-size:11px;line-height:1.8}
+  .foot a{color:var(--acc);text-decoration:none}
+  .tag{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6a6a72;
+    border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-left:6px}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <h1>The Race · Leaderboard<span class="tag" id="modetag">demo</span></h1>
+    <div class="sub">ranked by ground · ground never stops</div>
+  </header>
+
+  <div class="crown empty" id="crown">
+    <div class="ico">👑</div>
+    <div class="l"><div class="k">The Crown</div><div class="v" id="crownV">Unclaimed</div>
+      <div class="g" id="crownG">Empty until the first move</div></div>
+  </div>
+
+  <div class="ctrls">
+    <input id="q" placeholder="Search token # or wallet…" autocomplete="off">
+    <button id="squadBtn">🔗 My squad</button>
+    <div class="burn"><span class="dot"></span> Burn · closed</div>
+  </div>
+
+  <div class="meta"><span id="count">—</span><span id="asof"></span></div>
+  <div class="rows" id="rows"></div>
+
+  <p class="foot" id="foot">
+    Ground = seconds since reveal + everything absorbed by burns. Burns open later — the board is live from day one.
+  </p>
+</div>
+<script>
+// ============================ CONFIG ============================
+const CFG = {
+  demo: true,                                   // flip to false for live reads
+  supply: 666,
+  race: '0x3073501b96d8308b42bda1ec877dc2afbc769fc9',   // Sepolia race (audit-fixed). Swap to mainnet at launch.
+  rpc:  'https://ethereum-sepolia-rpc.publicnode.com',
+  reveal: 1783083827,                           // reveal t0 (fallback; live reads startTime())
+  SEL: { groundOf:'0xf47f131b', crown:'0x8fac9622', king:'0xcc181ca8', crownClaimed:'0xa9fd3822',
+         burnOpen:'0x477dfefb', startTime:'0x78e97925', ownerOf:'0x6352211e' },
+};
+// ============================ TIERS ============================
+function tierFor(rank){ // rank is 1-based over LIVING pieces
+  if(rank===1) return {k:'king', em:'👑', n:'King'};
+  if(rank<=10) return {k:'front',em:'🦸', n:'Front'};
+  if(rank<=25) return {k:'surge',em:'⚡', n:'Surge'};
+  if(rank<=100)return {k:'chase',em:'🎯', n:'Chase'};
+  return {k:'field',em:'🏃', n:'Field'};
+}
+const $=id=>document.getElementById(id);
+const pad=n=>BigInt(n).toString(16).padStart(64,'0');
+const fmt=n=>n.toLocaleString('en-US');
+const short=a=>a? a.slice(0,6)+'…'+a.slice(-4):'';
+
+// ============================ DATA ============================
+let PIECES=[];   // {id, ground, dead, owner}
+let CROWN={claimed:false, king:0};
+let MINE=new Set(), squadOn=false, MYADDR=null;
+
+function genDemo(){
+  // deterministic-ish demo: everyone shares a base (days since reveal), a top slice has absorbed extra.
+  const base = Math.floor(Date.now()/1000) - CFG.reveal;
+  const rng=(s=>()=>((s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff))(12345);
+  PIECES=[];
+  for(let id=1; id<=CFG.supply; id++){
+    let absorbed=0, dead=false;
+    if(id<=110){ absorbed = Math.floor((120-id)*(120-id)*rng()*90); }   // top ~110 have burn ground
+    if(id>1 && rng()<0.02) dead=true;                                    // a few burned out
+    PIECES.push({id, ground: dead?0:base+absorbed, dead, owner:null});
+  }
+  // pretend some are mine
+  MINE = new Set([7,42,199,404,''].filter(Boolean).map(Number));
+  const living=PIECES.filter(p=>!p.dead).sort((a,b)=>b.ground-a.ground);
+  CROWN={claimed:true, king:living[0].id};
+}
+
+async function rpc(calls){ // JSON-RPC batch of eth_call [{to,data}]
+  const body = calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to:c.to,data:c.data},'latest']}));
+  const r = await fetch(CFG.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const j = await r.json();
+  const out=new Array(calls.length);
+  (Array.isArray(j)?j:[j]).forEach(o=>{ out[o.id]=o.result; });
+  return out;
+}
+async function loadLive(){
+  // startTime + crown
+  const [stHex, crownClaimedHex, kingHex] = await rpc([
+    {to:CFG.race,data:CFG.SEL.startTime}, {to:CFG.race,data:CFG.SEL.crownClaimed}, {to:CFG.race,data:CFG.SEL.king}]);
+  const claimed = crownClaimedHex && BigInt(crownClaimedHex)!==0n;
+  CROWN={claimed, king: claimed? Number(BigInt(kingHex)):0};
+  // groundOf for all pieces, chunked
+  PIECES=[]; const CH=180;
+  for(let s=1; s<=CFG.supply; s+=CH){
+    const batch=[]; for(let id=s; id<Math.min(s+CH,CFG.supply+1); id++) batch.push({to:CFG.race,data:CFG.SEL.groundOf+pad(id)});
+    const res=await rpc(batch);
+    res.forEach((hex,k)=>{ const id=s+k; const g = hex? Number(BigInt(hex)):0; PIECES.push({id, ground:g, dead:g===0, owner:null}); });
+  }
+}
+
+// ============================ RENDER ============================
+function build(){
+  const living = PIECES.filter(p=>!p.dead).sort((a,b)=> b.ground-a.ground || a.id-b.id);
+  living.forEach((p,i)=>{ p.rank=i+1; p.tier=tierFor(p.rank); });
+  window.RANKED = living;
+  // crown banner
+  const c=$('crown');
+  if(CROWN.claimed && living.length){ const kp=living[0];
+    c.className='crown'; $('crownV').textContent='FRONTRUN #'+kp.id; $('crownG').textContent=fmt(kp.ground)+' ground'; }
+  else { c.className='crown empty'; $('crownV').textContent='Unclaimed'; $('crownG').textContent='Empty until the first move'; }
+  render();
+}
+function render(){
+  const q=$('q').value.trim().toLowerCase();
+  const rows=$('rows'); rows.innerHTML='';
+  let list=window.RANKED||[];
+  if(squadOn) list=list.filter(p=>MINE.has(p.id));
+  if(q){ if(/^\d+$/.test(q)) list=list.filter(p=>String(p.id).includes(q));
+         else list=list.filter(p=>p.owner&&p.owner.toLowerCase().includes(q)); }
+  $('count').textContent = list.length+' shown · '+ (window.RANKED?window.RANKED.length:0)+' running';
+  $('asof').textContent = CFG.demo?'demo data':'live';
+  if(!list.length){ rows.innerHTML='<div class="empty-msg">No runners match.</div>'; return; }
+  const frag=document.createDocumentFragment();
+  for(const p of list.slice(0,300)){
+    const t=p.tier, el=document.createElement('div');
+    el.className='row t-'+t.k+(MINE.has(p.id)?' me':'');
+    el.innerHTML='<div class="rank">'+p.rank+'</div>'+
+      '<div class="who"><span class="badge b-'+t.k+'">'+t.em+' '+t.n+'</span>'+
+      '<span class="pid">FRONTRUN <span class="hz">#</span>'+p.id+'</span>'+(MINE.has(p.id)?'<span class="metoo">you</span>':'')+'</div>'+
+      '<div class="ground"><span class="n">'+fmt(p.ground)+'</span> <span class="u">grd</span></div>';
+    frag.appendChild(el);
+  }
+  rows.appendChild(frag);
+  if(list.length>300){ const m=document.createElement('div'); m.className='empty-msg'; m.textContent='+ '+(list.length-300)+' more — search to narrow'; rows.appendChild(m); }
+}
+
+// ============================ WALLET (squad) ============================
+async function connectSquad(){
+  if(!window.ethereum){ alert('No wallet found — open in a wallet browser to see your squad.'); return; }
+  try{
+    const acc=await window.ethereum.request({method:'eth_requestAccounts'});
+    MYADDR=(acc[0]||'').toLowerCase();
+    // (live) squad = which of the ranked pieces this wallet owns — would read ownerOf; demo uses MINE
+    squadOn=true; $('squadBtn').classList.add('on'); $('squadBtn').textContent='🔗 '+short(MYADDR);
+    render();
+  }catch(e){}
+}
+
+// ============================ BOOT ============================
+$('q').addEventListener('input', render);
+$('squadBtn').addEventListener('click', ()=>{
+  if(squadOn){ squadOn=false; $('squadBtn').classList.remove('on'); $('squadBtn').textContent='🔗 My squad'; render(); return; }
+  if(CFG.demo){ squadOn=true; $('squadBtn').classList.add('on'); $('squadBtn').textContent='🔗 My squad ('+MINE.size+')'; render(); }  // demo: toggle with preset squad
+  else connectSquad();
+});
+(async function(){
+  $('modetag').textContent = CFG.demo?'demo':'live';
+  try{ if(CFG.demo) genDemo(); else await loadLive(); }
+  catch(e){ $('foot').innerHTML='Could not reach the contract — showing nothing. '+String(e.message||e); }
+  build();
+})();
+</script></body></html>
