@@ -1949,7 +1949,10 @@ async function loadAnim(figSet) {
   const cf = cp.length ? await Promise.all(cp) : [];
   if (rf.every(Boolean)) {
     runnerFrames = rf; crownFrames = cf; ANIM_N = n; animReady = true;
-    runnerAxis = rf.map(computeFigAxis);   // per-frame torso axis for centre-lock
+    runnerAxis = rf.map(computeFigAxis);
+    // ONE constant axis = the AVERAGE across all frames. A single shift centres the figure without
+    // adding a per-frame wobble — the runner keeps its natural side-to-side sway around a centred spine.
+    figAxis = runnerAxis.length ? runnerAxis.reduce((a,b)=>a+b,0)/runnerAxis.length : 250;
     const DUR = { runner:29/30, king:47/24, front:48/24, surge:41/24 };   // seconds/loop — each clip at its authored speed (24fps source; pack 30fps)
     RUN_FPS = ANIM_N / (DUR[realSet] || (ANIM_N / 24));       // forcing all into 0.97s ran the long clips ~2x too fast
     // animate the SHAPE via canvas clipping -> turn the static CSS mask off
@@ -1963,7 +1966,7 @@ function animApply(t) {
   const idx = Math.floor(t * RUN_FPS) % ANIM_N;
   figImg = runnerFrames[idx];   // the destination-in clip uses figImg -> runner runs
   crownImg = crownFrames[idx];  // drawCrown uses crownImg -> crown bobs in sync
-  figAxis = (runnerAxis[idx] != null) ? runnerAxis[idx] : (figImg ? figImg.width/2 : 250);  // centre-lock axis
+  // figAxis is a constant (set once in loadAnim) — do NOT update per frame or the runner wobbles
 }
 async function loadFigureMask() {
   const res = await fetch('figure.b64');
