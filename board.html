@@ -1,218 +1,257 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FRONTRUN · The Race · Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79;--card:#0d0d13;
-    --king:#ffcf4a;--front:#3a7bff;--surge:#00f0ff;--chase:#ffae00;--field:#6a6a78}
+  @font-face{font-family:'Inversionz';src:url('./fonts/Inversionz.otf') format('opentype'),url('./fonts/Inversionz.ttf') format('truetype');font-weight:400;font-display:swap}
+  @font-face{font-family:'Inversionz Unboxed';src:url('./fonts/Inversionz-Unboxed.otf') format('opentype'),url('./fonts/Inversionz-Unboxed.ttf') format('truetype');font-weight:400;font-display:swap}
+  :root{--paper:#F4F2EC;--paper-2:#EEEBE3;--ink:#121110;--dim:#8b877d;--faint:#bcb7ab;--line:#dcd8cd;--pink:#ED1E79;--gold:#a9821e;
+    --font:'Martian Mono',ui-monospace,monospace;--display:'Inversionz Unboxed','Inversionz',var(--font)}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,Menlo,monospace}
-  .wrap{max-width:760px;margin:0 auto;padding:34px 16px 90px}
-  header{text-align:center;margin-bottom:20px}
-  h1{font-size:15px;letter-spacing:.26em;text-transform:uppercase;margin:0 0 5px}
-  .sub{color:var(--mut);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.55;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  a{color:inherit;text-decoration:none}
+  header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 32px;border-bottom:1px solid transparent;transition:background .3s,border-color .3s}
+  header.scrolled{background:rgba(244,242,236,.9);backdrop-filter:blur(10px);border-color:var(--line)}
+  .brand{font-weight:800;letter-spacing:.28em;font-size:13px}.brand .dot{color:var(--pink)}
+  .hright{display:flex;align-items:center;gap:18px}
+  .nav{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .nav a{color:var(--ink)}.nav a.here{color:var(--pink)}
+  .connect{font-family:var(--font);font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+    border:1px solid var(--ink);background:transparent;color:var(--ink);padding:9px 16px;cursor:pointer;transition:background .15s,color .15s}
+  .connect:hover{background:var(--ink);color:var(--paper)}
+  .connect.on{background:var(--pink);border-color:var(--pink);color:#fff}
+  @media(max-width:760px){header{flex-wrap:wrap;justify-content:center;gap:7px 12px;padding:10px 14px}.brand{width:100%;text-align:center}.hright{width:100%;justify-content:center;flex-wrap:wrap;gap:10px}.nav{font-size:9px;letter-spacing:.12em;text-align:center}.wrap{padding-top:120px}}
+  .wrap{max-width:780px;margin:0 auto;padding:100px 20px 90px}
+  .kicker{display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:14px}.kicker .bar{width:32px;height:1px;background:var(--pink)}
+  .label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,6vw,58px);line-height:1;letter-spacing:.02em;margin:0 0 8px;text-transform:uppercase;text-align:center}
+  h1 .pk{color:var(--pink)}
+  .sub{color:var(--dim);font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-align:center;margin-bottom:24px;font-weight:500}
   /* crown banner */
-  .crown{margin:16px 0 18px;border:1px solid #3a2f12;border-radius:14px;padding:16px 18px;
-    background:linear-gradient(180deg,#151007,#0d0d13);display:flex;align-items:center;gap:16px}
-  .crown .ico{font-size:30px;filter:drop-shadow(0 0 10px rgba(255,207,74,.5))}
-  .crown .l{flex:1}
-  .crown .k{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--king)}
-  .crown .v{font-size:20px;font-weight:600;margin-top:2px}
-  .crown .g{color:var(--mut);font-size:11px;margin-top:2px}
-  .crown.empty .v{color:var(--mut);font-weight:400;font-size:15px}
+  .crown{margin:0 0 18px;border:1px solid var(--ink);padding:16px 20px;background:#faf3dd;display:flex;align-items:center;gap:16px}
+  .crown.empty{background:var(--paper-2);border-color:var(--line)}
+  .crown .ico{font-size:28px}
+  .crown .l{flex:1;min-width:0}
+  .crown .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  .crown.empty .k{color:var(--dim)}
+  .crown .v{font-size:18px;font-weight:800;margin-top:2px}
+  .crown.empty .v{color:var(--dim);font-weight:500;font-size:14px}
+  .crown .g{color:var(--dim);font-size:11px;margin-top:2px;font-variant-numeric:tabular-nums}
+  .crown .th{width:56px;height:56px;background:#05060a;border:1px solid var(--ink);overflow:hidden;flex:none}
+  .crown .th img{width:100%;height:100%;object-fit:cover;display:block}
   /* controls */
-  .ctrls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-  .ctrls input{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:10px;
-    color:var(--fg);font:inherit;padding:11px 13px;outline:none}
-  .ctrls input:focus{border-color:#3a3a48}
-  .ctrls button{background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--fg);
-    font:inherit;padding:11px 14px;cursor:pointer;white-space:nowrap}
-  .ctrls button.on{border-color:var(--acc);background:#2a0f1c;color:#fff}
-  .ctrls button:hover{border-color:#3a3a48}
-  .burn{border:1px dashed #33333f;border-radius:10px;color:var(--mut);padding:11px 14px;white-space:nowrap;
-    display:flex;align-items:center;gap:7px;font-size:12px}
-  .burn .dot{width:7px;height:7px;border-radius:50%;background:#555}
-  /* table */
-  .meta{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;letter-spacing:.1em;
-    text-transform:uppercase;padding:0 4px 8px}
-  .rows{display:flex;flex-direction:column;gap:3px}
-  .row{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;
-    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-  .row.me{border-color:var(--acc)}
-  .row.t-king{border-color:#4a3a12;background:linear-gradient(90deg,#161007,var(--card) 60%)}
-  .rank{font-size:15px;font-weight:600;color:var(--mut);text-align:center}
-  .row.t-king .rank,.row.t-front .rank{color:var(--fg)}
-  .who{display:flex;align-items:center;gap:9px;min-width:0}
-  .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:20px;
-    border:1px solid currentColor;white-space:nowrap}
-  .b-king{color:var(--king)} .b-front{color:var(--front)} .b-surge{color:var(--surge)}
-  .b-chase{color:var(--chase)} .b-field{color:var(--field)}
-  .pid{font-weight:600} .pid .hz{color:var(--mut);font-weight:400}
-  .metoo{color:var(--acc);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-left:2px}
-  .ground{text-align:right} .ground .n{font-weight:600} .ground .u{color:var(--mut);font-size:10px;letter-spacing:.1em}
-  .empty-msg{text-align:center;color:var(--mut);padding:40px}
-  .foot{margin-top:26px;text-align:center;color:var(--mut);font-size:11px;line-height:1.8}
-  .foot a{color:var(--acc);text-decoration:none}
-  .tag{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6a6a72;
-    border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-left:6px}
+  .ctrls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .ctrls input{flex:1;min-width:150px;background:var(--paper);border:1px solid var(--ink);color:var(--ink);font:inherit;font-size:11px;padding:11px 13px;outline:none}
+  .ctrls input::placeholder{color:var(--faint)}
+  .ctrls button{background:var(--paper);border:1px solid var(--ink);color:var(--ink);font:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:11px 14px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+  .ctrls button:hover{background:var(--ink);color:var(--paper)}
+  .ctrls button.on{background:var(--pink);border-color:var(--pink);color:#fff}
+  .burnst{border:1px dashed var(--faint);color:var(--dim);padding:11px 14px;white-space:nowrap;display:flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .burnst .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+  .burnst.open{border-color:var(--pink);color:var(--pink)}.burnst.open .dot{background:var(--pink)}
+  .meta{display:flex;justify-content:space-between;color:var(--dim);font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:0 2px 8px;font-weight:600}
+  /* rows */
+  .rows{border:1px solid var(--ink);background:var(--paper)}
+  .row{display:grid;grid-template-columns:52px 44px 1fr auto;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);cursor:default}
+  .row:last-child{border-bottom:0}
+  .row:hover{background:var(--paper-2)}
+  .row.me{box-shadow:inset 3px 0 0 var(--pink)}
+  .row.t-king{background:#faf3dd}
+  .rank{font-size:14px;font-weight:800;color:var(--dim);text-align:center;font-variant-numeric:tabular-nums}
+  .row.t-king .rank,.row.t-front .rank{color:var(--pink)}
+  .th{width:44px;height:44px;background:#05060a;border:1px solid var(--ink);overflow:hidden}
+  .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .who{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap}
+  .badge{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;font-weight:700;white-space:nowrap}
+  .b-king{background:#f0e2b0;color:var(--gold)} .b-front{background:#fbd9e7;color:#c0175f} .b-surge{background:#d7e7f4;color:#276a99} .b-chase{background:#dcecdf;color:#2c7a44} .b-field{background:var(--paper-2);color:var(--dim)}
+  .pid{font-weight:700;font-size:12.5px} .pid .hz{color:var(--dim);font-weight:400}
+  .metoo{color:var(--pink);font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  .ground{text-align:right} .ground .n{font-weight:700;font-variant-numeric:tabular-nums;font-size:13px} .ground .u{color:var(--dim);font-size:9px;letter-spacing:.14em;text-transform:uppercase;display:block}
+  .empty-msg{text-align:center;color:var(--dim);padding:36px;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .foot{margin-top:26px;text-align:center;color:var(--dim);font-size:11.5px;line-height:1.8}
+  .foot a{color:var(--pink);font-weight:700}
+  @media(max-width:560px){.row{grid-template-columns:40px 40px 1fr auto;gap:8px;padding:8px 10px}.th{width:40px;height:40px}}
 </style></head><body>
+<header id="hdr">
+  <div class="brand" style="cursor:pointer" onclick="location.href='./index.html'">FRONTRUN<span class="dot">_</span></div>
+  <div class="hright">
+    <div class="nav"><a href="./index.html">HOME</a> · <a href="./race.html">THE RACE</a> · <a href="./board.html" class="here">LEADERBOARD</a> · <a href="./levels.html">LEVELS</a> · <a href="./rarity.html">THE RARES</a> · <a href="./gif-maker.html">GIF</a></div>
+    <button class="connect" id="connectBtn">Connect</button>
+  </div>
+</header>
 <div class="wrap">
-  <header>
-    <h1>The Race · Leaderboard<span class="tag" id="modetag">demo</span></h1>
-    <div class="sub">ranked by ground · ground never stops</div>
-    <div style="margin-top:12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase">
-      <a href="./index.html" style="color:var(--mut);text-decoration:none">← Home</a> ·
-      <a href="./race.html" style="color:var(--mut);text-decoration:none">Race</a> ·
-      <a href="./levels.html" style="color:var(--mut);text-decoration:none">Levels</a>
-    </div>
-  </header>
+  <div class="kicker"><span class="bar"></span><span class="label">ranked by ground · ground never stops</span><span class="bar"></span></div>
+  <h1>LEADER<span class="pk">BOARD</span></h1>
+  <div class="sub" id="sub">live · ethereum mainnet</div>
 
   <div class="crown empty" id="crown">
     <div class="ico">👑</div>
     <div class="l"><div class="k">The Crown</div><div class="v" id="crownV">Unclaimed</div>
-      <div class="g" id="crownG">Empty until the first move</div></div>
+      <div class="g" id="crownG">Empty until the first burn</div></div>
+    <div class="th" id="crownTh" style="display:none"></div>
   </div>
 
   <div class="ctrls">
-    <input id="q" placeholder="Search token # or wallet…" autocomplete="off">
-    <button id="squadBtn">🔗 My squad</button>
-    <div class="burn"><span class="dot"></span> Burn · closed</div>
+    <input id="q" placeholder="Search token #…" autocomplete="off">
+    <button id="squadBtn">My squad</button>
+    <div class="burnst" id="burnst"><span class="dot"></span> Burn · —</div>
   </div>
 
-  <div class="meta"><span id="count">—</span><span id="asof"></span></div>
-  <div class="rows" id="rows"></div>
+  <div class="meta"><span id="count">—</span><span id="asof">live</span></div>
+  <div class="rows" id="rows"><div class="empty-msg">reading the race…</div></div>
 
-  <p class="foot" id="foot">
-    Ground = seconds since reveal + everything absorbed by burns. Burns open later — the board is live from day one.
+  <p class="foot">
+    Ground = seconds since reveal + everything absorbed by burns. The full field with art lives on
+    <a href="./the-race.html">the race board</a>.
   </p>
 </div>
 <script>
-// ============================ CONFIG ============================
+// ============================ CONFIG — LIVE MAINNET ============================
 const CFG = {
-  demo: true,                                   // flip to false for live reads
-  supply: 666,
-  race: '0x3073501b96d8308b42bda1ec877dc2afbc769fc9',   // Sepolia race (audit-fixed). Swap to mainnet at launch.
-  rpc:  'https://ethereum-sepolia-rpc.publicnode.com',
-  reveal: 1783083827,                           // reveal t0 (fallback; live reads startTime())
-  SEL: { groundOf:'0xf47f131b', crown:'0x8fac9622', king:'0xcc181ca8', crownClaimed:'0xa9fd3822',
-         burnOpen:'0x477dfefb', startTime:'0x78e97925', ownerOf:'0x6352211e' },
+  supply: 666, firstId: 1,
+  collection: '0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0',
+  race: '0xb1045442e1aafea9280480e82b61c2ee5a71c741',           // FrontrunRace (mainnet, 2026-07-13)
+  rpcs: ['https://eth-mainnet.public.blastapi.io','https://rpc.mevblocker.io','https://ethereum-rpc.publicnode.com'],
 };
-// ============================ TIERS ============================
-function tierFor(rank){ // rank is 1-based over LIVING pieces
-  if(rank===1) return {k:'king', em:'👑', n:'King'};
-  if(rank<=10) return {k:'front',em:'🦸', n:'Front'};
-  if(rank<=25) return {k:'surge',em:'⚡', n:'Surge'};
-  if(rank<=100)return {k:'chase',em:'🎯', n:'Chase'};
-  return {k:'field',em:'🏃', n:'Field'};
-}
+const SEL = { groundOf:'0xf47f131b', dead:'0xe77f7b4b', absorbed:'0xb9821574', king:'0xcc181ca8', crownClaimed:'0xa9fd3822',
+  burnOpen:'0x477dfefb', startTime:'0x78e97925', burnCount:'0x524773ce', ownerOf:'0x6352211e', tokenURI:'0xc87b56dd', balanceOf:'0x70a08231' };
+const IDS = Array.from({length:CFG.supply},(_,i)=>i+CFG.firstId);
 const $=id=>document.getElementById(id);
 const pad=n=>BigInt(n).toString(16).padStart(64,'0');
+const padA=a=>a.toLowerCase().replace(/^0x/,'').padStart(64,'0');
 const fmt=n=>n.toLocaleString('en-US');
 const short=a=>a? a.slice(0,6)+'…'+a.slice(-4):'';
-
-// ============================ DATA ============================
-let PIECES=[];   // {id, ground, dead, owner}
-let CROWN={claimed:false, king:0};
-let MINE=new Set(), squadOn=false, MYADDR=null;
-
-function genDemo(){
-  // deterministic-ish demo: everyone shares a base (days since reveal), a top slice has absorbed extra.
-  const base = Math.floor(Date.now()/1000) - CFG.reveal;
-  const rng=(s=>()=>((s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff))(12345);
-  PIECES=[];
-  for(let id=1; id<=CFG.supply; id++){
-    let absorbed=0, dead=false;
-    if(id<=110){ absorbed = Math.floor((120-id)*(120-id)*rng()*90); }   // top ~110 have burn ground
-    if(id>1 && rng()<0.02) dead=true;                                    // a few burned out
-    PIECES.push({id, ground: dead?0:base+absorbed, dead, owner:null});
+const nowSec=()=>Math.floor(Date.now()/1000);
+function decAbiString(ret){ if(!ret||ret==='0x'||ret.length<130)return null; const h=ret.slice(2); const len=parseInt(h.slice(64,128),16); if(!len)return null; let s=''; for(let i=0;i<len;i++)s+=String.fromCharCode(parseInt(h.substr(128+i*2,2),16)); return s; }
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let rpcIdx=0;
+async function rpcBatch(calls){
+  const body=calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to:c.to,data:c.data},'latest']}));
+  rpcIdx=(rpcIdx+1)%CFG.rpcs.length;                          // rotate each call to spread load
+  for(let t=0;t<CFG.rpcs.length;t++){
+    try{ const r=await fetch(CFG.rpcs[(rpcIdx+t)%CFG.rpcs.length],{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+      const j=await r.json(); const out=new Array(calls.length); (Array.isArray(j)?j:[j]).forEach(o=>{ if(o&&o.id!=null&&o.result!==undefined) out[o.id]=o.result; }); return out;
+    }catch(e){}
   }
-  // pretend some are mine
-  MINE = new Set([7,42,199,404,''].filter(Boolean).map(Number));
-  const living=PIECES.filter(p=>!p.dead).sort((a,b)=>b.ground-a.ground);
-  CROWN={claimed:true, king:living[0].id};
+  return new Array(calls.length);                             // soft-fail: caller retries the gaps
 }
-
-async function rpc(calls){ // JSON-RPC batch of eth_call [{to,data}]
-  const body = calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to:c.to,data:c.data},'latest']}));
-  const r = await fetch(CFG.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-  const j = await r.json();
-  const out=new Array(calls.length);
-  (Array.isArray(j)?j:[j]).forEach(o=>{ out[o.id]=o.result; });
-  return out;
-}
+async function batchAll(calls,chunk=120){ const out=[]; for(let i=0;i<calls.length;i+=chunk){ out.push(...await rpcBatch(calls.slice(i,i+chunk))); await sleep(50); } return out; }
+// ============================ STATE ============================
+const ST={start:0,king:0,crown:false,burns:0,open:false,dead:{},absorbed:{},owner:{},img:{},ownersLoaded:false};
+let ACC=null, squadOn=false;
+function groundOf(id){ if(ST.dead[id])return 0; return Math.max(0,nowSec()-ST.start)+Number(ST.absorbed[id]||0n); }
+function tierFor(rank){ if(rank===1)return{k:'king',em:'👑',n:'King'}; if(rank<=10)return{k:'front',em:'🦸',n:'Front'};
+  if(rank<=25)return{k:'surge',em:'⚡',n:'Surge'}; if(rank<=100)return{k:'chase',em:'🎯',n:'Chase'}; return{k:'field',em:'🏃',n:'Field'}; }
+// contract-accurate display tier: crown → King; no absorbed ground → Field
+function tierOfTok(id,rank){ if(ST.crown&&ST.king===id)return{k:'king',em:'👑',n:'King'};
+  if(!ST.absorbed[id]||ST.absorbed[id]===0n)return{k:'field',em:'🏃',n:'Field'}; return tierFor(rank); }
+const mineP=id=>ACC&&ST.owner[id]&&ST.owner[id].toLowerCase()===ACC.toLowerCase();
+// ============================ LOAD ============================
 async function loadLive(){
-  // startTime + crown
-  const [stHex, crownClaimedHex, kingHex] = await rpc([
-    {to:CFG.race,data:CFG.SEL.startTime}, {to:CFG.race,data:CFG.SEL.crownClaimed}, {to:CFG.race,data:CFG.SEL.king}]);
-  const claimed = crownClaimedHex && BigInt(crownClaimedHex)!==0n;
-  CROWN={claimed, king: claimed? Number(BigInt(kingHex)):0};
-  // groundOf for all pieces, chunked
-  PIECES=[]; const CH=180;
-  for(let s=1; s<=CFG.supply; s+=CH){
-    const batch=[]; for(let id=s; id<Math.min(s+CH,CFG.supply+1); id++) batch.push({to:CFG.race,data:CFG.SEL.groundOf+pad(id)});
-    const res=await rpc(batch);
-    res.forEach((hex,k)=>{ const id=s+k; const g = hex? Number(BigInt(hex)):0; PIECES.push({id, ground:g, dead:g===0, owner:null}); });
-  }
+  const m=await rpcBatch([{to:CFG.race,data:SEL.startTime},{to:CFG.race,data:SEL.king},{to:CFG.race,data:SEL.crownClaimed},{to:CFG.race,data:SEL.burnCount},{to:CFG.race,data:SEL.burnOpen}]);
+  ST.start=parseInt(m[0],16); ST.king=parseInt(m[1],16); ST.crown=BigInt(m[2]||'0x0')!==0n; ST.burns=parseInt(m[3],16); ST.open=BigInt(m[4]||'0x0')!==0n;
+  const calls=[]; IDS.forEach(id=>calls.push({to:CFG.race,data:SEL.dead+pad(id)},{to:CFG.race,data:SEL.absorbed+pad(id)}));
+  const res=await batchAll(calls);
+  IDS.forEach((id,i)=>{ ST.dead[id]=BigInt(res[i*2]||'0x0')!==0n; ST.absorbed[id]=res[i*2+1]?BigInt(res[i*2+1]):0n; });
+  const b=$('burnst'); b.className='burnst'+(ST.open?' open':''); b.innerHTML='<span class="dot"></span> Burn · '+(ST.open?'open — '+ST.burns+' burned':'closed');
+  build();
 }
-
+async function scanOwners(ids,conc){ // ownerOf in parallel across RPCs; fills ST.owner for whatever resolves
+  const chunks=[]; for(let i=0;i<ids.length;i+=100) chunks.push(ids.slice(i,i+100)); let ci=0;
+  async function worker(){ while(ci<chunks.length){ const c=chunks[ci++];
+    const res=await rpcBatch(c.map(id=>({to:CFG.collection,data:SEL.ownerOf+pad(id)})));
+    c.forEach((id,k)=>{ const h=res&&res[k]; if(h&&h!=='0x'&&h.length>=42) ST.owner[id]='0x'+h.slice(-40); });
+    await sleep(30); } }
+  await Promise.all(Array.from({length:conc||3},worker));
+}
+async function myBalance(){ if(!ACC)return null; const [h]=await rpcBatch([{to:CFG.collection,data:SEL.balanceOf+padA(ACC)}]); return (h&&h!=='0x')?parseInt(h,16):null; }
+// squad: scan owners, retry until we've found EXACTLY balanceOf(ACC) tokens — guarantees nothing is missed
+async function loadSquad(){
+  const bal=await myBalance(); ST.myBal=bal;
+  for(let a=0; a<15; a++){
+    const found=IDS.filter(mineP).length;
+    if($('squadBtn')) $('squadBtn').textContent = bal!=null ? 'reading… '+found+'/'+bal : 'reading…';
+    if(bal!=null && found>=bal) break;
+    const miss=IDS.filter(id=>!ST.owner[id]); if(!miss.length) break;
+    const before=miss.length; await scanOwners(miss); if(IDS.filter(id=>!ST.owner[id]).length===before) await sleep(350);
+  }
+  ST.ownersLoaded = IDS.filter(id=>!ST.owner[id]).length===0;
+}
+// full owner map (for the board's own-address display) — retry until every runner resolves
+async function loadOwners(){ if(ST.ownersLoaded)return;
+  let miss=IDS.filter(id=>!ST.owner[id]);
+  for(let pass=0; miss.length && pass<10; pass++){ await scanOwners(miss);
+    const nm=IDS.filter(id=>!ST.owner[id]); if(nm.length===miss.length) await sleep(400); miss=nm; }
+  ST.ownersLoaded = miss.length===0;
+}
 // ============================ RENDER ============================
+let RANKED=[];
 function build(){
-  const living = PIECES.filter(p=>!p.dead).sort((a,b)=> b.ground-a.ground || a.id-b.id);
-  living.forEach((p,i)=>{ p.rank=i+1; p.tier=tierFor(p.rank); });
-  window.RANKED = living;
-  // crown banner
+  const living=IDS.filter(id=>!ST.dead[id]).map(id=>({id})).sort((a,b)=>groundOf(b.id)-groundOf(a.id)||a.id-b.id);
+  living.forEach((p,i)=>{ p.rank=i+1; p.tier=tierOfTok(p.id,p.rank); });
+  RANKED=living;
   const c=$('crown');
-  if(CROWN.claimed && living.length){ const kp=living[0];
-    c.className='crown'; $('crownV').textContent='FRONTRUN #'+kp.id; $('crownG').textContent=fmt(kp.ground)+' ground'; }
-  else { c.className='crown empty'; $('crownV').textContent='Unclaimed'; $('crownG').textContent='Empty until the first move'; }
+  if(ST.crown&&living.length){ const kp=living.find(p=>p.id===ST.king)||living[0];
+    c.className='crown'; $('crownV').textContent='FRONTRUN #'+kp.id; $('crownG').textContent=fmt(groundOf(kp.id))+' ground';
+    const th=$('crownTh'); th.style.display=''; loadArt(kp.id).then(()=>{ if(ST.img[kp.id]&&!th.querySelector('img')) th.innerHTML='<img src="'+ST.img[kp.id]+'">'; });
+  } else { c.className='crown empty'; $('crownV').textContent='Unclaimed'; $('crownG').textContent='Empty until the first burn'; $('crownTh').style.display='none'; }
   render();
 }
 function render(){
-  const q=$('q').value.trim().toLowerCase();
+  const q=$('q').value.trim();
   const rows=$('rows'); rows.innerHTML='';
-  let list=window.RANKED||[];
-  if(squadOn) list=list.filter(p=>MINE.has(p.id));
-  if(q){ if(/^\d+$/.test(q)) list=list.filter(p=>String(p.id).includes(q));
-         else list=list.filter(p=>p.owner&&p.owner.toLowerCase().includes(q)); }
-  $('count').textContent = list.length+' shown · '+ (window.RANKED?window.RANKED.length:0)+' running';
-  $('asof').textContent = CFG.demo?'demo data':'live';
-  if(!list.length){ rows.innerHTML='<div class="empty-msg">No runners match.</div>'; return; }
+  let list=RANKED;
+  if(squadOn) list=list.filter(p=>mineP(p.id));
+  if(q&&/^\d+$/.test(q)) list=list.filter(p=>String(p.id).includes(q));
+  $('count').textContent=list.length+' shown · '+RANKED.length+' running';
+  if(!list.length){ rows.innerHTML='<div class="empty-msg">'+(squadOn?'this wallet holds no runners':'no runners match')+'</div>'; return; }
   const frag=document.createDocumentFragment();
   for(const p of list.slice(0,300)){
     const t=p.tier, el=document.createElement('div');
-    el.className='row t-'+t.k+(MINE.has(p.id)?' me':'');
+    el.className='row t-'+t.k+(mineP(p.id)?' me':'');
     el.innerHTML='<div class="rank">'+p.rank+'</div>'+
+      '<div class="th" data-art="'+p.id+'">'+(ST.img[p.id]?'<img src="'+ST.img[p.id]+'">':'')+'</div>'+
       '<div class="who"><span class="badge b-'+t.k+'">'+t.em+' '+t.n+'</span>'+
-      '<span class="pid">FRONTRUN <span class="hz">#</span>'+p.id+'</span>'+(MINE.has(p.id)?'<span class="metoo">you</span>':'')+'</div>'+
-      '<div class="ground"><span class="n">'+fmt(p.ground)+'</span> <span class="u">grd</span></div>';
+      '<span class="pid">FRONTRUN <span class="hz">#</span>'+p.id+'</span>'+(mineP(p.id)?'<span class="metoo">you</span>':'')+'</div>'+
+      '<div class="ground"><span class="n" data-g="'+p.id+'">'+fmt(groundOf(p.id))+'</span><span class="u">ground</span></div>';
     frag.appendChild(el);
   }
   rows.appendChild(frag);
   if(list.length>300){ const m=document.createElement('div'); m.className='empty-msg'; m.textContent='+ '+(list.length-300)+' more — search to narrow'; rows.appendChild(m); }
+  observeArt();
 }
-
-// ============================ WALLET (squad) ============================
-async function connectSquad(){
-  if(!window.ethereum){ alert('No wallet found — open in a wallet browser to see your squad.'); return; }
-  try{
-    const acc=await window.ethereum.request({method:'eth_requestAccounts'});
-    MYADDR=(acc[0]||'').toLowerCase();
-    // (live) squad = which of the ranked pieces this wallet owns — would read ownerOf; demo uses MINE
-    squadOn=true; $('squadBtn').classList.add('on'); $('squadBtn').textContent='🔗 '+short(MYADDR);
-    render();
-  }catch(e){}
-}
-
+let io;
+function observeArt(){ if(io)io.disconnect(); io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ io.unobserve(e.target); queueArt(+e.target.dataset.art); } }); },{rootMargin:'250px'});
+  document.querySelectorAll('[data-art]').forEach(c=>io.observe(c)); }
+// thumb loader: small queue with retries — survives RPC rate-limits right after the big board read
+const artQ=[]; let artBusy=0;
+function queueArt(id,tries){ artQ.push({id,tries:tries||0}); pumpArt(); }
+async function pumpArt(){ if(artBusy>=2) return; const it=artQ.shift(); if(!it) return; artBusy++;
+  try{ await loadArt(it.id);
+    if(ST.img[it.id]) document.querySelectorAll('[data-art="'+it.id+'"]').forEach(el=>{ if(!el.querySelector('img')) el.innerHTML='<img src="'+ST.img[it.id]+'">'; });
+    else if(it.tries<3) setTimeout(()=>queueArt(it.id,it.tries+1), 1500*(it.tries+1));
+  } finally{ artBusy--; if(artQ.length) pumpArt(); } }
+async function loadArt(id){ if(ST.img[id])return; try{ const [ret]=await rpcBatch([{to:CFG.collection,data:SEL.tokenURI+pad(id)}]); const j=JSON.parse(atob(decAbiString(ret).split('base64,')[1])); if(j.image)ST.img[id]=j.image; }catch(e){} }
+function tick(){ document.querySelectorAll('[data-g]').forEach(el=>{ el.textContent=fmt(groundOf(+el.dataset.g)); });
+  if(ST.crown){ const kg=$('crownG'); if(kg&&ST.king&&!ST.dead[ST.king]) kg.textContent=fmt(groundOf(ST.king))+' ground'; } }
+// ============================ WALLET ============================
+async function connect(){ if(!window.ethereum){ alert('Open in a wallet browser to connect.'); return; }
+  try{ const a=await window.ethereum.request({method:'eth_requestAccounts'}); ACC=a[0];
+    $('connectBtn').textContent=short(ACC); $('connectBtn').classList.add('on');
+    window.ethereum.on&&window.ethereum.on('accountsChanged',x=>{ ACC=x[0]||null; $('connectBtn').textContent=ACC?short(ACC):'Connect'; $('connectBtn').classList.toggle('on',!!ACC); render(); });
+    await loadSquad(); $('squadBtn').textContent='My squad ('+IDS.filter(mineP).length+')'; render();
+  }catch(e){} }
+$('connectBtn').addEventListener('click',connect);
+$('squadBtn').addEventListener('click',async()=>{ if(!ACC){ await connect(); if(!ACC)return; }
+  if(!ST.ownersLoaded && IDS.filter(mineP).length<(ST.myBal||0)) await loadSquad();
+  squadOn=!squadOn; $('squadBtn').classList.toggle('on',squadOn); $('squadBtn').textContent='My squad ('+IDS.filter(mineP).length+')'; render(); });
+$('q').addEventListener('input',render);
+addEventListener('scroll',()=>{ document.getElementById('hdr').classList.toggle('scrolled',scrollY>10); });
 // ============================ BOOT ============================
-$('q').addEventListener('input', render);
-$('squadBtn').addEventListener('click', ()=>{
-  if(squadOn){ squadOn=false; $('squadBtn').classList.remove('on'); $('squadBtn').textContent='🔗 My squad'; render(); return; }
-  if(CFG.demo){ squadOn=true; $('squadBtn').classList.add('on'); $('squadBtn').textContent='🔗 My squad ('+MINE.size+')'; render(); }  // demo: toggle with preset squad
-  else connectSquad();
-});
-(async function(){
-  $('modetag').textContent = CFG.demo?'demo':'live';
-  try{ if(CFG.demo) genDemo(); else await loadLive(); }
-  catch(e){ $('foot').innerHTML='Could not reach the contract — showing nothing. '+String(e.message||e); }
-  build();
-})();
+loadLive().catch(e=>{ $('rows').innerHTML='<div class="empty-msg">couldn\'t reach the race — retrying…</div>'; setTimeout(()=>loadLive().catch(()=>{}),4000); });
+setInterval(tick,1000);
+setInterval(()=>loadLive().catch(()=>{}),30000);
 </script></body></html>

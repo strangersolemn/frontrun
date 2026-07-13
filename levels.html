@@ -1,64 +1,90 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FRONTRUN · The Race · Levels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79;--card:#0d0d13}
+  @font-face{font-family:'Inversionz';src:url('./fonts/Inversionz.otf') format('opentype'),url('./fonts/Inversionz.ttf') format('truetype');font-weight:400;font-display:swap}
+  @font-face{font-family:'Inversionz Unboxed';src:url('./fonts/Inversionz-Unboxed.otf') format('opentype'),url('./fonts/Inversionz-Unboxed.ttf') format('truetype');font-weight:400;font-display:swap}
+  :root{--paper:#F4F2EC;--paper-2:#EEEBE3;--ink:#121110;--dim:#8b877d;--faint:#bcb7ab;--line:#dcd8cd;--pink:#ED1E79;--gold:#a9821e;
+    --font:'Martian Mono',ui-monospace,monospace;--display:'Inversionz Unboxed','Inversionz',var(--font)}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 ui-monospace,Menlo,monospace;
-    -webkit-font-smoothing:antialiased}
-  .wrap{max-width:960px;margin:0 auto;padding:42px 18px 80px}
-  header{text-align:center;margin-bottom:14px}
-  h1{font-size:16px;letter-spacing:.28em;text-transform:uppercase;margin:0 0 6px}
-  .sub{color:var(--mut);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
-  .intro{max-width:640px;margin:22px auto 40px;color:#c3c3cc;text-align:center;font-size:13.5px;line-height:1.8}
-  .intro b{color:var(--fg)}
-  .grid{display:flex;flex-direction:column;gap:20px}
-  .tier{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:center;
-    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;overflow:hidden}
-  .tier.king{border-color:#3a2a12;background:linear-gradient(180deg,#14100a,#0d0d13)}
-  .stage{position:relative;width:230px;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#000;flex:none}
-  .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
-  .body h2{margin:0 0 2px;font-size:15px;letter-spacing:.12em;text-transform:uppercase}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.6;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  a{color:inherit;text-decoration:none}
+  header{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid transparent;transition:background .3s,border-color .3s}
+  header.scrolled{background:rgba(244,242,236,.9);backdrop-filter:blur(10px);border-color:var(--line)}
+  .brand{font-weight:800;letter-spacing:.28em;font-size:13px;cursor:pointer}.brand .dot{color:var(--pink)}
+  .nav{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .nav a{color:var(--ink)}.nav a.here{color:var(--pink)}
+  @media(max-width:720px){header{flex-wrap:wrap;justify-content:center;gap:7px;padding:10px 14px}.brand{width:100%;text-align:center}.nav{width:100%;text-align:center;font-size:9px;letter-spacing:.12em}.wrap{padding-top:126px}}
+  .wrap{max-width:960px;margin:0 auto;padding:100px 24px 90px}
+  .kicker{display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:14px}.kicker .bar{width:32px;height:1px;background:var(--pink)}
+  .label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,6vw,64px);line-height:1;letter-spacing:.02em;margin:0 0 8px;text-transform:uppercase;text-align:center}
+  h1 .pk{color:var(--pink)}
+  .sub{color:var(--dim);font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-align:center;margin-bottom:26px;font-weight:500}
+  .intro{max-width:620px;margin:0 auto 44px;color:var(--dim);text-align:center;font-size:13px;line-height:1.85}
+  .intro b{color:var(--ink);font-weight:700}
+  .grid{display:flex;flex-direction:column;gap:16px}
+  .tier{display:grid;grid-template-columns:230px 1fr;gap:24px;align-items:center;background:var(--paper);border:1px solid var(--ink);padding:18px}
+  .tier.king{border-color:var(--pink);background:#faf3dd}
+  .stage{position:relative;width:230px;aspect-ratio:1;overflow:hidden;background:#05060a;border:1px solid var(--ink);flex:none;cursor:zoom-in}
+  .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;pointer-events:none}
+  .stage .zoom{position:absolute;bottom:7px;right:7px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;pointer-events:none}
+  .body h2{margin:0 0 6px;font-size:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
   .body h2 .em{font-size:18px;margin-right:8px}
-  .rank{display:inline-block;color:var(--acc);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-    border:1px solid #3a1626;background:#1c0c14;border-radius:20px;padding:3px 11px;margin-bottom:10px}
-  .glowtag{color:var(--mut);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-left:8px}
-  .body p{margin:0;color:#c3c3cc;font-size:13px;line-height:1.75}
-  .foot{margin-top:44px;text-align:center;color:var(--mut);font-size:11.5px;line-height:1.9;max-width:640px;margin-left:auto;margin-right:auto}
-  .foot b{color:#c3c3cc}
-  .draft{margin:30px auto 0;max-width:640px;color:#6a6a72;font-size:10.5px;text-align:center;letter-spacing:.04em}
+  .rank{display:inline-block;color:#fff;background:var(--pink);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:3px 11px;margin-bottom:10px;font-weight:700}
+  .tier.king .rank{background:var(--gold)}
+  .glowtag{color:var(--dim);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-left:8px;font-weight:600}
+  .body p{margin:0;color:var(--dim);font-size:12.5px;line-height:1.75}
+  .body p b{color:var(--ink)}
+  .foot{margin:48px auto 0;text-align:center;color:var(--dim);font-size:12px;line-height:1.9;max-width:640px}
+  .foot b{color:var(--ink)}
+  .foot a{color:var(--pink);font-weight:700}
   @media(max-width:620px){ .tier{grid-template-columns:1fr;justify-items:center;text-align:center}
-    .stage{width:min(78vw,300px)} .rank{margin-top:2px} }
+    .stage{width:min(78vw,320px)} }
+  /* zoom modal */
+  #zoom{position:fixed;inset:0;background:rgba(18,17,16,.82);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+  #zoom.open{display:flex}
+  #zoom .zbox{position:relative;width:min(88vw,640px);aspect-ratio:1;background:#05060a;border:1px solid var(--paper)}
+  #zoom iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  #zoom .zc{position:absolute;top:-34px;right:0;color:#fff;font-size:24px;cursor:pointer}
+  #zoom .zn{position:absolute;top:-30px;left:0;color:#fff;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
 </style></head><body>
+<header id="hdr">
+  <div class="brand" onclick="location.href='./index.html'">FRONTRUN<span class="dot">_</span></div>
+  <div class="nav"><a href="./index.html">HOME</a> · <a href="./race.html">THE RACE</a> · <a href="./board.html">LEADERBOARD</a> · <a href="./levels.html" class="here">LEVELS</a> · <a href="./rarity.html">THE RARES</a> · <a href="./gif-maker.html">GIF</a></div>
+</header>
 <div class="wrap">
-  <header>
-    <h1>The Race · Levels</h1>
-    <div class="sub">666 runners · one crown · ground never stops</div>
-    <div style="margin-top:12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase">
-      <a href="./index.html" style="color:var(--mut);text-decoration:none">← Home</a> ·
-      <a href="./race.html" style="color:var(--mut);text-decoration:none">Race</a> ·
-      <a href="./board.html" style="color:var(--mut);text-decoration:none">Leaderboard</a>
-    </div>
-  </header>
+  <div class="kicker"><span class="bar"></span><span class="label">666 runners · one crown</span><span class="bar"></span></div>
+  <h1>THE <span class="pk">LEVELS</span></h1>
+  <div class="sub">ground never stops</div>
 
   <p class="intro">
-    Every FRONTRUN piece is a runner. From reveal, each one earns <b>ground</b> — one per second, forever.
+    Every FRONTRUN piece is a runner. From reveal, each earns <b>ground</b> — one per second, forever.
     <b>Rank</b> is ground. <b>Burn</b> a piece into yours and you absorb all of its ground — the burned one is
-    gone for good. The higher you climb, the more your runner shows it: the top 100 glow in their own colour,
-    and the single piece with the most ground wears the <b>crown</b>.
+    gone for good. Where you sit in the field is <b>drawn into the piece itself</b>: the top 100 glow in their
+    own colour, and the single runner out front wears the <b>crown</b>. Tap any level to see it full-screen.
   </p>
 
   <div class="grid" id="grid"></div>
 
   <p class="foot">
-    <b>The crown is written into the art.</b> Whoever holds #1 renders as the King on-chain — everywhere, even
-    on OpenSea. The rest of the ladder lives here, on the board, updating the second the ground moves.
+    <b>Your rank is written into the art — all of it, on-chain.</b> Whether you're the King, the Front, the Surge or
+    the Chase, the piece renders your tier itself — everywhere it's shown, OpenSea included — and re-renders the
+    moment the ground moves. The <a href="./board.html">leaderboard</a> just shows the whole ladder, live.
   </p>
-  <p class="draft">— draft copy, to be rewritten in your voice —</p>
+</div>
+<div id="zoom" onclick="if(event.target.id==='zoom')closeZoom()">
+  <div class="zbox"><span class="zn" id="zoomName"></span><span class="zc" onclick="closeZoom()">×</span><div id="zoomHost"></div></div>
 </div>
 <script>
+const ENGINE='./sketch-v4-glitch-lab.html';
+// King brightened for legibility (was scanlines-on-dark); the rest unchanged
 const TIERS=[
-  {key:'king', em:'👑', name:'The King', rank:'Rank #1', glow:'wears the crown', pal:9, gl:'scanlines', shp:'hex',
+  {key:'king', em:'👑', name:'The King', rank:'Rank #1', glow:'wears the crown', pal:1, gl:'flood', shp:'hex',
    copy:"The single piece holding the most ground. One at a time. The crown moves to whoever passes the King."},
   {key:'front', em:'🦸', name:'The Front', rank:'Ranks 2–10', glow:'caped · glows', pal:8, gl:'palstatic', shp:'oct',
    copy:"The lead pack. The nine runners behind the crown, caped and glowing in their own colour. First on every block, one burn from the top."},
@@ -69,14 +95,21 @@ const TIERS=[
   {key:'runner', em:'🏃', name:'The Field', rank:'Ranks 100+', glow:'no glow', pal:0, gl:'palstatic', shp:'square',
    copy:"Everyone else. No glow yet — but the ground ticks up every second, and one burn changes everything. The field is where every King started."},
 ];
+// fixed per-tier seed (w) so the card and its enlarged view render the SAME tunnel/piece — not a fresh random one
+function src(t,i){ return ENGINE+'?embed=1&preview=1&fig='+t.key+'&palette='+t.pal+'&glitch='+t.gl+'&shape='+t.shp+'&w=0x'+((i+1)*1234567).toString(16).padStart(40,'0'); }
 const grid=document.getElementById('grid');
-TIERS.forEach(t=>{
+TIERS.forEach((t,i)=>{
   const el=document.createElement('div'); el.className='tier'+(t.key==='king'?' king':'');
   el.innerHTML=
-    '<div class="stage"><iframe loading="lazy" src="./sketch-v4-glitch-lab.html?embed=1&preview=1&fig='+t.key+'&palette='+t.pal+'&glitch='+t.gl+'&shape='+t.shp+'"></iframe></div>'+
+    '<div class="stage" onclick="openZoom('+i+')"><iframe loading="lazy" src="'+src(t,i)+'"></iframe><span class="zoom">⤢ tap to enlarge</span></div>'+
     '<div class="body"><h2><span class="em">'+t.em+'</span>'+t.name+'</h2>'+
     '<span class="rank">'+t.rank+'</span><span class="glowtag">'+t.glow+'</span>'+
     '<p>'+t.copy+'</p></div>';
   grid.appendChild(el);
 });
+function openZoom(i){ const t=TIERS[i]; document.getElementById('zoomName').textContent=t.em+' '+t.name;
+  document.getElementById('zoomHost').innerHTML='<iframe src="'+src(t,i)+'"></iframe>'; document.getElementById('zoom').classList.add('open'); }
+function closeZoom(){ document.getElementById('zoom').classList.remove('open'); document.getElementById('zoomHost').innerHTML=''; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeZoom(); });
+addEventListener('scroll',()=>{ document.getElementById('hdr').classList.toggle('scrolled',scrollY>10); });
 </script></body></html>

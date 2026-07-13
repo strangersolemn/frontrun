@@ -334,13 +334,13 @@ const ENGINE = './sketch-v4-glitch-lab.html';
 const P = new URLSearchParams(location.search);
 
 // ---- config: flip live by filling RACE (+ COLLECTION) for the chosen net ----
-const NET = P.has('testnet') ? 'testnet' : (P.has('mainnet') ? 'mainnet' : 'demo');
+const NET = P.has('testnet') ? 'testnet' : (P.has('demo') ? 'demo' : 'mainnet');   // LIVE: mainnet is the default
 const CFG = {
   dem:     { rpcs:[], collection:'', race:'', reveal: 1751500000, supply: 666 }, // demo reveal ~2025-07-03
   testnet: { rpcs:['https://ethereum-sepolia-rpc.publicnode.com','https://sepolia.drpc.org','https://1rpc.io/sepolia'],
              collection:'0xa803f060afd257b2a0a8ffc15c6b1a9fdc333e9c', race:'0x3073501b96d8308b42bda1ec877dc2afbc769fc9', reveal:1780705908, supply:420 }, // Sepolia rehearsal of the AUDIT-FIXED race (2026-07-07); prev buggy build was 0xc262…a110
-  mainnet: { rpcs:['https://ethereum-rpc.publicnode.com','https://eth.drpc.org','https://1rpc.io/eth'],
-             collection:'0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0', race:'', reveal:1783083827, supply:666 }, // real FRONTRUN collection; reveal = block 25452163 (2026-07-03 13:03:47 UTC); race:'' until deployed
+  mainnet: { rpcs:['https://eth-mainnet.public.blastapi.io','https://rpc.mevblocker.io','https://ethereum-rpc.publicnode.com'],
+             collection:'0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0', race:'0xb1045442e1aafea9280480e82b61c2ee5a71c741', reveal:1783083827, supply:666 }, // LIVE: FrontrunRace deployed 2026-07-13 (dormant, burns closed until openBurn)
 };
 const C = NET==='demo' ? CFG.dem : CFG[NET];
 const DEMO = NET==='demo' || !C.race; // fall back to simulated squad until a race contract exists
@@ -351,7 +351,7 @@ document.getElementById('modeNote').textContent = DEMO
   : '— live on-chain';
 
 // ---- selectors (keccak4, verified via `cast sig`) ----
-const SEL = { nextId:'0x61b8ce8c', ownerOf:'0x6352211e', groundOf:'0xf47f131b', crown:'0x8fac9622', absorbed:'0xb9821574', dead:'0xe77f7b4b' };
+const SEL = { nextId:'0x61b8ce8c', ownerOf:'0x6352211e', groundOf:'0xf47f131b', crown:'0x8fac9622', absorbed:'0xb9821574', dead:'0xe77f7b4b', balanceOf:'0x70a08231' };
 
 async function ethCall(to, data){
   for(const r of C.rpcs){
@@ -365,6 +365,14 @@ async function ethCall(to, data){
 }
 const pad = a => a.replace(/^0x/,'').toLowerCase().padStart(64,'0');
 const hexNum = h => parseInt(h,16);
+const _sleep = ms => new Promise(r=>setTimeout(r,ms));
+let _ri=0;
+// batched eth_call across the rpc list, rotating + soft-failing gaps
+async function ethBatch(to, datas){ const body=datas.map((d,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to,data:d},'latest']}));
+  _ri=(_ri+1)%C.rpcs.length;
+  for(let t=0;t<C.rpcs.length;t++){ try{ const r=await fetch(C.rpcs[(_ri+t)%C.rpcs.length],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json(); const out=new Array(datas.length); (Array.isArray(j)?j:[j]).forEach(o=>{ if(o&&o.id!=null&&o.result!==undefined) out[o.id]=o.result; }); return out;
+  }catch(e){} } return new Array(datas.length); }
 
 // ---- ground formatting ----
 const nf = new Intl.NumberFormat('en-US');
@@ -394,19 +402,22 @@ function demoField(){
 
 // ---- LIVE squad (testnet/mainnet): enumerate ownerOf, read groundOf ----
 async function liveSquad(wallet){
-  const total = hexNum(await ethCall(C.collection, SEL.nextId));
-  const mine=[]; const w = wallet.toLowerCase();
-  // batch ownerOf reads
-  const ids = [...Array(Math.min(total, C.supply)).keys()];
-  const owners = await Promise.all(ids.map(id => ethCall(C.collection, SEL.ownerOf+pad('0x'+id.toString(16))).catch(()=>null)));
-  for(let id=0; id<ids.length; id++){
-    const o = owners[id]; if(!o) continue;
-    if(('0x'+o.slice(26)).toLowerCase()===w){
-      let g=0; try{ g = hexNum(await ethCall(C.race, SEL.groundOf+pad('0x'+id.toString(16)))); }catch(e){}
-      mine.push({ id, wallet, ground:g, base:g, absorbed:0, dead:g===0, fetchTime:nowSec() });
-    }
-  }
-  return mine;
+  const w = wallet.toLowerCase();
+  const ids = [...Array(C.supply).keys()].map(i=>i+1);   // FRONTRUN tokens are 1..supply
+  const owner={};
+  // reliable owner scan: batched (100/req), concurrent across RPCs, retry the gaps
+  async function scan(list,conc){ const chunks=[]; for(let i=0;i<list.length;i+=100) chunks.push(list.slice(i,i+100)); let ci=0;
+    async function wk(){ while(ci<chunks.length){ const c=chunks[ci++]; const res=await ethBatch(C.collection, c.map(id=>SEL.ownerOf+pad('0x'+id.toString(16))));
+      c.forEach((id,k)=>{ const h=res&&res[k]; if(h&&h!=='0x'&&h.length>=42) owner[id]='0x'+h.slice(26); }); await _sleep(30); } }
+    await Promise.all(Array.from({length:conc||3},wk)); }
+  const balH=(await ethBatch(C.collection,[SEL.balanceOf+pad(wallet)]))[0]; const bal=(balH&&balH!=='0x')?hexNum(balH):null;
+  const foundN=()=>ids.filter(id=>(owner[id]||'').toLowerCase()===w).length;
+  for(let p=0; p<15; p++){ if(bal!=null && foundN()>=bal) break; const miss=ids.filter(id=>!owner[id]); if(!miss.length) break;
+    const before=miss.length; await scan(miss); if(ids.filter(id=>!owner[id]).length===before) await _sleep(350); }
+  const mineIds = ids.filter(id => (owner[id]||'').toLowerCase()===w);
+  // ground for the owned pieces
+  const gr = await ethBatch(C.race, mineIds.map(id=>SEL.groundOf+pad('0x'+id.toString(16))));
+  return mineIds.map((id,i)=>{ const g = gr[i]? hexNum(gr[i]):0; return { id, wallet, ground:g, base:g, absorbed:0, dead:g===0, fetchTime:nowSec() }; });
 }
 
 // ---- render ----
