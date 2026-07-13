@@ -21,7 +21,7 @@
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.62;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden;letter-spacing:-.01em}
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
   a{color:inherit;text-decoration:none}
-  .wrap{max-width:1180px;margin:0 auto;padding:0 38px}
+  .wrap{max-width:1180px;margin:0 auto;padding-left:38px;padding-right:38px}
   .label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);font-weight:500}
   .pink{color:var(--pink)}
 
@@ -354,7 +354,7 @@ document.getElementById('modeNote').textContent = DEMO
   : '— live on-chain';
 
 // ---- selectors (keccak4, verified via `cast sig`) ----
-const SEL = { nextId:'0x61b8ce8c', ownerOf:'0x6352211e', groundOf:'0xf47f131b', crown:'0x8fac9622', absorbed:'0xb9821574', dead:'0xe77f7b4b', balanceOf:'0x70a08231' };
+const SEL = { nextId:'0x61b8ce8c', ownerOf:'0x6352211e', groundOf:'0xf47f131b', crown:'0x8fac9622', absorbed:'0xb9821574', dead:'0xe77f7b4b', balanceOf:'0x70a08231', startTime:'0x78e97925' };
 
 async function ethCall(to, data){
   for(const r of C.rpcs){
@@ -442,6 +442,22 @@ async function liveSquad(wallet){
   // ground for the owned pieces
   const gr = await ethBatch(C.race, mineIds.map(id=>SEL.groundOf+pad('0x'+id.toString(16))));
   return mineIds.map((id,i)=>{ const g = gr[i]? hexNum(gr[i]):0; return { id, wallet, ground:g, base:g, absorbed:0, dead:g===0, fetchTime:nowSec() }; });
+}
+
+// ---- real global field (live): rank ALL 666 runners by ground for the board, no wallet needed ----
+let REAL_FIELD=null;
+async function loadRealField(){
+  if(DEMO) return demoField();
+  try{
+    const st=await ethCall(C.race, SEL.startTime); const start=parseInt(st,16)||C.reveal;
+    const ids=[...Array(C.supply).keys()].map(i=>i+1);
+    const calls=[]; ids.forEach(id=>{ const h=pad('0x'+id.toString(16)); calls.push(SEL.absorbed+h, SEL.dead+h); });
+    const res=[]; for(let i=0;i<calls.length;i+=120){ res.push(...await ethBatch(C.race, calls.slice(i,i+120))); await _sleep(40); }
+    REAL_FIELD = ids.map((id,k)=>{ const av=res[k*2], dv=res[k*2+1];
+      const ab=(av&&av!=='0x')?parseInt(av,16):0; const dd=(BigInt(dv||'0x0')!==0n);
+      return { id, wallet:'', ground:(start?Math.max(0,nowSec()-start):0)+ab, absorbed:ab, dead:dd, fetchTime:nowSec(), field:true }; });
+    return REAL_FIELD;
+  }catch(e){ return REAL_FIELD||[]; }
 }
 
 // ---- render ----
@@ -573,17 +589,22 @@ function renderSquad(list){
 // the pack as a race track: runners positioned by REAL ground (bigger lead = bigger gap),
 // all one colour + same size so it reads by POSITION; leader is gold, out front, crowned.
 function renderBoard(list){
-  const field = DEMO ? demoField() : [];
-  const all = [...list.map(p=>({...p,me:true})), ...field]
-    .sort((a,b)=> groundOf(b)-groundOf(a)).slice(0,8);
-  const max = all.length ? Math.max(1, groundOf(all[0])) : 1;
+  const field = DEMO ? demoField() : (REAL_FIELD||[]);   // live: the real global field, so the track is never empty
+  const mineIds = new Set(list.map(p=>p.id));
+  const all = [...list.map(p=>({...p,me:true})), ...field.filter(f=>!mineIds.has(f.id))]
+    .filter(p=>!p.dead)
+    .sort((a,b)=> groundOf(b)-groundOf(a) || a.id-b.id).slice(0,8);
   const box=document.getElementById('board'); box.innerHTML='';
+  if(!all.length){ box.innerHTML='<div style="border:1px dashed var(--line);padding:26px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase">reading the field…</div>'; return; }
+  // position by ground gap; when the field is bunched (pre-burn, all tied) fall back to an even starting line
+  const gmax=groundOf(all[0]), gmin=groundOf(all[all.length-1]); const spread=gmax-gmin;
   all.forEach((p,i)=>{
     // crown only the REAL king — demo uses local rank, live uses the on-chain crown (0 pre-burn)
     const crowned = (DEMO ? i===0 : p.id===CROWN_ID) && !p.dead;
     const set = crowned ? 'king' : 'runner';            // king silhouette only for the true crown
     const m='url(anim/'+set+'_00.png)';
-    const x = 7 + (groundOf(p)/max) * 82;               // position by real ground → dynamic gaps
+    const x = spread>1000 ? 7 + ((groundOf(p)-gmin)/spread)*82   // real gaps once burns spread the field
+                          : 7 + (all.length>1 ? i/(all.length-1) : 0)*82; // even grid while everyone's tied
     const col = palFor(p)[1];                            // the front ten → each its OWN palette colour
     const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(crowned?' lead':'');
     el.innerHTML=
@@ -619,7 +640,7 @@ function lazyframes(){
 // live-ticking ground counters
 function tick(){
   document.querySelectorAll('[data-g]').forEach(n=>{ const p=LAST_SQUAD.find(x=>x.id==n.dataset.g); if(p) n.textContent=fmtG(groundOf(p)); });
-  document.querySelectorAll('[data-lg]').forEach(n=>{ const p=[...LAST_SQUAD,...(DEMO?demoField():[])].find(x=>x.id==n.dataset.lg); if(p) n.textContent=fmtG(groundOf(p)); });
+  document.querySelectorAll('[data-lg]').forEach(n=>{ const p=[...LAST_SQUAD,...(DEMO?demoField():(REAL_FIELD||[]))].find(x=>x.id==n.dataset.lg); if(p) n.textContent=fmtG(groundOf(p)); });
   if(document.getElementById('overlay').classList.contains('open') && CUR){
     document.getElementById('dGround').textContent = fmtG(groundOf(CUR));
     document.getElementById('dBase').textContent = fmtG(CUR.dead?0:(nowSec()-C.reveal));
@@ -683,7 +704,7 @@ function openDetail(p){
   document.getElementById('dStatus').textContent = p.dead ? 'burned' : 'running';
   document.getElementById('dBase').textContent = fmtG(p.dead?0:(nowSec()-C.reveal));
   document.getElementById('dAbs').textContent = fmtG(p.absorbed||0);
-  const rankList=[...LAST_SQUAD,...(DEMO?demoField():[])].sort((a,b)=>groundOf(b)-groundOf(a));
+  const rankList=[...LAST_SQUAD,...(DEMO?demoField():(REAL_FIELD||[]))].sort((a,b)=>groundOf(b)-groundOf(a));
   const rank=rankList.findIndex(x=>x.id===p.id && x.wallet===p.wallet);
   // crown only the REAL king (live: on-chain crown id; demo: local rank)
   const isLeader = (DEMO ? rank===0 : p.id===CROWN_ID) && !p.dead;
@@ -924,6 +945,10 @@ document.getElementById('bBurn').addEventListener('click',async()=>{
     const demoWallet='0x'+h32('frontrun-demo').toString(16).padStart(40,'0').slice(0,40);
     document.getElementById('q').placeholder='connect a wallet, paste 0x… / name.eth, or a piece number 0–'+(C.supply-1)+' — showing a demo squad';
     loadWallet(demoWallet);
+  } else {
+    renderBoard(LAST_SQUAD);                                        // show "reading the field…" immediately
+    loadRealField().then(()=>renderBoard(LAST_SQUAD));             // then the real front of the pack, no wallet needed
+    setInterval(()=>loadRealField().then(()=>renderBoard(LAST_SQUAD)), 60000); // refresh as burns move the field
   }
   refreshLeader();                       // feature the one up front
   setInterval(refreshLeader, 30000);     // re-check the crown holder every 30s (burns can change it)
