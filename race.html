@@ -387,6 +387,15 @@ function _decAbiStr(hex){ if(!hex||hex==='0x')return''; const h=hex.slice(2);
 function _imgFromTokenURI(uri){ try{ const b=uri.split(',')[1]; if(!b)return null;
   const bin=atob(b); const by=Uint8Array.from(bin,c=>c.charCodeAt(0)); const js=new TextDecoder().decode(by);
   const m=js.match(/"image":"([^"]+)"/); return m?m[1]:null; }catch(e){ return null; } }
+// the REAL on-chain interactive render (animation_url) — used for fullscreen so the site matches OpenSea exactly
+const RANIM={};
+function _animFromTokenURI(uri){ try{ const b=uri.split(',')[1]; if(!b)return null;
+  const bin=atob(b); const by=Uint8Array.from(bin,c=>c.charCodeAt(0)); const js=new TextDecoder().decode(by);
+  const m=js.match(/"animation_url":"([^"]+)"/); return m?m[1]:null; }catch(e){ return null; } }
+async function loadTokenAnim(id){ if(RANIM[id]!==undefined) return RANIM[id];
+  try{ const res=await ethBatch(C.collection,[TOKURI_SEL+pad('0x'+id.toString(16))]);
+    const uri=_decAbiStr((res&&res[0])||''); RANIM[id]= uri?_animFromTokenURI(uri):null; }catch(e){ RANIM[id]=null; }
+  return RANIM[id]; }
 // fetch tokenURI images for a list of pieces, swapping them into any matching tiles as they land
 async function loadTokenImages(list){
   const ids=list.map(p=>p.id).filter(id=>RIMG[id]===undefined);
@@ -686,7 +695,15 @@ function renderLeader(L){
   document.getElementById('lGround').textContent=fmtG(groundOf(L));
   document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
   document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
-  document.getElementById('lPoster').innerHTML=posterSVG(L, true, true, true);   // the front #1 → glows its own colour + crown
+  // LIVE: the real on-chain art (matches OpenSea); DEMO: the simulated poster
+  if(!DEMO){
+    document.getElementById('lPoster').innerHTML = RIMG[L.id]
+      ? '<img class="tokimg ready" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" src="'+RIMG[L.id]+'" alt="FRONTRUN #'+L.id+'">'
+      : '<img class="tokimg" data-tok="'+L.id+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="FRONTRUN #'+L.id+'">';
+    if(RIMG[L.id]===undefined) loadTokenImages([L]);
+  } else {
+    document.getElementById('lPoster').innerHTML=posterSVG(L, true, true, true);
+  }
   const f=document.getElementById('lRender'); if(f) f.style.display='none';  // no inline WebGL (heavy/unreliable)
   document.getElementById('lOpen').onclick=()=>openDetail(L);
 }
@@ -742,11 +759,14 @@ function chip(k,v){ return '<span class="chip"><b>'+k+'</b>'+v+'</span>'; }
 document.getElementById('close').addEventListener('click',()=>{document.getElementById('overlay').classList.remove('open');document.getElementById('dRender').src='about:blank';CUR=null;});
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay'){document.getElementById('close').click();}});
 // fullscreen loads the RICH WebGL engine (one focused context) and drives the current piece
-document.getElementById('fs').addEventListener('click',()=>{
+document.getElementById('fs').addEventListener('click',async()=>{
   const el=document.getElementById('dRender'); if(!el||!CUR) return;
   el.style.display='block'; el.classList.add('live');
-  el.src=ENGINE+'?preview=1&embed=1';
-  el.addEventListener('load',()=>{ detailWin=el.contentWindow; driveFrame(el,CUR,CUR_LEADER); },{once:true});
+  // LIVE: load the REAL on-chain render (animation_url) so fullscreen matches OpenSea exactly.
+  // DEMO (or if anim missing): fall back to the sketch engine.
+  let anim=null; if(!DEMO){ try{ anim=await loadTokenAnim(CUR.id); }catch(e){} }
+  if(anim){ el.src=anim; }
+  else { el.src=ENGINE+'?preview=1&embed=1'; el.addEventListener('load',()=>{ detailWin=el.contentWindow; driveFrame(el,CUR,CUR_LEADER); },{once:true}); }
   const r=el.requestFullscreen||el.webkitRequestFullscreen; if(r)r.call(el);
 });
 
