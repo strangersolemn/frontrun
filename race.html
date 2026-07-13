@@ -396,6 +396,22 @@ async function loadTokenAnim(id){ if(RANIM[id]!==undefined) return RANIM[id];
   try{ const res=await ethBatch(C.collection,[TOKURI_SEL+pad('0x'+id.toString(16))]);
     const uri=_decAbiStr((res&&res[0])||''); RANIM[id]= uri?_animFromTokenURI(uri):null; }catch(e){ RANIM[id]=null; }
   return RANIM[id]; }
+// the REAL on-chain trait attributes (exactly what OpenSea reads) — no local guessing
+const RTRAITS={};
+function _traitsFromTokenURI(uri){ try{ const b=uri.split(',')[1]; if(!b)return null;
+  const bin=atob(b); const by=Uint8Array.from(bin,c=>c.charCodeAt(0)); const js=new TextDecoder().decode(by);
+  const j=JSON.parse(js); return j.attributes||[]; }catch(e){ return null; } }
+async function showRealTraits(id){
+  const chips=document.getElementById('dChips'); if(!chips) return;
+  let attrs=RTRAITS[id];
+  if(attrs===undefined){ chips.innerHTML='<span class="chip">reading traits…</span>';
+    try{ const res=await ethBatch(C.collection,[TOKURI_SEL+pad('0x'+id.toString(16))]);
+      const uri=_decAbiStr((res&&res[0])||''); attrs=RTRAITS[id]= uri?_traitsFromTokenURI(uri):null; }catch(e){ attrs=RTRAITS[id]=null; } }
+  if(document.getElementById('dTitle')&&document.getElementById('dTitle').textContent!=='FRONTRUN #'+id) return; // overlay moved on
+  if(!attrs){ chips.innerHTML='<span class="chip">traits unavailable — check OpenSea</span>'; return; }
+  const skip=new Set(['Collection','Status','Holder']);
+  chips.innerHTML = attrs.filter(a=>!skip.has(a.trait_type)).map(a=>chip(a.trait_type.toLowerCase(), a.value)).join('') || '<span class="chip">no traits</span>';
+}
 // fetch tokenURI images for a list of pieces, swapping them into any matching tiles as they land
 async function loadTokenImages(list){
   const ids=list.map(p=>p.id).filter(id=>RIMG[id]===undefined);
@@ -726,9 +742,13 @@ function openDetail(p){
   // crown only the REAL king (live: on-chain crown id; demo: local rank)
   const isLeader = (DEMO ? rank===0 : p.id===CROWN_ID) && !p.dead;
   document.getElementById('dRank').textContent = isLeader ? '👑 crown' : (rank>0?('#'+(rank+1)):'—');
-  // traits: show locally-derived ones immediately; the live engine refines them when it reports
-  const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
-  fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
+  // traits: LIVE = the real on-chain attributes (matches OpenSea exactly); DEMO = simulated
+  if(!DEMO){
+    showRealTraits(p.id);
+  } else {
+    const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
+    fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
+  }
   // LIVE: show the real on-chain art as the poster (matches OpenSea); fall back to the silhouette
   if(!DEMO){
     document.getElementById('dPoster').innerHTML = RIMG[p.id]
