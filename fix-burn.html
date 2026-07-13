@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · Fix Burns</title>
+<style>
+  :root{--bg:#0b0b0f;--fg:#f2f2f6;--mut:#8a8a96;--line:#22222c;--acc:#ED1E79;--ok:#35c46b;--bad:#ff3b4e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 ui-monospace,Menlo,monospace;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+  .card{width:100%;max-width:540px;border:1px solid var(--line);border-radius:16px;padding:26px;background:#0f0f15}
+  h1{font-size:16px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 2px}
+  .sub{color:var(--mut);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:18px}
+  .exp{font-size:12.5px;color:var(--mut);line-height:1.6;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:16px}
+  .exp b{color:var(--fg)}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #17171f;font-size:13.5px}
+  .row:last-of-type{border-bottom:0}.row .k{color:var(--mut)}.row .v{text-align:right;word-break:break-all}
+  .pill{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:var(--mut)}
+  .pill.ok{border-color:var(--ok);color:var(--ok)}.pill.bad{border-color:var(--bad);color:var(--bad)}
+  button{font:inherit;width:100%;border:0;border-radius:12px;padding:15px;cursor:pointer;font-weight:700;margin-top:8px}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  .connect{background:#1a1a22;color:var(--fg);border:1px solid #33333f}
+  .go{background:var(--acc);color:#fff;letter-spacing:.06em;text-transform:uppercase;font-size:15px;margin-top:16px}
+  .log{font-size:12.5px;color:var(--mut);white-space:pre-wrap;word-break:break-all;margin-top:14px;min-height:18px}
+  .log a{color:var(--acc)} .ok{color:var(--ok)}
+</style></head><body>
+<div class="card">
+  <h1>Fix Burns</h1>
+  <div class="sub">FRONTRUN collection · remove transfer block</div>
+  <div class="exp">Burns revert with <b>CallerMustBeWhitelisted</b> because the collection's ERC721-C transfer validator blocks the Race contract from moving pieces. This sets the collection's <b>transfer validator to none</b>, so the burn (and normal transfers) go through. One transaction, owner only. <b>Note:</b> this turns off ERC721-C royalty enforcement — you can re-add a validator + whitelist the Race later.</div>
+
+  <div class="row"><span class="k">wallet</span><span class="v" id="acc">not connected</span></div>
+  <div class="row"><span class="k">network</span><span class="v"><span class="pill" id="net">—</span></span></div>
+  <div class="row"><span class="k">you are collection owner</span><span class="v"><span class="pill" id="own">—</span></span></div>
+  <div class="row"><span class="k">current validator</span><span class="v" id="val" style="font-size:11px">reading…</span></div>
+
+  <button class="connect" id="connectBtn" onclick="connect()">Connect wallet</button>
+  <button class="go" id="goBtn" onclick="go()" disabled>Remove transfer block (setTransferValidator → none)</button>
+  <div class="log" id="log"></div>
+</div>
+<script>
+const COLL='0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0';
+const OWNER='0xef682b1d0835df1f971d5d1f4565e9f6c121f706';
+const CHAIN='0x1', RPC='https://eth-mainnet.public.blastapi.io';
+const ZERO='0000000000000000000000000000000000000000000000000000000000000000';
+const SEL={ setValidator:'0xa9fc664e', getValidator:'0x098144d4' };
+const $=id=>document.getElementById(id);
+const rq=(m,p)=>window.ethereum.request({method:m,params:p});
+let ACC=null,NET=null;
+function ethCall(to,data){return fetch(RPC,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to,data},'latest']})}).then(r=>r.json()).then(j=>j.result);}
+function pill(id,t,c){const e=$(id);e.textContent=t;e.className='pill'+(c?' '+c:'');}
+async function readVal(){try{const v=await ethCall(COLL,SEL.getValidator);const a=v&&v!=='0x'?('0x'+v.slice(26)):'?';const off=/^0x0+$/.test(a);$('val').textContent=off?'none ✓ (fixed)':a;$('val').style.color=off?'#35c46b':'#f2f2f6';return off;}catch(e){$('val').textContent='read failed';return false;}}
+function gate(){const isOwner=ACC&&ACC.toLowerCase()===OWNER.toLowerCase();const onMain=NET===CHAIN;pill('own',ACC?(isOwner?'yes':'NO — wrong wallet'):'—',ACC?(isOwner?'ok':'bad'):'');pill('net',NET?(onMain?'mainnet':'wrong network'):'—',NET?(onMain?'ok':'bad'):'');$('goBtn').disabled=!(ACC&&isOwner&&onMain);}
+async function connect(){
+  if(!window.ethereum){$('log').textContent='Open in your wallet browser.';return;}
+  try{const a=await rq('eth_requestAccounts');ACC=a[0];NET=await rq('eth_chainId');
+    if(NET!==CHAIN){try{await rq('wallet_switchEthereumChain',[{chainId:CHAIN}]);NET=CHAIN;}catch(e){}}
+    $('acc').textContent=ACC.slice(0,7)+'…'+ACC.slice(-5);
+    window.ethereum.on&&window.ethereum.on('accountsChanged',x=>{ACC=x[0]||null;$('acc').textContent=ACC?ACC.slice(0,7)+'…'+ACC.slice(-5):'not connected';gate();});
+    window.ethereum.on&&window.ethereum.on('chainChanged',c=>{NET=c;gate();});
+    gate();
+  }catch(e){$('log').textContent='Connect cancelled.';}
+}
+const link=h=>'<a href="https://etherscan.io/tx/'+h+'" target="_blank">'+h.slice(0,12)+'…</a>';
+async function waitReceipt(h){$('log').innerHTML='fixing… '+link(h);for(let i=0;i<80;i++){const r=await rq('eth_getTransactionReceipt',[h]);if(r)return r;await new Promise(r=>setTimeout(r,3000));}return null;}
+async function go(){
+  if(!confirm('Set the collection transfer validator to none? This unblocks burns/transfers and turns off ERC721-C enforcement. Proceed?'))return;
+  $('goBtn').disabled=true;
+  try{
+    const h=await rq('eth_sendTransaction',[{from:ACC,to:COLL,data:SEL.setValidator+ZERO}]);
+    const rc=await waitReceipt(h);
+    if(!rc){$('log').innerHTML='sent, pending… '+link(h);return;}
+    if(rc.status&&rc.status!=='0x1'){$('log').innerHTML='reverted. '+link(h);$('goBtn').disabled=false;return;}
+    const off=await readVal();
+    $('log').innerHTML='<span class="ok">✅ done — burns work now.</span> Try a burn on race.html. '+link(h);
+  }catch(e){$('log').textContent='cancelled / failed: '+(e.message||e);$('goBtn').disabled=false;}
+}
+readVal();
+</script></body></html>
