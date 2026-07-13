@@ -1,0 +1,87 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · Open the Burn</title>
+<style>
+  :root{--bg:#0b0b0f;--fg:#f2f2f6;--mut:#8a8a96;--line:#22222c;--acc:#ED1E79;--ok:#35c46b;--bad:#ff3b4e;--gold:#ffd44d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 ui-monospace,Menlo,monospace;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+  .card{width:100%;max-width:520px;border:1px solid var(--line);border-radius:16px;padding:26px;background:#0f0f15}
+  h1{font-size:16px;letter-spacing:.2em;text-transform:uppercase;margin:0 0 2px}
+  .sub{color:var(--mut);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:20px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #17171f;font-size:13.5px}
+  .row:last-of-type{border-bottom:0}
+  .row .k{color:var(--mut)} .row .v{text-align:right;word-break:break-all}
+  .pill{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:var(--mut)}
+  .pill.ok{border-color:var(--ok);color:var(--ok)} .pill.bad{border-color:var(--bad);color:var(--bad)}
+  button{font:inherit;width:100%;border:0;border-radius:12px;padding:15px;cursor:pointer;font-weight:700;margin-top:8px}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  .connect{background:#1a1a22;color:var(--fg);border:1px solid #33333f}
+  .go{background:var(--acc);color:#fff;letter-spacing:.1em;text-transform:uppercase;font-size:15px;margin-top:18px}
+  .warn{border:1px solid #4a1420;background:#1a0a0e;border-radius:10px;padding:12px 14px;color:#ff8a95;font-size:12.5px;margin:18px 0 6px;line-height:1.5}
+  .log{font-size:12.5px;color:var(--mut);white-space:pre-wrap;word-break:break-all;margin-top:14px;min-height:18px}
+  .log a{color:var(--acc)}
+  .ok{color:var(--ok)}
+</style></head><body>
+<div class="card">
+  <h1>Open the Burn</h1>
+  <div class="sub">FRONTRUN · The Race · one-way launch</div>
+
+  <div class="row"><span class="k">wallet</span><span class="v" id="acc">not connected</span></div>
+  <div class="row"><span class="k">network</span><span class="v"><span class="pill" id="net">—</span></span></div>
+  <div class="row"><span class="k">you are owner</span><span class="v"><span class="pill" id="own">—</span></span></div>
+  <div class="row"><span class="k">burn state</span><span class="v"><span class="pill" id="state">reading…</span></span></div>
+
+  <button class="connect" id="connectBtn" onclick="connect()">Connect wallet</button>
+
+  <div class="warn"><b>openBurn() is ONE-WAY.</b> It starts The Race for all 666 holders and can never be closed. Only fire this when you're live.</div>
+  <button class="go" id="goBtn" onclick="go()" disabled>🔥 openBurn() — start The Race</button>
+  <div class="log" id="log"></div>
+</div>
+<script>
+const RACE='0xb1045442e1aafea9280480e82b61c2ee5a71c741';
+const OWNER='0xef682b1d0835df1f971d5d1f4565e9f6c121f706';
+const CHAIN='0x1';
+const RPC='https://eth-mainnet.public.blastapi.io';
+const SEL={openBurn:'0x29cbec1a',burnOpen:'0x477dfefb',owner:'0x8da5cb5b'};
+const $=id=>document.getElementById(id);
+const rq=(m,p)=>window.ethereum.request({method:m,params:p});
+let ACC=null,NET=null,OPEN=null;
+function ethCall(data){return fetch(RPC,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:RACE,data},'latest']})}).then(r=>r.json()).then(j=>j.result);}
+function pill(id,txt,cls){const e=$(id);e.textContent=txt;e.className='pill'+(cls?' '+cls:'');}
+async function readState(){try{const bo=await ethCall(SEL.burnOpen);OPEN=bo&&BigInt(bo)!==0n;pill('state',OPEN?'ALREADY OPEN':'closed — ready',OPEN?'bad':'ok');}catch(e){pill('state','read failed','bad');}gate();}
+function gate(){
+  const isOwner=ACC&&ACC.toLowerCase()===OWNER.toLowerCase();
+  const onMain=NET===CHAIN;
+  pill('own',ACC?(isOwner?'yes':'NO — wrong wallet'):'—',ACC?(isOwner?'ok':'bad'):'');
+  pill('net',NET?(onMain?'mainnet':'wrong network'):'—',NET?(onMain?'ok':'bad'):'');
+  $('goBtn').disabled=!(ACC&&isOwner&&onMain&&OPEN===false);
+}
+async function connect(){
+  if(!window.ethereum){$('log').textContent='Open this in your wallet browser (MetaMask/Rainbow).';return;}
+  try{
+    const a=await rq('eth_requestAccounts');ACC=a[0];NET=await rq('eth_chainId');
+    if(NET!==CHAIN){try{await rq('wallet_switchEthereumChain',[{chainId:CHAIN}]);NET=CHAIN;}catch(e){}}
+    $('acc').textContent=ACC.slice(0,7)+'…'+ACC.slice(-5);
+    window.ethereum.on&&window.ethereum.on('chainChanged',c=>{NET=c;gate();});
+    window.ethereum.on&&window.ethereum.on('accountsChanged',x=>{ACC=x[0]||null;$('acc').textContent=ACC?ACC.slice(0,7)+'…'+ACC.slice(-5):'not connected';gate();});
+    gate();
+  }catch(e){$('log').textContent='Connect cancelled.';}
+}
+async function waitReceipt(h){$('log').innerHTML='opening… '+link(h);for(let i=0;i<80;i++){const r=await rq('eth_getTransactionReceipt',[h]);if(r)return r;await new Promise(r=>setTimeout(r,3000));}return null;}
+const link=h=>'<a href="https://etherscan.io/tx/'+h+'" target="_blank">'+h.slice(0,12)+'…</a>';
+async function go(){
+  if(OPEN!==false){$('log').textContent='Burn is already open.';return;}
+  if(!confirm('openBurn() is ONE-WAY and can NEVER be closed. It starts The Race for every holder. Proceed?'))return;
+  if(!confirm('Final check — you are live. Fire openBurn() now?'))return;
+  $('goBtn').disabled=true;
+  try{
+    const h=await rq('eth_sendTransaction',[{from:ACC,to:RACE,data:SEL.openBurn}]);
+    const rc=await waitReceipt(h);
+    if(!rc){$('log').innerHTML='sent, still pending… '+link(h);return;}
+    if(rc.status&&rc.status!=='0x1'){$('log').innerHTML='reverted (already open, or wrong wallet). '+link(h);$('goBtn').disabled=false;return;}
+    $('log').innerHTML='<span class="ok">🔥 The Race is LIVE. Burns are open.</span> '+link(h);
+    await readState();
+  }catch(e){$('log').textContent='cancelled / failed: '+(e.message||e);$('goBtn').disabled=false;}
+}
+readState();
+</script></body></html>
