@@ -93,6 +93,9 @@
   .card{border:1px solid var(--line);background:var(--paper);cursor:pointer;transition:border-color .18s,transform .18s;position:relative;overflow:hidden}
   .card:hover{border-color:var(--ink);transform:translateY(-2px)}
   .card .thumb{position:relative;width:100%;aspect-ratio:1;background:#0b0b0f;overflow:hidden}
+  /* real on-chain art: the exact SVG from tokenURI (identical to OpenSea, real tier) */
+  .thumb img.tokimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#05060a;opacity:0;transition:opacity .45s}
+  .thumb img.tokimg.ready{opacity:1}
   /* masked real-runner render (used in cards, leader hero, detail) */
   .tun{position:absolute;inset:0;width:100%;height:100%;display:block}
   /* gold aura: a blurred gold copy of the runner, sitting behind it → a real, visible glow */
@@ -374,6 +377,27 @@ async function ethBatch(to, datas){ const body=datas.map((d,i)=>({jsonrpc:'2.0',
     const j=await r.json(); const out=new Array(datas.length); (Array.isArray(j)?j:[j]).forEach(o=>{ if(o&&o.id!=null&&o.result!==undefined) out[o.id]=o.result; }); return out;
   }catch(e){} } return new Array(datas.length); }
 
+// ---- real on-chain token image (the exact SVG OpenSea shows; encodes the true tier) ----
+const TOKURI_SEL='0xc87b56dd'; // tokenURI(uint256)
+const RIMG={};                 // id -> image data-uri (null = failed)
+let   CROWN_ID=0;              // real crowned token id from the race contract (0 = none / pre-burn)
+function _decAbiStr(hex){ if(!hex||hex==='0x')return''; const h=hex.slice(2);
+  const len=parseInt(h.slice(64,128),16); const d=h.slice(128,128+len*2);
+  let s=''; for(let i=0;i<d.length;i+=2)s+=String.fromCharCode(parseInt(d.substr(i,2),16)); return s; }
+function _imgFromTokenURI(uri){ try{ const b=uri.split(',')[1]; if(!b)return null;
+  const bin=atob(b); const by=Uint8Array.from(bin,c=>c.charCodeAt(0)); const js=new TextDecoder().decode(by);
+  const m=js.match(/"image":"([^"]+)"/); return m?m[1]:null; }catch(e){ return null; } }
+// fetch tokenURI images for a list of pieces, swapping them into any matching tiles as they land
+async function loadTokenImages(list){
+  const ids=list.map(p=>p.id).filter(id=>RIMG[id]===undefined);
+  for(let i=0;i<ids.length;i+=6){ const chunk=ids.slice(i,i+6);
+    const res=await ethBatch(C.collection, chunk.map(id=>TOKURI_SEL+pad('0x'+id.toString(16))));
+    chunk.forEach((id,k)=>{ const uri=_decAbiStr((res&&res[k])||''); RIMG[id]= uri?_imgFromTokenURI(uri):null;
+      if(RIMG[id]) document.querySelectorAll('img.tokimg[data-tok="'+id+'"]').forEach(im=>{ im.src=RIMG[id]; im.classList.add('ready'); }); });
+    await _sleep(50);
+  }
+}
+
 // ---- ground formatting ----
 const nf = new Intl.NumberFormat('en-US');
 function fmtG(n){ return nf.format(Math.floor(n)); }
@@ -528,14 +552,22 @@ function renderSquad(list){
   list.forEach(p=>{
     const g = groundOf(p);
     const el=document.createElement('div'); el.className='card'; el.dataset.id=p.id;
+    // LIVE: the real on-chain art (exact OpenSea SVG — real tier, no fabricated king).
+    // DEMO: simulated silhouette (no chain to read).
+    const thumb = DEMO
+      ? posterSVG(p, p.id===kingId&&!p.dead, false, TT.has(p.id))
+      : (RIMG[p.id]
+          ? '<img class="tokimg ready" data-tok="'+p.id+'" src="'+RIMG[p.id]+'" alt="FRONTRUN #'+p.id+'">'
+          : '<img class="tokimg" data-tok="'+p.id+'" alt="FRONTRUN #'+p.id+'">');
     el.innerHTML =
-      '<div class="thumb">'+posterSVG(p, p.id===kingId&&!p.dead, false, TT.has(p.id))+'</div>'+
+      '<div class="thumb">'+thumb+'</div>'+
       '<div class="meta"><div class="id">FRONTRUN #'+p.id+(p.dead?'<span class="burned">burned</span>':'')+'</div>'+
       '<div class="g">ground <b data-g="'+p.id+'">'+fmtG(g)+'</b></div></div>';
     el.addEventListener('click',()=>openDetail(p));
     box.appendChild(el);
   });
   tick();
+  if(!DEMO) loadTokenImages(list);   // pull real images in, swap them into the tiles as they land
 }
 
 // the pack as a race track: runners positioned by REAL ground (bigger lead = bigger gap),
@@ -547,16 +579,18 @@ function renderBoard(list){
   const max = all.length ? Math.max(1, groundOf(all[0])) : 1;
   const box=document.getElementById('board'); box.innerHTML='';
   all.forEach((p,i)=>{
-    const set = i===0 ? 'king' : 'runner';              // #1 = king silhouette (crown built in)
+    // crown only the REAL king — demo uses local rank, live uses the on-chain crown (0 pre-burn)
+    const crowned = (DEMO ? i===0 : p.id===CROWN_ID) && !p.dead;
+    const set = crowned ? 'king' : 'runner';            // king silhouette only for the true crown
     const m='url(anim/'+set+'_00.png)';
     const x = 7 + (groundOf(p)/max) * 82;               // position by real ground → dynamic gaps
     const col = palFor(p)[1];                            // the front ten → each its OWN palette colour
-    const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(i===0?' lead':'');
+    const el=document.createElement('div'); el.className='lane'+(p.me?' me':'')+(crowned?' lead':'');
     el.innerHTML=
       '<span class="rk">'+(i+1)+'</span>'+
       '<span class="who">#'+p.id+(p.me?'<span class="you">you</span>':'')+'</span>'+
-      '<div class="ln"><div class="mark'+(i===0?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
-        (i===0?'':glowSVG(col,'board',set))+
+      '<div class="ln"><div class="mark'+(crowned?' king':'')+'" style="left:'+x.toFixed(1)+'%">'+
+        (crowned?'':glowSVG(col,'board',set))+
         '<div class="rsil mk-run" data-mask="'+set+'" style="background:'+col+';-webkit-mask-image:'+m+';mask-image:'+m+'"></div>'+
       '</div></div>'+
       '<span class="gr" data-lg="'+p.id+'">'+fmtG(groundOf(p))+'</span>';
@@ -604,8 +638,9 @@ async function fetchLeader(){
   }
   try{
     const r=await ethCall(C.race, SEL.crown); const w=r.replace(/^0x/,'');
-    if(parseInt(w.slice(0,64),16)===0) return { claimed:false };            // crown unclaimed (no burns yet)
+    if(parseInt(w.slice(0,64),16)===0){ CROWN_ID=0; return { claimed:false }; }   // crown unclaimed (no burns yet)
     const id=parseInt(w.slice(64,128),16), ground=parseInt(w.slice(128,192),16);
+    CROWN_ID=id;                                                             // the real king (gates crown in squad/board/detail)
     let wallet=''; try{ const o=await ethCall(C.collection, SEL.ownerOf+pad('0x'+id.toString(16))); wallet='0x'+o.slice(26); }catch(e){}
     return { id, wallet, ground, claimed:true, dead:false, fetchTime:nowSec() };
   }catch(e){ return null; }
@@ -650,12 +685,21 @@ function openDetail(p){
   document.getElementById('dAbs').textContent = fmtG(p.absorbed||0);
   const rankList=[...LAST_SQUAD,...(DEMO?demoField():[])].sort((a,b)=>groundOf(b)-groundOf(a));
   const rank=rankList.findIndex(x=>x.id===p.id && x.wallet===p.wallet);
-  const isLeader = rank===0 && !p.dead;
+  // crown only the REAL king (live: on-chain crown id; demo: local rank)
+  const isLeader = (DEMO ? rank===0 : p.id===CROWN_ID) && !p.dead;
   document.getElementById('dRank').textContent = isLeader ? '👑 crown' : (rank>0?('#'+(rank+1)):'—');
   // traits: show locally-derived ones immediately; the live engine refines them when it reports
   const palNames=['frontrunner','crimson','emerald','amber','cyan','sulphur','magenta','violet','royal blue','dark red','terminal green','black & white'];
   fillTraits({ paletteName: palNames[h32(p.wallet+':pal:'+p.id)%palNames.length], shape: shapeFor(p.id), hard:null });
-  document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true, rank>=0 && rank<10);   // glow only if this piece is in the front ten
+  // LIVE: show the real on-chain art as the poster (matches OpenSea); fall back to the silhouette
+  if(!DEMO){
+    document.getElementById('dPoster').innerHTML = RIMG[p.id]
+      ? '<img class="tokimg ready" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" src="'+RIMG[p.id]+'" alt="FRONTRUN #'+p.id+'">'
+      : '<img class="tokimg" data-tok="'+p.id+'" alt="FRONTRUN #'+p.id+'">';
+    if(RIMG[p.id]===undefined) loadTokenImages([p]);   // search-by-number: fetch its real image on demand
+  } else {
+    document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true, rank>=0 && rank<10);   // glow only if this piece is in the front ten
+  }
   CUR_LEADER = isLeader;
   const f=document.getElementById('dRender'); if(f){ f.classList.remove('live'); f.src='about:blank'; }  // WebGL loads only on fullscreen
   document.getElementById('overlay').classList.add('open');
