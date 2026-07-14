@@ -756,7 +756,7 @@ function openDetail(p){
   CUR=p;
   const g = groundOf(p);
   document.getElementById('dTitle').textContent='FRONTRUN #'+p.id;
-  document.getElementById('dHolder').textContent='held by '+shorten(p.wallet);
+  document.getElementById('dHolder').textContent = p.wallet ? ('held by '+shorten(p.wallet)) : '';  // field pieces carry no wallet — don't render a dangling "held by"
   document.getElementById('dGround').textContent=fmtG(g);
   document.getElementById('dAccr').textContent = p.dead ? 'burned — ground absorbed into a survivor' : 'accruing +1 / second';
   document.getElementById('dStatus').textContent = p.dead ? 'burned' : 'running';
@@ -801,8 +801,20 @@ function openDetail(p){
     document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true, inFront);   // glow only if this piece is genuinely in the front
   }
   CUR_LEADER = isLeader;
-  const f=document.getElementById('dRender'); if(f){ f.classList.remove('live'); f.src='about:blank'; }  // WebGL loads only on fullscreen
+  mountDetailRender(p.id);   // the real RUNNING render, same mechanism as the hero — the poster sits under it until it paints
   document.getElementById('overlay').classList.add('open');
+}
+// load a piece's real on-chain animation (run.html) into the detail card. The overlay only opens on a
+// user click, by which time the page is quiet, so the engine gets a clean boot (same as the lightbox).
+let SHOWN_DETAIL=null;
+function mountDetailRender(id){
+  const f=document.getElementById('dRender'); if(!f) return;
+  f.classList.remove('live');
+  if(DEMO){ f.style.display='none'; f.src='about:blank'; SHOWN_DETAIL=null; return; }  // demo has no on-chain render
+  f.style.display='block'; f.removeAttribute('srcdoc');
+  SHOWN_DETAIL=id;
+  f.onload=()=>{ setTimeout(()=>{ if(SHOWN_DETAIL===id) f.classList.add('live'); }, 2600); };
+  f.src='./run.html?id='+id;
 }
 function fillTraits(s){
   if(!document.getElementById('overlay').classList.contains('open')) return;
@@ -818,17 +830,20 @@ function fillTraits(s){
 }
 function chip(k,v){ return '<span class="chip"><b>'+k+'</b>'+v+'</span>'; }
 
-document.getElementById('close').addEventListener('click',()=>{document.getElementById('overlay').classList.remove('open');document.getElementById('dRender').src='about:blank';CUR=null;});
+document.getElementById('close').addEventListener('click',()=>{document.getElementById('overlay').classList.remove('open');const dr=document.getElementById('dRender');dr.classList.remove('live');dr.src='about:blank';SHOWN_DETAIL=null;CUR=null;});
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay'){document.getElementById('close').click();}});
 // fullscreen loads the RICH WebGL engine (one focused context) and drives the current piece
 document.getElementById('fs').addEventListener('click',async()=>{
   const el=document.getElementById('dRender'); if(!el||!CUR) return;
-  el.style.display='block'; el.classList.add('live');
-  // fullscreen shows the SAME on-chain image the card + OpenSea use (not a separate render)
-  let img = DEMO ? null : RIMG[CUR.id];
-  if(!DEMO && img===undefined){ try{ await loadTokenImages([CUR]); }catch(e){} img=RIMG[CUR.id]; }
-  if(img){ el.removeAttribute('src'); el.srcdoc='<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#05060a}body{display:flex;align-items:center;justify-content:center}img{max-width:100%;max-height:100%;object-fit:contain;display:block}</style><img src="'+img+'">'; }
-  else { el.removeAttribute('srcdoc'); el.src=ENGINE+'?preview=1&embed=1'; el.addEventListener('load',()=>{ detailWin=el.contentWindow; driveFrame(el,CUR,CUR_LEADER); },{once:true}); }
+  el.style.display='block';
+  if(!DEMO){
+    // already running from openDetail — just make sure it's mounted, then blow the RUNNING render up
+    if(SHOWN_DETAIL!==CUR.id || !(el.src||'').includes('run.html')) mountDetailRender(CUR.id);
+    el.classList.add('live');
+  } else {
+    el.classList.add('live'); el.removeAttribute('srcdoc'); el.src=ENGINE+'?preview=1&embed=1';
+    el.addEventListener('load',()=>{ detailWin=el.contentWindow; driveFrame(el,CUR,CUR_LEADER); },{once:true});
+  }
   const r=el.requestFullscreen||el.webkitRequestFullscreen; if(r)r.call(el);
 });
 
