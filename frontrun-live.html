@@ -1,0 +1,97 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · The Race · Live pieces (Sepolia)</title>
+<style>
+  :root{--bg:#f4f4f6;--fg:#111;--mut:#777;--line:#e2e2e6;--acc:#ED1E79;--gold:#c99a1e}
+  @media (prefers-color-scheme:dark){:root{--bg:#0b0b0f;--fg:#eaeaf0;--mut:#8a8a96;--line:#20202a}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 ui-monospace,Menlo,monospace}
+  .wrap{max-width:660px;margin:0 auto;padding:30px 18px 70px}
+  h1{font-size:16px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-bottom:18px}
+  .stage{position:relative;width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#050505}
+  .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .stage .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#666;font-size:13px}
+  .bar{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px;gap:12px}
+  .bar .who{font-size:15px} .bar .who b{font-weight:700}
+  .badge{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;padding:3px 10px;margin-left:8px}
+  .b-king{background:#3a2f00;color:var(--gold)} .b-front{background:#3a0e1e;color:#ff6aa6} .b-surge{background:#1a2c3a;color:#4aa3d8}
+  .b-field{background:#e8e8ee;color:#777} .b-dead{background:#eee;color:#aaa}
+  @media (prefers-color-scheme:dark){.b-field{background:#141420;color:#8a8a96}.b-dead{background:#141420;color:#555}}
+  .nav button{font:inherit;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:8px;padding:7px 13px;cursor:pointer}
+  .nav button:hover{border-color:var(--acc)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .chip{font:inherit;font-size:12px;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:8px;padding:6px 9px;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .chip:hover{border-color:#888}
+  .chip.on{border-color:var(--acc);background:rgba(237,30,121,.08)}
+  .chip.dead{opacity:.45}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .d-king{background:var(--gold)} .d-front{background:#ff6aa6} .d-surge{background:#4aa3d8} .d-field{background:#888} .d-dead{background:#555}
+  .note{color:var(--mut);font-size:12px;text-align:center;margin-top:16px}
+  a{color:var(--acc)}
+</style></head><body>
+<div class="wrap">
+  <h1>FRONTRUN · The Race</h1>
+  <div class="sub">Live pieces · Sepolia</div>
+  <div class="stage" id="stage"><div class="ph">loading…</div></div>
+  <div class="bar">
+    <div class="who">Piece <b id="who">#—</b><span id="badge"></span></div>
+    <div class="nav"><button onclick="step(-1)">‹ prev</button> <button onclick="step(1)">next ›</button></div>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="note">The actual on-chain render, one piece at a time (so it stays smooth). Tier is live — burn on the <a href="burn-art.html">burn page</a> and a piece climbs Field → the ranks → King; its body + glow change here.</div>
+</div>
+<script>
+const CFG={ collection:'0xaaF7c610b770E068D6011D4689aC683cb16E7aA0', race:'0xf947D65Bd43cB61B02B87De389AF7780fA2ac7fD',
+  rpc:'https://ethereum-sepolia-rpc.publicnode.com', firstId:1, supply:12 };
+const IDS=Array.from({length:CFG.supply},(_,i)=>i+CFG.firstId);
+const SEL={ tokenURI:'0xc87b56dd', groundOf:'0xf47f131b', dead:'0xe77f7b4b', absorbed:'0xb9821574', king:'0xcc181ca8', crownClaimed:'0xa9fd3822' };
+const padU=n=>BigInt(n).toString(16).padStart(64,'0');
+const ST={ground:{},dead:{},absorbed:{},king:0,crown:false,animCache:{}};
+let cur=IDS[0];
+function decAbiString(ret){ if(!ret||ret==='0x'||ret.length<130)return null; const h=ret.slice(2); const len=parseInt(h.slice(64,128),16); if(!len)return null; let s=''; for(let i=0;i<len;i++)s+=String.fromCharCode(parseInt(h.substr(128+i*2,2),16)); return s; }
+async function batch(calls){ const body=calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to:c.to,data:c.data},'latest']})); const r=await fetch(CFG.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); return (await r.json()).sort((a,b)=>a.id-b.id).map(x=>x.result); }
+function tierOf(id){
+  if(ST.dead[id]) return ['Burned','b-dead','d-dead'];
+  if(ST.crown && ST.king===id) return ['King','b-king','d-king'];
+  if(!ST.absorbed[id]||ST.absorbed[id]===0n) return ['Field','b-field','d-field'];
+  let ahead=0; for(const j of IDS){ if(j===id||ST.dead[j])continue; if(ST.ground[j]>ST.ground[id])ahead++; }
+  const r=ahead+1;
+  if(r<=10)return['Front','b-front','d-front']; if(r<=25)return['Surge','b-surge','d-surge'];
+  return['Field','b-field','d-field'];
+}
+async function loadState(){
+  const meta=await batch([{to:CFG.race,data:SEL.king},{to:CFG.race,data:SEL.crownClaimed}]);
+  ST.king=parseInt(meta[0],16); ST.crown=BigInt(meta[1]||'0x0')!==0n;
+  const calls=[]; IDS.forEach(id=>calls.push({to:CFG.race,data:SEL.groundOf+padU(id)},{to:CFG.race,data:SEL.dead+padU(id)},{to:CFG.race,data:SEL.absorbed+padU(id)}));
+  const res=await batch(calls);
+  IDS.forEach((id,i)=>{ const b=i*3; ST.ground[id]=res[b]?BigInt(res[b]):0n; ST.dead[id]=res[b+1]?BigInt(res[b+1])!==0n:false; ST.absorbed[id]=res[b+2]?BigInt(res[b+2]):0n; });
+  paintChips();
+}
+function paintChips(){
+  document.getElementById('chips').innerHTML = IDS.map(id=>{ const [tn,,dc]=tierOf(id);
+    return '<button class="chip'+(id===cur?' on':'')+(ST.dead[id]?' dead':'')+'" onclick="pick('+id+')"><span class="dot '+dc+'"></span>#'+id+'</button>'; }).join('');
+}
+async function fetchAnim(id){
+  if(ST.animCache[id]!==undefined) return ST.animCache[id];
+  try{ const [ret]=await batch([{to:CFG.collection,data:SEL.tokenURI+padU(id)}]); const uri=decAbiString(ret); const j=JSON.parse(atob(uri.split('base64,')[1])); ST.animCache[id]=j.animation_url||null; }
+  catch(e){ ST.animCache[id]=null; }
+  return ST.animCache[id];
+}
+async function pick(id){
+  cur=id; paintChips();
+  const [tn,bc]=tierOf(id);
+  document.getElementById('who').textContent='#'+id;
+  document.getElementById('badge').innerHTML='<span class="badge '+bc+'">'+tn+'</span>';
+  const stage=document.getElementById('stage');
+  stage.innerHTML='<div class="ph">rendering #'+id+'…</div>';
+  const anim=await fetchAnim(id);
+  if(id!==cur) return;                       // user moved on
+  if(anim){ const ifr=document.createElement('iframe'); ifr.setAttribute('scrolling','no'); ifr.src=anim; stage.innerHTML=''; stage.appendChild(ifr); }
+  else stage.innerHTML='<div class="ph">#'+id+' · art not on chain</div>';
+}
+function step(d){ let i=IDS.indexOf(cur); i=(i+d+IDS.length)%IDS.length; pick(IDS[i]); }
+(async()=>{ await loadState(); // open on the King if there is one, else first living
+  const living=IDS.filter(id=>!ST.dead[id]); const start=(ST.crown&&!ST.dead[ST.king])?ST.king:(living[0]||IDS[0]); pick(start);
+})();
+</script></body></html>

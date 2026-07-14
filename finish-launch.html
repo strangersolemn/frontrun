@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · Finish Launch</title>
+<style>
+  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79;--card:#0d0d13;--ok:#35c46b;--danger:#ff3b4e}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13.5px/1.6 ui-monospace,Menlo,monospace}
+  .wrap{max-width:640px;margin:0 auto;padding:30px 16px 90px}
+  h1{font-size:15px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .card h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #14141b}.row:last-child{border-bottom:0}
+  .row .k{color:var(--mut)}.row .v{text-align:right;word-break:break-all}.v.ok{color:var(--ok)}.v.bad{color:var(--danger)}
+  button{font:inherit;border:1px solid #33333f;background:#15151d;color:var(--fg);border-radius:10px;padding:13px 16px;cursor:pointer;width:100%}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}button:disabled{opacity:.4;cursor:not-allowed}
+  button.danger{background:#2a0c10;border-color:#5a1a22;color:#ff8a95}
+  .banner{border:1px solid #12351a;background:#0a140d;border-radius:10px;padding:10px 14px;color:var(--ok);font-size:12px;margin-bottom:16px;text-align:center}
+  .locked{opacity:.4;pointer-events:none}.space{height:8px}.log{font-size:11.5px;color:var(--mut);white-space:pre-wrap;word-break:break-all;margin-top:8px;min-height:16px}
+  .pill{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:3px 10px;color:var(--mut)}.pill.on{border-color:var(--ok);color:var(--ok)}.pill.bad{border-color:var(--danger);color:var(--danger)}
+</style></head><body>
+<div class="wrap">
+  <h1>FRONTRUN · Finish Launch</h1>
+  <div class="sub">One tx left · then the Space</div>
+  <div class="banner">✅ Race deployed · 10 art files uploaded · renderer deployed &amp; render-tested. Just point the collection at it.</div>
+
+  <div class="card"><h2>Wallet</h2>
+    <div class="row"><span class="k">account</span><span class="v" id="acc">not connected</span></div>
+    <div class="row"><span class="k">network</span><span class="v"><span class="pill" id="netpill">—</span></span></div>
+    <div class="row"><span class="k">is owner</span><span class="v"><span class="pill" id="ownpill">—</span></span></div>
+    <div class="space"></div><button class="primary" id="connectBtn" onclick="connect()">Connect wallet</button>
+  </div>
+
+  <div class="card"><h2>Go live — setRenderer</h2>
+    <div class="row"><span class="k">renderer (deployed)</span><span class="v ok">0x5E56…B5D3</span></div>
+    <div style="font-size:12px;color:var(--mut);margin:8px 0">Points FRONTRUN at the new renderer. All 666 render with tiers + glow (all Field until burns start). Tiny tx (~$0.20). Reversible.</div>
+    <div class="row"><span class="k">renderer() after</span><span class="v" id="ck-swap">—</span></div>
+    <div class="row"><span class="k">token #1 renders</span><span class="v" id="ck-render">—</span></div>
+    <div class="space"></div><button class="primary" id="setRendBtn" onclick="setRenderer()" disabled>setRenderer — sign</button>
+    <div class="log" id="log2"></div>
+  </div>
+
+  <div class="card locked" id="c3"><h2>Arm the burn — SAVE FOR THE SPACE</h2>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:8px"><b style="color:var(--danger)">openBurn() is ONE-WAY.</b> Do NOT press this now — this is your live Space moment.</div>
+    <button class="danger" id="openBtn" onclick="openBurn()" disabled>🔥 openBurn() — arm the burn (ONE-WAY)</button>
+    <div class="log" id="log3"></div>
+  </div>
+</div>
+<script>
+const RENDERER="0x5E5699c3e97806cA782c0F169b3b9FEece86B5D3",RACE="0xb1045442e1aafea9280480e82b61c2ee5a71c741",COLL="0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0",OWNER="0xEf682B1D0835Df1F971d5D1F4565E9f6c121f706";
+const SEL={setRenderer:'0x56d3163d',renderer:'0x8ada6b0f',tokenURI:'0xc87b56dd',openBurn:'0x29cbec1a'};
+let ACC=null,CHAIN=null;
+const $=id=>document.getElementById(id);const log=(m,el)=>{$(el).textContent=m;};const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rq=(m,p)=>window.ethereum.request({method:m,params:p});const ethCall=(to,data)=>rq('eth_call',[{to,data},'latest']);
+const pad32=a=>a.toLowerCase().replace(/^0x/,'').padStart(64,'0');
+function paint(){const ok=CHAIN==='0x1';$('netpill').textContent=CHAIN?(ok?'Ethereum mainnet':'wrong network'):'—';$('netpill').className='pill'+(ok?' on':' bad');const isO=ACC&&ACC.toLowerCase()===OWNER.toLowerCase();$('ownpill').textContent=ACC?(isO?'yes ✓':'NOT owner'):'—';$('ownpill').className='pill'+(isO?' on':(ACC?' bad':''));$('setRendBtn').disabled=!(ACC&&ok&&isO);}
+async function connect(){if(!window.ethereum){log('No wallet found.','log2');return;}try{const a=await rq('eth_requestAccounts');ACC=a[0];CHAIN=await rq('eth_chainId');if(CHAIN!=='0x1'){try{await rq('wallet_switchEthereumChain',[{chainId:'0x1'}]);CHAIN='0x1';}catch(e){}}$('acc').textContent=ACC;paint();window.ethereum.on&&window.ethereum.on('chainChanged',c=>{CHAIN=c;paint();});window.ethereum.on&&window.ethereum.on('accountsChanged',x=>{ACC=x[0]||null;$('acc').textContent=ACC||'not connected';paint();});}catch(e){log('Connect failed: '+(e.message||e),'log2');}}
+async function waitReceipt(h,el){log('tx '+h+'\nwaiting…',el);for(let i=0;i<300;i++){const r=await rq('eth_getTransactionReceipt',[h]);if(r)return r;await sleep(3000);}throw new Error('timeout');}
+function setV(id,v,ok){const e=$(id);e.textContent=v;e.className='v '+(ok?'ok':'bad');}
+async function setRenderer(){if(!confirm('setRenderer('+RENDERER+') on FRONTRUN — all 666 render through the new renderer. Burns stay CLOSED. Proceed?'))return;$('setRendBtn').disabled=true;try{const data=SEL.setRenderer+pad32(RENDERER);const h=await rq('eth_sendTransaction',[{from:ACC,to:COLL,data}]);const rc=await waitReceipt(h,'log2');if(rc.status&&rc.status!=='0x1'){log('reverted (are you owner?)','log2');$('setRendBtn').disabled=false;return;}const cur=await ethCall(COLL,SEL.renderer);const curA='0x'+cur.slice(-40);const okSwap=curA.toLowerCase()===RENDERER.toLowerCase();setV('ck-swap',curA,okSwap);try{const t1=await ethCall(COLL,SEL.tokenURI+'0000000000000000000000000000000000000000000000000000000000000001');const renders=t1&&t1.length>200;setV('ck-render',renders?'yes ✓':'check on OpenSea',renders);}catch(e){setV('ck-render','check on OpenSea',false);}if(okSwap){log('✅ live — 666 now render via v2. Check a token on OpenSea, then openBurn on your Space.','log2');$('c3').classList.remove('locked');$('openBtn').disabled=false;}else{$('setRendBtn').disabled=false;}}catch(e){log('cancelled/failed: '+(e.message||e),'log2');$('setRendBtn').disabled=false;}}
+async function openBurn(){if(!confirm('openBurn() is ONE-WAY and can NEVER be closed. Starts The Race for all holders. Proceed?'))return;if(!confirm('Final check — ready to launch live. Arm the burn now?'))return;$('openBtn').disabled=true;try{const h=await rq('eth_sendTransaction',[{from:ACC,to:RACE,data:SEL.openBurn}]);const rc=await waitReceipt(h,'log3');if(rc.status&&rc.status!=='0x1'){log('reverted','log3');$('openBtn').disabled=false;return;}log('🔥 The Race is live. Burns are open.','log3');}catch(e){log('cancelled/failed: '+(e.message||e),'log3');$('openBtn').disabled=false;}}
+</script></body></html>

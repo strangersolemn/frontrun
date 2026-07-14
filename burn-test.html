@@ -1,0 +1,219 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · The Race · Burn (Sepolia test)</title>
+<style>
+  :root{--bg:#08080c;--fg:#eaeaf0;--mut:#8a8a96;--line:#1c1c24;--acc:#ED1E79;--card:#0d0d13;--ok:#35c46b;--warn:#ffae00;--danger:#ff3b4e;--gold:#ffd44d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:13.5px/1.6 ui-monospace,Menlo,monospace}
+  .wrap{max-width:680px;margin:0 auto;padding:30px 16px 90px}
+  h1{font-size:15px;letter-spacing:.22em;text-transform:uppercase;margin:0 0 4px;text-align:center}
+  .sub{color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .card h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #14141b}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--mut)} .row .v{text-align:right;word-break:break-all}
+  button{font:inherit;border:1px solid #33333f;background:#15151d;color:var(--fg);border-radius:10px;padding:12px 16px;cursor:pointer;width:100%}
+  button:hover:not(:disabled){border-color:#55556a}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  button.danger{background:#2a0c10;border-color:#5a1a22;color:#ff8a95}
+  button.danger:hover:not(:disabled){border-color:var(--danger)}
+  .banner{border:1px solid #23303a;background:#0b1116;border-radius:10px;padding:10px 14px;color:#7fd0ff;font-size:11.5px;margin-bottom:16px;text-align:center}
+  .pill{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:3px 10px;color:var(--mut)}
+  .pill.on{border-color:var(--ok);color:var(--ok)} .pill.bad{border-color:var(--danger);color:var(--danger)}
+  .space{height:8px}
+  .log{font-size:11.5px;color:var(--mut);white-space:pre-wrap;word-break:break-all;margin-top:8px;min-height:16px}
+  a{color:var(--acc)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .tk{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#0b0b10}
+  .tk.mine{border-color:#3a2233}
+  .tk .id{font-weight:600} .tk .g{color:var(--mut);font-size:11px} .tk .rk{font-size:11px}
+  .tk.dead{opacity:.35}
+  .badge{display:inline-block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;border-radius:5px;padding:1px 6px;margin-top:3px}
+  .b-king{background:#3a2f00;color:var(--gold)} .b-front{background:#3a0e1e;color:#ff6aa6} .b-surge{background:#1a2c3a;color:#7fd0ff}
+  .b-chase{background:#16221a;color:#7fe0a0} .b-field{background:#141420;color:var(--mut)}
+  select{font:inherit;background:#15151d;color:var(--fg);border:1px solid #33333f;border-radius:8px;padding:10px;width:100%}
+  .frm{display:flex;gap:10px;margin:6px 0} .frm>div{flex:1}
+  label{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em}
+  .king{color:var(--gold)}
+</style></head><body>
+<div class="wrap">
+  <h1>FRONTRUN · The Race</h1>
+  <div class="sub">Burn test · Sepolia</div>
+  <div class="banner">Sepolia testnet — no real value. Sacrifice one of your pieces into another: the survivor absorbs all the sacrifice's ground. Most ground wears the crown.</div>
+
+  <div class="card">
+    <h2>Wallet</h2>
+    <div class="row"><span class="k">account</span><span class="v" id="acc">not connected</span></div>
+    <div class="row"><span class="k">network</span><span class="v"><span class="pill" id="netpill">—</span></span></div>
+    <div class="row"><span class="k">race approved</span><span class="v"><span class="pill" id="appill">—</span></span></div>
+    <div class="space"></div>
+    <button class="primary" id="connectBtn" onclick="connect()">Connect wallet</button>
+    <div class="space"></div>
+    <button id="approveBtn" onclick="approve()" disabled>Approve the race to move your pieces</button>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>The Race <span class="pill" id="statepill" style="float:right">—</span></h2>
+    <div class="row"><span class="k">king</span><span class="v king" id="king">—</span></div>
+    <div class="row"><span class="k">burns</span><span class="v" id="burncount">—</span></div>
+    <div class="row"><span class="k">your pieces</span><span class="v" id="mycount">—</span></div>
+    <div class="space"></div>
+    <button onclick="refresh()">↻ Refresh</button>
+  </div>
+
+  <div class="card">
+    <h2>Burn</h2>
+    <div class="frm">
+      <div><label>sacrifice (dies)</label><select id="sacSel"></select></div>
+      <div><label>survivor (absorbs)</label><select id="survSel"></select></div>
+    </div>
+    <div style="font-size:11.5px;color:var(--mut);margin:4px 0 10px" id="burnPreview">—</div>
+    <button class="danger" id="burnBtn" onclick="burn()" disabled>🔥 Burn sacrifice into survivor</button>
+    <div class="log" id="log2"></div>
+  </div>
+
+  <div class="card">
+    <h2>Board <span class="pill" style="float:right">live</span></h2>
+    <div class="grid" id="board"></div>
+  </div>
+</div>
+<script>
+// ===== CONFIG — filled from the Sepolia deploy =====
+const CFG = {
+  race:       '0x38E78D1817412Ef763efD883D39e1bbbC245eC63',
+  collection: '0x8fb8Dd3ba83b018fdCF73Ed2e60d507A536C5F9f',
+  rpc:        'https://ethereum-sepolia-rpc.publicnode.com',
+  chainId:    '0xaa36a7',           // 11155111
+  firstId:    0,                    // this test collection mints from token 0
+  supply:     12,
+};
+const IDS = Array.from({length:CFG.supply},(_,i)=>i+CFG.firstId);   // [0..11]
+const SEL = { groundOf:'0xf47f131b', dead:'0xe77f7b4b', king:'0xcc181ca8', crownClaimed:'0xa9fd3822',
+  burnOpen:'0x477dfefb', burnCount:'0x524773ce', ownerOf:'0x6352211e', isApprovedForAll:'0xe985e9c5',
+  setApprovalForAll:'0xa22cb465', burnInto:'0x1d1a4d5d' };
+let ACC=null,CHAIN=null,APPROVED=false;
+let STATE={ground:{},dead:{},owner:{},king:0,burnCount:0,burnOpen:false};
+const $=id=>document.getElementById(id);
+const log=(m,el='log')=>{$(el).textContent=m;};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rq=(m,p)=>window.ethereum.request({method:m,params:p});
+const padU=n=>BigInt(n).toString(16).padStart(64,'0');
+const padA=a=>a.toLowerCase().replace(/^0x/,'').padStart(64,'0');
+
+// batched eth_call over public RPC (reads don't need the wallet)
+async function batch(calls){
+  const body=calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to:c.to,data:c.data},'latest']}));
+  const r=await fetch(CFG.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json(); return j.sort((a,b)=>a.id-b.id).map(x=>x.result);
+}
+function tierOf(rank){ if(rank===1)return['KING','b-king','👑']; if(rank<=10)return['FRONT','b-front','🦸'];
+  if(rank<=25)return['SURGE','b-surge','⚡']; if(rank<=100)return['CHASE','b-chase','🎯']; return['FIELD','b-field','🏃']; }
+
+function paintNet(){
+  const ok=CHAIN===CFG.chainId;
+  $('netpill').textContent=CHAIN?(ok?'Sepolia':'wrong network'):'—';
+  $('netpill').className='pill'+(ok?' on':' bad');
+}
+async function connect(){
+  if(!window.ethereum){log('No wallet found. Open in your wallet browser.');return;}
+  try{
+    const a=await rq('eth_requestAccounts');ACC=a[0];CHAIN=await rq('eth_chainId');
+    if(CHAIN!==CFG.chainId){ try{ await rq('wallet_switchEthereumChain',[{chainId:CFG.chainId}]); CHAIN=CFG.chainId; }catch(e){ log('Switch to Sepolia in your wallet.'); } }
+    $('acc').textContent=ACC; paintNet();
+    window.ethereum.on&&window.ethereum.on('chainChanged',c=>{CHAIN=c;paintNet();refresh();});
+    window.ethereum.on&&window.ethereum.on('accountsChanged',x=>{ACC=x[0]||null;$('acc').textContent=ACC||'not connected';refresh();});
+    await refresh();
+  }catch(e){log('Connect failed: '+(e.message||e));}
+}
+async function refresh(){
+  // read king / burnCount / burnOpen
+  const meta=await batch([{to:CFG.race,data:SEL.king},{to:CFG.race,data:SEL.burnCount},{to:CFG.race,data:SEL.burnOpen}]);
+  STATE.king=parseInt(meta[0],16); STATE.burnCount=parseInt(meta[1],16); STATE.burnOpen=BigInt(meta[2])!==0n;
+  // per-token: ground, dead, owner
+  const calls=[];
+  IDS.forEach(id=>{ calls.push({to:CFG.race,data:SEL.groundOf+padU(id)},{to:CFG.race,data:SEL.dead+padU(id)},{to:CFG.collection,data:SEL.ownerOf+padU(id)}); });
+  const res=await batch(calls);
+  IDS.forEach((id,i)=>{
+    const b=i*3;
+    STATE.ground[id]=res[b]?BigInt(res[b]):0n;
+    STATE.dead[id]=res[b+1]?BigInt(res[b+1])!==0n:false;
+    STATE.owner[id]=res[b+2]?('0x'+res[b+2].slice(-40)):null;
+  });
+  // approval
+  if(ACC){ const ap=await batch([{to:CFG.collection,data:SEL.isApprovedForAll+padA(ACC)+padA(CFG.race)}]); APPROVED=BigInt(ap[0]||'0x0')!==0n; }
+  paintState();
+}
+function rankMap(){
+  const live=[]; IDS.forEach(id=>{ if(!STATE.dead[id]) live.push(id); });
+  live.sort((a,b)=> STATE.ground[b]>STATE.ground[a]?1:(STATE.ground[b]<STATE.ground[a]?-1:a-b));
+  const rank={}; live.forEach((id,i)=>rank[id]=i+1); return rank;
+}
+function paintState(){
+  const rank=rankMap();
+  $('statepill').textContent=STATE.burnOpen?'burns open':'closed';
+  $('statepill').className='pill '+(STATE.burnOpen?'on':'bad');
+  $('king').textContent = STATE.king? ('#'+STATE.king) : '— (open)';
+  $('burncount').textContent=STATE.burnCount;
+  $('appill').textContent = ACC?(APPROVED?'yes':'not yet'):'—';
+  $('appill').className='pill'+(APPROVED?' on':(ACC?' bad':''));
+  $('approveBtn').disabled=!(ACC&&CHAIN===CFG.chainId)||APPROVED;
+  // board
+  const cells=[];
+  for(const id of IDS){
+    const mine=ACC&&STATE.owner[id]&&STATE.owner[id].toLowerCase()===ACC.toLowerCase();
+    const dead=STATE.dead[id];
+    let inner='<div class="id">#'+id+(STATE.king===id?' 👑':'')+'</div>';
+    if(dead){ inner+='<div class="g">burned</div>'; }
+    else { const r=rank[id]; const [tn,tc,te]=tierOf(r);
+      inner+='<div class="rk">rank '+r+'</div><div class="g">'+Number(STATE.ground[id]).toLocaleString()+'</div><span class="badge '+tc+'">'+te+' '+tn+'</span>'; }
+    cells.push('<div class="tk'+(mine?' mine':'')+(dead?' dead':'')+'">'+inner+(mine&&!dead?'<div class="g" style="color:var(--acc)">yours</div>':'')+'</div>');
+  }
+  $('board').innerHTML=cells.join('');
+  // my pieces + burn selectors
+  const mine=[]; IDS.forEach(id=>{ if(ACC&&!STATE.dead[id]&&STATE.owner[id]&&STATE.owner[id].toLowerCase()===ACC.toLowerCase()) mine.push(id); });
+  $('mycount').textContent=ACC?(mine.length+' live'):'connect wallet';
+  const opts=mine.map(id=>'<option value="'+id+'">#'+id+' · '+Number(STATE.ground[id]).toLocaleString()+' ground</option>').join('');
+  $('sacSel').innerHTML=opts; $('survSel').innerHTML=opts;
+  if(mine.length>=2){ $('survSel').selectedIndex=1; }
+  $('burnBtn').disabled=!(ACC&&APPROVED&&STATE.burnOpen&&mine.length>=2);
+  updatePreview();
+}
+function updatePreview(){
+  const s=+$('sacSel').value,v=+$('survSel').value;
+  if(!s||!v){ $('burnPreview').textContent='—'; return; }
+  if(s===v){ $('burnPreview').textContent='pick two different pieces'; return; }
+  const gained=Number(STATE.ground[s]);
+  $('burnPreview').textContent='#'+s+' dies → #'+v+' absorbs '+gained.toLocaleString()+' ground (→ '+(Number(STATE.ground[v])+gained).toLocaleString()+')';
+}
+$('sacSel').addEventListener?0:0; document.addEventListener('change',e=>{ if(e.target.id==='sacSel'||e.target.id==='survSel') updatePreview(); });
+
+async function approve(){
+  if(!ACC)return; $('approveBtn').disabled=true;
+  try{
+    const data=SEL.setApprovalForAll+padA(CFG.race)+padU(1);
+    const hash=await rq('eth_sendTransaction',[{from:ACC,to:CFG.collection,data}]);
+    log('approving… '+hash);
+    for(let i=0;i<60;i++){ const r=await rq('eth_getTransactionReceipt',[hash]); if(r){ APPROVED=true; log('✅ approved — you can burn now.'); await refresh(); return; } await sleep(3000); }
+  }catch(e){ log('Approve cancelled/failed: '+(e.message||e)); $('approveBtn').disabled=false; }
+}
+async function burn(){
+  const s=+$('sacSel').value,v=+$('survSel').value;
+  if(!s||!v||s===v){ log('Pick two different pieces.','log2'); return; }
+  if(!confirm('Burn #'+s+' into #'+v+'? #'+s+' is destroyed forever (Sepolia).')) return;
+  $('burnBtn').disabled=true;
+  try{
+    const data=SEL.burnInto+padU(s)+padU(v);
+    const hash=await rq('eth_sendTransaction',[{from:ACC,to:CFG.race,data}]);
+    log('🔥 burning #'+s+' → #'+v+'… '+hash,'log2');
+    for(let i=0;i<60;i++){ const r=await rq('eth_getTransactionReceipt',[hash]); if(r){
+      if(r.status&&r.status!=='0x1'){ log('Burn reverted.','log2'); $('burnBtn').disabled=false; return; }
+      log('✅ #'+s+' burned into #'+v+'. Board updated.','log2'); await refresh(); return;
+    } await sleep(3000); }
+  }catch(e){ log('Burn cancelled/failed: '+(e.message||e),'log2'); $('burnBtn').disabled=false; }
+}
+// initial read (no wallet needed for the board) — retry a few times through transient RPC hiccups
+(async function init(){ for(let i=0;i<5;i++){ try{ await refresh(); if(document.querySelectorAll('#board .tk').length) return; }catch(e){} await sleep(1500); } })();
+</script></body></html>

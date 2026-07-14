@@ -1,0 +1,110 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · The Race · Your ground (Sepolia)</title>
+<style>
+  :root{--bg:#0b0b0f;--fg:#eaeaf0;--mut:#8a8a96;--line:#20202a;--acc:#ED1E79;--gold:#ffd44d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 ui-monospace,Menlo,monospace}
+  .wrap{max-width:640px;margin:0 auto;padding:28px 18px 70px}
+  h1{font-size:16px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-bottom:16px}
+  .stage{position:relative;width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#050505}
+  .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .stage .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#666;font-size:13px}
+  .info{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:14px 2px 2px}
+  .info .who{font-size:16px} .info .who b{font-weight:700}
+  .badge{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;padding:3px 9px;margin-left:8px;vertical-align:middle}
+  .b-king{background:#3a2f00;color:var(--gold)} .b-front{background:#3a0e1e;color:#ff6aa6} .b-surge{background:#1a2c3a;color:#7fd0ff}
+  .b-field{background:#161620;color:var(--mut)} .b-dead{background:#161620;color:#555}
+  .ground{text-align:right}
+  .ground .lab{color:var(--mut);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+  .ground .num{font-size:17px;font-variant-numeric:tabular-nums;margin-top:1px} .ground .num.king{color:var(--gold)}
+  .ground .rk{color:var(--mut);font-size:11px}
+  .nav{display:flex;gap:8px;margin:14px 0 4px}
+  .nav button{flex:1;font:inherit;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:9px;padding:8px;cursor:pointer}
+  .nav button:hover{border-color:var(--acc)}
+  .chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;margin-top:10px}
+  .chip{position:relative;aspect-ratio:1;border:1px solid var(--line);background:#050505;border-radius:9px;cursor:pointer;overflow:hidden;padding:0}
+  .chip img{width:100%;height:100%;object-fit:cover;display:block}
+  .chip .n{position:absolute;left:0;right:0;bottom:0;font-size:9px;padding:1px 0;background:rgba(0,0,0,.55);color:#ccc;text-align:center}
+  .chip .dot{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%}
+  .chip .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#555;font-size:12px}
+  .chip:hover{border-color:#888} .chip.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+  .chip.dead{opacity:.4} .chip.mine{outline:2px solid rgba(237,30,121,.55);outline-offset:-2px}
+  .d-king{background:var(--gold)} .d-front{background:#ff6aa6} .d-surge{background:#7fd0ff} .d-field{background:#666} .d-dead{background:#444}
+  .foot{color:var(--mut);font-size:12px;text-align:center;margin-top:16px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+  .foot span b{color:var(--fg)} a{color:var(--acc)}
+</style></head><body>
+<div class="wrap">
+  <h1>FRONTRUN · The Race</h1>
+  <div class="sub">Live pieces & ground · Sepolia</div>
+
+  <div class="stage" id="stage"><div class="ph">loading…</div></div>
+  <div class="info">
+    <div class="who">Runner <b id="who">#—</b><span id="badge"></span></div>
+    <div class="ground"><div class="lab">ground</div><div class="num" id="ground">—</div><div class="rk" id="rank"></div></div>
+  </div>
+  <div class="nav"><button onclick="step(-1)">‹ prev</button><button onclick="step(1)">next ›</button></div>
+  <div class="chips" id="chips"></div>
+  <div class="foot">
+    <span>race: <b id="fstate">—</b></span><span>king: <b id="fking" style="color:var(--gold)">—</b></span><span>burns: <b id="fburns">—</b></span>
+    <span id="mineline" style="display:none">your squad: <b id="fmine">—</b></span>
+  </div>
+  <div class="foot"><button style="max-width:220px;border-color:var(--acc)" onclick="connect()" id="cbtn">Connect to mark your pieces</button></div>
+  <div class="foot" style="margin-top:6px">Ground climbs every second from the reveal. Win burns on the <a href="burn-art.html">burn page</a> to absorb more — most ground wears the 👑.</div>
+</div>
+<script>
+const CFG={ collection:'0xaaF7c610b770E068D6011D4689aC683cb16E7aA0', race:'0xf947D65Bd43cB61B02B87De389AF7780fA2ac7fD',
+  rpc:'https://ethereum-sepolia-rpc.publicnode.com', chainId:'0xaa36a7', firstId:1, supply:12 };
+const IDS=Array.from({length:CFG.supply},(_,i)=>i+CFG.firstId);
+const SEL={ tokenURI:'0xc87b56dd', startTime:'0x78e97925', king:'0xcc181ca8', crownClaimed:'0xa9fd3822', burnCount:'0x524773ce', burnOpen:'0x477dfefb', dead:'0xe77f7b4b', absorbed:'0xb9821574', ownerOf:'0x6352211e' };
+const padU=n=>BigInt(n).toString(16).padStart(64,'0');
+const $=id=>document.getElementById(id);
+const ST={start:0,king:0,crown:false,burns:0,open:false,dead:{},absorbed:{},owner:{},tok:{}};
+let cur=IDS[0], ACC=null;
+function decAbiString(ret){ if(!ret||ret==='0x'||ret.length<130)return null; const h=ret.slice(2); const len=parseInt(h.slice(64,128),16); if(!len)return null; let s=''; for(let i=0;i<len;i++)s+=String.fromCharCode(parseInt(h.substr(128+i*2,2),16)); return s; }
+async function batch(calls){ const body=calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:'eth_call',params:[{to:c.to,data:c.data},'latest']})); const r=await fetch(CFG.rpc,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); return (await r.json()).sort((a,b)=>a.id-b.id).map(x=>x.result); }
+const nowSec=()=>Math.floor(Date.now()/1000);
+function groundOf(id){ if(ST.dead[id])return 0; return Math.max(0,nowSec()-ST.start)+Number(ST.absorbed[id]||0n); }
+function rankMap(){ const live=IDS.filter(id=>!ST.dead[id]); live.sort((a,b)=>groundOf(b)-groundOf(a)||a-b); const r={}; live.forEach((id,i)=>r[id]=i+1); return r; }
+function tierOf(id){ if(ST.dead[id])return['Burned','b-dead','d-dead']; if(ST.crown&&ST.king===id)return['King','b-king','d-king'];
+  if(!ST.absorbed[id]||ST.absorbed[id]===0n)return['Field','b-field','d-field'];
+  let a=0; for(const j of IDS){ if(j===id||ST.dead[j])continue; if(groundOf(j)>groundOf(id))a++; } const r=a+1;
+  if(r<=10)return['Front','b-front','d-front']; if(r<=25)return['Surge','b-surge','d-surge']; return['Field','b-field','d-field']; }
+async function loadState(){
+  const m=await batch([{to:CFG.race,data:SEL.startTime},{to:CFG.race,data:SEL.king},{to:CFG.race,data:SEL.crownClaimed},{to:CFG.race,data:SEL.burnCount},{to:CFG.race,data:SEL.burnOpen}]);
+  ST.start=parseInt(m[0],16); ST.king=parseInt(m[1],16); ST.crown=BigInt(m[2]||'0x0')!==0n; ST.burns=parseInt(m[3],16); ST.open=BigInt(m[4]||'0x0')!==0n;
+  const calls=[]; IDS.forEach(id=>calls.push({to:CFG.race,data:SEL.dead+padU(id)},{to:CFG.race,data:SEL.absorbed+padU(id)},{to:CFG.collection,data:SEL.ownerOf+padU(id)}));
+  const res=await batch(calls);
+  IDS.forEach((id,i)=>{ const b=i*3; ST.dead[id]=BigInt(res[b]||'0x0')!==0n; ST.absorbed[id]=res[b+1]?BigInt(res[b+1]):0n; ST.owner[id]=res[b+2]?('0x'+res[b+2].slice(-40)):null; });
+  $('fstate').textContent=ST.open?'open':'closed'; $('fking').textContent=ST.king?('#'+ST.king):'—'; $('fburns').textContent=ST.burns;
+  if(ACC){ const mine=IDS.filter(id=>mineP(id)); const live=mine.filter(id=>!ST.dead[id]); $('mineline').style.display=''; $('fmine').textContent=live.length+' live'+(mine.length-live.length?(' · '+(mine.length-live.length)+' burned'):''); }
+  paintChips(); paintInfo();
+}
+const mineP=id=>ACC&&ST.owner[id]&&ST.owner[id].toLowerCase()===ACC.toLowerCase();
+function paintChips(){ $('chips').innerHTML=IDS.map(id=>{ const [,,dc]=tierOf(id); const img=ST.tok[id]&&ST.tok[id].image;
+  return '<button class="chip'+(id===cur?' on':'')+(ST.dead[id]?' dead':'')+(mineP(id)?' mine':'')+'" onclick="pick('+id+')">'+
+    (img?'<img src="'+img+'" alt="#'+id+'">':'<div class="ph">#'+id+'</div>')+'<span class="dot '+dc+'"></span><span class="n">#'+id+'</span></button>'; }).join(''); }
+function paintInfo(){ const [tn,bc]=tierOf(cur); const rank=rankMap();
+  $('who').textContent='#'+cur; $('badge').innerHTML='<span class="badge '+bc+'">'+tn+'</span>';
+  if(ST.dead[cur]){ $('ground').textContent='burned'; $('ground').className='num'; $('rank').textContent=''; }
+  else{ $('ground').innerHTML=groundOf(cur).toLocaleString(); $('ground').className='num'+(ST.crown&&ST.king===cur?' king':''); $('rank').textContent='rank #'+rank[cur]; } }
+async function fetchTok(id){ if(ST.tok[id]!==undefined)return ST.tok[id];
+  try{ const [ret]=await batch([{to:CFG.collection,data:SEL.tokenURI+padU(id)}]); const uri=decAbiString(ret); const j=JSON.parse(atob(uri.split('base64,')[1])); ST.tok[id]={image:j.image||null,anim:j.animation_url||null}; }
+  catch(e){ ST.tok[id]={image:null,anim:null}; } return ST.tok[id]; }
+async function loadThumbs(){ let i=0; await Promise.all(Array.from({length:4},async()=>{ while(i<IDS.length){ const id=IDS[i++]; await fetchTok(id); paintChips(); } })); }
+async function pick(id){ cur=id; paintChips(); paintInfo();
+  const stage=$('stage'); stage.innerHTML='<div class="ph">rendering #'+id+'…</div>';
+  const anim=(await fetchTok(id)).anim; if(id!==cur)return;
+  if(anim){ const f=document.createElement('iframe'); f.setAttribute('scrolling','no'); f.src=anim; stage.innerHTML=''; stage.appendChild(f); }
+  else stage.innerHTML='<div class="ph">#'+id+' · art not on chain</div>'; }
+function step(d){ let i=IDS.indexOf(cur); i=(i+d+IDS.length)%IDS.length; pick(IDS[i]); }
+async function connect(){ if(!window.ethereum){ $('cbtn').textContent='no wallet found'; return; }
+  try{ const a=await window.ethereum.request({method:'eth_requestAccounts'}); ACC=a[0];
+    try{ await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:CFG.chainId}]}); }catch(e){}
+    $('cbtn').textContent=ACC.slice(0,6)+'…'+ACC.slice(-4)+' — your pieces are outlined'; await loadState();
+  }catch(e){} }
+(async()=>{ await loadState(); const living=IDS.filter(id=>!ST.dead[id]); pick((ST.crown&&!ST.dead[ST.king])?ST.king:(living[0]||IDS[0])); loadThumbs(); })();
+setInterval(()=>{ paintInfo(); }, 1000);                    // ground ticks on the selected runner
+setInterval(()=>loadState().catch(()=>{}), 20000);
+</script></body></html>

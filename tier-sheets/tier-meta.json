@@ -1,0 +1,26 @@
+{
+  "king": {
+    "frames": 47,
+    "cols": 7,
+    "rows": 7,
+    "cell": 500,
+    "bytes": 112544,
+    "b64": 150060
+  },
+  "front": {
+    "frames": 48,
+    "cols": 7,
+    "rows": 7,
+    "cell": 500,
+    "bytes": 107508,
+    "b64": 143344
+  },
+  "surge": {
+    "frames": 41,
+    "cols": 7,
+    "rows": 6,
+    "cell": 500,
+    "bytes": 96800,
+    "b64": 129068
+  }
+}

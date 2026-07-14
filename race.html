@@ -179,7 +179,7 @@
   <a class="brand" href="./index.html">FRONTRUN<span class="dot">.</span></a>
   <nav class="navlinks">
     <a href="./index.html">home</a>
-    <a href="./race.html" class="on">the race</a><a href="./race.html" style="color:var(--pink);font-weight:800">burn 🔥</a>
+    <a href="./race.html" class="on">the race</a>
     <a href="./board.html">leaderboard</a>
     <a href="./levels.html">levels</a>
     <a href="./rarity.html">the rares</a>
@@ -691,6 +691,19 @@ async function fetchLeader(){
     return { id, wallet, ground, claimed:true, dead:false, fetchTime:nowSec() };
   }catch(e){ return null; }
 }
+let SHOWN_LEADER=null, FIELD_READY=false;
+// load the King's real running render (run.html = the exact animation_url) into the hero iframe.
+// once per king, and only after the boot field-scan is done, so the WebGL engine isn't starved while painting.
+function mountLeaderRender(id){
+  if(DEMO||id==null) return;
+  if(!FIELD_READY) return;               // hold until the page is quiet
+  if(id===SHOWN_LEADER) return;          // already showing this king
+  SHOWN_LEADER=id;
+  const f=document.getElementById('lRender'); if(!f) return;
+  f.classList.remove('live'); f.style.display='';
+  f.onload=()=>{ setTimeout(()=>f.classList.add('live'), 2600); };  // reveal after the engine has painted; poster shows until then
+  f.src='./run.html?id='+id;
+}
 function renderLeader(L){
   LEADER=L;
   const box=document.getElementById('leader');
@@ -711,26 +724,17 @@ function renderLeader(L){
   document.getElementById('lGround').textContent=fmtG(groundOf(L));
   document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
   document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
-  // LIVE: the King's real art (real tunnel) with his silhouette RUNNING on top, tinted to his own colour.
+  // LIVE: the King's real FULL render — the exact animation_url (moving tunnel + runner), same as OpenSea's open view / the lightbox.
   if(!DEMO){
     const lp=document.getElementById('lPoster');
-    const paint=(img)=>{
-      const s=new Image();
-      s.onload=()=>{
-        let col='#39d353';
-        try{ const cv=document.createElement('canvas'); cv.width=64;cv.height=64; const g=cv.getContext('2d'); g.drawImage(s,0,0,64,64);
-          const d=g.getImageData(32,42,1,1).data; if(d[3]>20) col='rgb('+d[0]+','+d[1]+','+d[2]+')'; }catch(e){}
-        lp.innerHTML='<img style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" src="'+img+'" alt="FRONTRUN #'+L.id+'">'
-          +'<div class="rsil" data-mask="king" style="position:absolute;inset:0;background:'+col+';-webkit-mask-image:url(anim/king_00.png);mask-image:url(anim/king_00.png);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat"></div>';
-      };
-      s.src=img;
-    };
-    if(RIMG[L.id]) paint(RIMG[L.id]);
-    else { lp.innerHTML='<div class="rsil" data-mask="king" style="position:absolute;inset:0;background:#39d353;-webkit-mask-image:url(anim/king_00.png);mask-image:url(anim/king_00.png);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat"></div>'; loadTokenImages([L]).then(()=>{ if(RIMG[L.id]) paint(RIMG[L.id]); }); }
+    const imgTag=(src)=>'<img style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" src="'+src+'" alt="FRONTRUN #'+L.id+'">';
+    // real static image sits underneath as an instant placeholder so the hero is never blank/black while the engine boots
+    if(RIMG[L.id]) lp.innerHTML=imgTag(RIMG[L.id]);
+    else { lp.innerHTML=''; loadTokenImages([L]).then(()=>{ if(RIMG[L.id]) lp.innerHTML=imgTag(RIMG[L.id]); }); }
+    mountLeaderRender(L.id);   // load the live running render on top (once per king, after the field is ready)
   } else {
     document.getElementById('lPoster').innerHTML=posterSVG(L, true, true, true);
   }
-  const f=document.getElementById('lRender'); if(f) f.style.display='none';  // no inline WebGL (heavy/unreliable)
   document.getElementById('lOpen').onclick=()=>openRun(L.id);
   { const lp2=document.getElementById('lPoster'); if(lp2){ lp2.style.cursor='pointer'; lp2.onclick=()=>openRun(L.id); } }
 }
@@ -1008,7 +1012,7 @@ document.getElementById('bBurn').addEventListener('click',async()=>{
     loadWallet(demoWallet);
   } else {
     renderBoard(LAST_SQUAD);                                        // show "reading the field…" immediately
-    loadRealField().then(()=>renderBoard(LAST_SQUAD));             // then the real front of the pack, no wallet needed
+    loadRealField().then(()=>{ renderBoard(LAST_SQUAD); FIELD_READY=true; if(LEADER) mountLeaderRender(LEADER.id); });  // field ready -> now the hero can boot its render on a quiet page
     setInterval(()=>loadRealField().then(()=>renderBoard(LAST_SQUAD)), 60000); // refresh as burns move the field
   }
   refreshLeader();                       // feature the one up front

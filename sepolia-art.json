@@ -1,0 +1,25 @@
+{
+  "collection": "0xaaF7c610b770E068D6011D4689aC683cb16E7aA0",
+  "minted": true,
+  "revealed": true,
+  "race": "0xf947D65Bd43cB61B02B87De389AF7780fA2ac7fD",
+  "uploaded": [
+    "frontrun-engine-gz-20",
+    "frontrun-card-king",
+    "frontrun-card-kingcard",
+    "frontrun-card-runnerw",
+    "frontrun-card-front",
+    "frontrun-card-frontcard",
+    "frontrun-card-surge",
+    "frontrun-card-surgecard"
+  ],
+  "firstId": 1,
+  "supply": 12,
+  "note": "King/Front/Field art uploaded; Surge skipped (budget; unreachable in test)",
+  "demoBurn": "12->1",
+  "renderer": "0x53B68de517DB1950eF6ABe0f8D5D4Cbb29138484",
+  "rendererSet": true,
+  "approved": true,
+  "done": true,
+  "deployer": "0x5da3d2dB711a8782393ff09009e3b7Ab129aBB26"
+}

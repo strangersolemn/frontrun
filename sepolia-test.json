@@ -1,0 +1,11 @@
+{
+  "chain": "sepolia",
+  "chainId": 11155111,
+  "collection": "0x8fb8Dd3ba83b018fdCF73Ed2e60d507A536C5F9f",
+  "race": "0x38E78D1817412Ef763efD883D39e1bbbC245eC63",
+  "deployer": "0x5da3d2dB711a8782393ff09009e3b7Ab129aBB26",
+  "firstId": 0,
+  "supply": 12,
+  "reveal": 1781184507,
+  "ts": "2026-07-11T14:09:49.355Z"
+}
