@@ -201,7 +201,7 @@
       <iframe id="lRender" title="current leader"></iframe>
     </div>
     <div class="linfo">
-      <div class="llabel">the front</div>
+      <div class="llabel" id="lLabel">the king</div>
       <div class="lname" id="lName">FRONTRUN #—</div>
       <div class="lg"><span id="lGround">0</span><span class="u">ground</span></div>
       <div class="lsub" id="lSub">holds the crown · accruing +1 / second</div>
@@ -1012,7 +1012,7 @@ document.getElementById('bBurn').addEventListener('click',async()=>{
     setInterval(()=>loadRealField().then(()=>renderBoard(LAST_SQUAD)), 60000); // refresh as burns move the field
   }
   refreshLeader();                       // feature the one up front
-  setInterval(refreshLeader, 30000);     // re-check the crown holder every 30s (burns can change it)
+  setInterval(refreshLeader, 15000);     // re-check the crown holder every 30s (burns can change it)
 })();
 </script>
 <div id="runbox" onclick="if(event.target.id==='runbox')closeRun()" style="position:fixed;inset:0;z-index:999;background:rgba(5,6,10,.96);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px">
