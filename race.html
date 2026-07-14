@@ -711,12 +711,22 @@ function renderLeader(L){
   document.getElementById('lGround').textContent=fmtG(groundOf(L));
   document.getElementById('lHolder').textContent = L.wallet ? ('held by '+shorten(L.wallet)) : '';
   document.getElementById('lSub').textContent='holds the crown · accruing +1 / second';
-  // LIVE: the real on-chain art (matches OpenSea); DEMO: the simulated poster
+  // LIVE: the King's real art (real tunnel) with his silhouette RUNNING on top, tinted to his own colour.
   if(!DEMO){
-    document.getElementById('lPoster').innerHTML = RIMG[L.id]
-      ? '<img class="tokimg ready" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" src="'+RIMG[L.id]+'" alt="FRONTRUN #'+L.id+'">'
-      : '<img class="tokimg" data-tok="'+L.id+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="FRONTRUN #'+L.id+'">';
-    if(RIMG[L.id]===undefined) loadTokenImages([L]);
+    const lp=document.getElementById('lPoster');
+    const paint=(img)=>{
+      const s=new Image();
+      s.onload=()=>{
+        let col='#39d353';
+        try{ const cv=document.createElement('canvas'); cv.width=64;cv.height=64; const g=cv.getContext('2d'); g.drawImage(s,0,0,64,64);
+          const d=g.getImageData(32,42,1,1).data; if(d[3]>20) col='rgb('+d[0]+','+d[1]+','+d[2]+')'; }catch(e){}
+        lp.innerHTML='<img style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" src="'+img+'" alt="FRONTRUN #'+L.id+'">'
+          +'<div class="rsil" data-mask="king" style="position:absolute;inset:0;background:'+col+';-webkit-mask-image:url(anim/king_00.png);mask-image:url(anim/king_00.png);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat"></div>';
+      };
+      s.src=img;
+    };
+    if(RIMG[L.id]) paint(RIMG[L.id]);
+    else { lp.innerHTML='<div class="rsil" data-mask="king" style="position:absolute;inset:0;background:#39d353;-webkit-mask-image:url(anim/king_00.png);mask-image:url(anim/king_00.png);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center bottom;mask-position:center bottom;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat"></div>'; loadTokenImages([L]).then(()=>{ if(RIMG[L.id]) paint(RIMG[L.id]); }); }
   } else {
     document.getElementById('lPoster').innerHTML=posterSVG(L, true, true, true);
   }
