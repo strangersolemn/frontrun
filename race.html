@@ -761,12 +761,29 @@ function openDetail(p){
   document.getElementById('dAccr').textContent = p.dead ? 'burned — ground absorbed into a survivor' : 'accruing +1 / second';
   document.getElementById('dStatus').textContent = p.dead ? 'burned' : 'running';
   document.getElementById('dBase').textContent = fmtG(p.dead?0:(nowSec()-C.reveal));
-  document.getElementById('dAbs').textContent = fmtG(p.absorbed||0);
-  const rankList=[...LAST_SQUAD,...(DEMO?demoField():(REAL_FIELD||[]))].sort((a,b)=>groundOf(b)-groundOf(a));
-  const rank=rankList.findIndex(x=>x.id===p.id && x.wallet===p.wallet);
-  // crown only the REAL king (live: on-chain crown id; demo: local rank)
-  const isLeader = (DEMO ? rank===0 : p.id===CROWN_ID) && !p.dead;
-  document.getElementById('dRank').textContent = isLeader ? '👑 crown' : (rank>0?('#'+(rank+1)):'—');
+  // rank: every runner shares the same base ground (time since start), so ABSORBED (from burns) is the
+  // ONLY real differentiator. rank by absorbed with tied pieces sharing a position (competition rank) —
+  // no fetchTime drift, no arbitrary tie ordering, so an un-burned piece stops jumping 4 -> 400.
+  const fieldAll = DEMO ? demoField() : (REAL_FIELD||[]);
+  const meF = fieldAll.find(x=>x.id===p.id);
+  const myAb = meF ? (meF.absorbed||0) : (p.absorbed||0);   // real on-chain absorbed (squad objects carry a stale 0)
+  document.getElementById('dAbs').textContent = fmtG(myAb);
+  let rankNum=0, tiedCount=0, inFront=false, isLeader=false;
+  if(p.dead){ /* burned — no rank */ }
+  else if(DEMO){
+    const rl=[...LAST_SQUAD,...fieldAll].sort((a,b)=>groundOf(b)-groundOf(a)||a.id-b.id);
+    rankNum=rl.findIndex(x=>x.id===p.id&&x.wallet===p.wallet)+1; isLeader=rankNum===1; inFront=rankNum>0&&rankNum<=10;
+  } else if(fieldAll.length){
+    isLeader = (p.id===CROWN_ID);
+    rankNum  = fieldAll.filter(x=>!x.dead && (x.absorbed||0) > myAb).length + 1;   // # of runners genuinely ahead + 1
+    tiedCount= fieldAll.filter(x=>!x.dead && (x.absorbed||0) === myAb).length;      // everyone level with this piece (incl self)
+    inFront  = myAb>0 && rankNum<=10;                                               // glow only if it has actually climbed
+  }
+  document.getElementById('dRank').textContent =
+      p.dead    ? 'burned'
+    : isLeader  ? '👑 crown'
+    : rankNum>0 ? ('#'+rankNum + (tiedCount>1 ? ' · tied ('+tiedCount+' level)' : ''))
+    : '—';
   // traits: LIVE = the real on-chain attributes (matches OpenSea exactly); DEMO = simulated
   if(!DEMO){
     showRealTraits(p.id);
@@ -781,7 +798,7 @@ function openDetail(p){
       : '<img class="tokimg" data-tok="'+p.id+'" alt="FRONTRUN #'+p.id+'">';
     if(RIMG[p.id]===undefined) loadTokenImages([p]);   // search-by-number: fetch its real image on demand
   } else {
-    document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true, rank>=0 && rank<10);   // glow only if this piece is in the front ten
+    document.getElementById('dPoster').innerHTML=posterSVG(p, isLeader, true, inFront);   // glow only if this piece is genuinely in the front
   }
   CUR_LEADER = isLeader;
   const f=document.getElementById('dRender'); if(f){ f.classList.remove('live'); f.src='about:blank'; }  // WebGL loads only on fullscreen
