@@ -721,12 +721,23 @@ function renderLeader(L){
     document.getElementById('lPoster').innerHTML=posterSVG(L, true, true, true);
   }
   const f=document.getElementById('lRender'); if(f) f.style.display='none';  // no inline WebGL (heavy/unreliable)
-  document.getElementById('lOpen').onclick=()=>openDetail(L);
+  document.getElementById('lOpen').onclick=()=>openRun(L.id);
+  { const lp2=document.getElementById('lPoster'); if(lp2){ lp2.style.cursor='pointer'; lp2.onclick=()=>openRun(L.id); } }
 }
 async function refreshLeader(){ renderLeader(await fetchLeader()); }
 
 // ---- detail overlay ----
 let CUR=null, detailWin=null, CUR_LEADER=false;
+// open the EXACT on-chain runner, running, in a big lightbox (needs a large view to paint — inline starves it)
+function openRun(id){
+  const box=document.getElementById('runbox'), f=document.getElementById('runframe');
+  if(!box||!f) return;
+  f.src='./run.html?id='+id;
+  document.getElementById('runlabel').textContent='FRONTRUN #'+id;
+  box.style.display='flex';
+}
+function closeRun(){ const box=document.getElementById('runbox'), f=document.getElementById('runframe'); if(box)box.style.display='none'; if(f)f.src='about:blank'; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeRun(); });
 function openDetail(p){
   CUR=p;
   const g = groundOf(p);
@@ -994,5 +1005,12 @@ document.getElementById('bBurn').addEventListener('click',async()=>{
   setInterval(refreshLeader, 30000);     // re-check the crown holder every 30s (burns can change it)
 })();
 </script>
+<div id="runbox" onclick="if(event.target.id==='runbox')closeRun()" style="position:fixed;inset:0;z-index:999;background:rgba(5,6,10,.96);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:16px;color:#f2f2f6;font:600 12px/1 ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase">
+    <span id="runlabel">FRONTRUN</span><span style="color:var(--pink,#ED1E79)">running</span>
+    <span onclick="closeRun()" style="cursor:pointer;font-size:22px;line-height:1;color:#f2f2f6">×</span>
+  </div>
+  <iframe id="runframe" title="runner" style="width:min(92vw,880px);height:min(92vw,880px);max-height:82vh;border:1px solid #22222c;background:#05060a;display:block"></iframe>
+</div>
 </body>
 </html>

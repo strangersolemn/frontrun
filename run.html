@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRONTRUN · runner</title><style>html,body{margin:0;height:100%;background:#05060a}#f{position:fixed;inset:0;width:100vw;height:100vh;border:0;display:block}</style></head>
+<body><iframe id="f" title="runner"></iframe>
+<script>
+const COLL='0xf8c20abd9c233a9de999c2ac6f1628df3f64efb0';
+const RPCS=['https://eth-mainnet.public.blastapi.io','https://rpc.mevblocker.io'];
+const id=new URLSearchParams(location.search).get('id')||'1';
+const pad=n=>BigInt(n).toString(16).padStart(64,'0');
+function dec(hex){const h=hex.slice(2);const len=parseInt(h.slice(64,128),16);let s='';for(let i=0;i<len;i++)s+=String.fromCharCode(parseInt(h.substr(128+i*2,2),16));return s;}
+(async()=>{
+  for(const r of RPCS){try{
+    const res=await fetch(r,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:COLL,data:'0xc87b56dd'+pad(id)},'latest']})});
+    const j=await res.json(); if(!j.result||j.result==='0x') continue;
+    const uri=dec(j.result); const by=Uint8Array.from(atob(uri.split(',')[1]),c=>c.charCodeAt(0)); const meta=JSON.parse(new TextDecoder().decode(by));
+    if(meta.animation_url){ document.getElementById('f').src=meta.animation_url; return; }
+  }catch(e){}}
+})();
+</script></body></html>
