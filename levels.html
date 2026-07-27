@@ -82,13 +82,13 @@
 </div>
 <script>
 const ENGINE='./sketch-v4-glitch-lab.html';
-// King brightened for legibility (was scanlines-on-dark); the rest unchanged
+// King/Front/Surge use the solid 'flood' figure for legibility (Front was too-dark palstatic, Surge lost in tear-stripes); each keeps its own tier colour
 const TIERS=[
   {key:'king', em:'👑', name:'The King', rank:'Rank #1', glow:'wears the crown', pal:1, gl:'flood', shp:'hex',
    copy:"The single piece holding the most ground. One at a time. The crown moves to whoever passes the King."},
-  {key:'front', em:'🦸', name:'The Front', rank:'Ranks 2–10', glow:'caped · glows', pal:8, gl:'palstatic', shp:'oct',
+  {key:'front', em:'🦸', name:'The Front', rank:'Ranks 2–10', glow:'caped · glows', pal:8, gl:'flood', shp:'oct',
    copy:"The lead pack. The nine runners behind the crown, caped and glowing in their own colour. First on every block, one burn from the top."},
-  {key:'surge', em:'⚡', name:'The Surge', rank:'Ranks 11–25', glow:'glows', pal:4, gl:'tear', shp:'square-flat',
+  {key:'surge', em:'⚡', name:'The Surge', rank:'Ranks 11–25', glow:'glows', pal:4, gl:'flood', shp:'square-flat',
    copy:"The push. Fifteen runners at the Front’s heels, glowing, closing the gap. One good move from breaking into the top ten."},
   {key:'chase', em:'🎯', name:'The Chase', rank:'Ranks 26–100', glow:'glows', pal:3, gl:'flood', shp:'oct',
    copy:"The chase. Ranks twenty-six through one hundred — inside the club, glowing in their own colour, hunting the runners ahead. The line between the club and the field."},
